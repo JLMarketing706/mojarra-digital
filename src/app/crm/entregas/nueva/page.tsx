@@ -1,0 +1,180 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { toast } from 'sonner'
+import { Loader2, ArrowLeft, FileDown } from 'lucide-react'
+import Link from 'next/link'
+
+interface TramiteSimple { id: string; tipo: string; numero_referencia: string | null }
+
+export default function NuevaEntregaPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const supabase = createClient()
+  const [saving, setSaving] = useState(false)
+  const [tramites, setTramites] = useState<TramiteSimple[]>([])
+  const [form, setForm] = useState({
+    tramite_id: searchParams.get('tramite_id') ?? '',
+    receptor_nombre: '',
+    receptor_dni: '',
+    observaciones: '',
+  })
+  const [entregaId, setEntregaId] = useState<string | null>(null)
+
+  useEffect(() => {
+    supabase
+      .from('tramites')
+      .select('id, tipo, numero_referencia')
+      .neq('estado', 'entregado')
+      .order('updated_at', { ascending: false })
+      .then(({ data }) => { if (data) setTramites(data) })
+  }, [])
+
+  function set(k: string, v: string) { setForm(p => ({ ...p, [k]: v })) }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!form.tramite_id || !form.receptor_nombre || !form.receptor_dni) {
+      toast.error('Trámite, nombre y DNI del receptor son obligatorios.')
+      return
+    }
+    setSaving(true)
+
+    const { data: entrega, error: entregaError } = await supabase
+      .from('entregas')
+      .insert({
+        tramite_id: form.tramite_id,
+        receptor_nombre: form.receptor_nombre,
+        receptor_dni: form.receptor_dni,
+        observaciones: form.observaciones || null,
+        fecha: new Date().toISOString(),
+      })
+      .select()
+      .single()
+
+    if (entregaError) {
+      if (entregaError.code === '23505') {
+        toast.error('Este trámite ya tiene una entrega registrada.')
+      } else {
+        toast.error('Error al registrar la entrega.')
+      }
+      setSaving(false)
+      return
+    }
+
+    // Actualizar estado del trámite a "entregado"
+    await supabase
+      .from('tramites')
+      .update({ estado: 'entregado', updated_at: new Date().toISOString() })
+      .eq('id', form.tramite_id)
+
+    await supabase.from('tramite_hitos').insert({
+      tramite_id: form.tramite_id,
+      descripcion: `Documentación entregada a ${form.receptor_nombre} (DNI ${form.receptor_dni})`,
+    })
+
+    setSaving(false)
+    toast.success('Entrega registrada. Trámite marcado como entregado.')
+    setEntregaId(entrega.id)
+  }
+
+  if (entregaId) {
+    return (
+      <div className="max-w-md">
+        <div className="p-6 rounded-xl border border-lime-500/30 bg-lime-500/5 text-center">
+          <div className="w-12 h-12 rounded-full bg-lime-500/20 flex items-center justify-center mx-auto mb-4">
+            <FileDown className="text-lime-400" size={22} />
+          </div>
+          <h2 className="text-white font-semibold mb-2">¡Entrega registrada!</h2>
+          <p className="text-zinc-400 text-sm mb-6">El trámite fue marcado como entregado.</p>
+          <div className="flex flex-col gap-2">
+            <a href={`/api/recibo?id=${entregaId}`} target="_blank" rel="noopener noreferrer">
+              <Button className="w-full bg-lime-400 text-black hover:bg-lime-300 font-semibold gap-2">
+                <FileDown size={15} />Descargar recibo PDF
+              </Button>
+            </a>
+            <Link href="/crm/entregas">
+              <Button variant="outline" className="w-full border-zinc-700 text-zinc-300 hover:bg-zinc-800">
+                Ver todas las entregas
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <Link href="/crm/entregas">
+        <Button variant="ghost" size="sm" className="gap-1.5 text-zinc-400 -ml-2 mb-6">
+          <ArrowLeft size={14} />Entregas
+        </Button>
+      </Link>
+      <h1 className="text-2xl font-semibold text-white mb-6">Nueva entrega</h1>
+
+      <form onSubmit={handleSubmit} className="space-y-5 max-w-lg">
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardHeader><CardTitle className="text-sm text-zinc-300">Datos de la entrega</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-zinc-300">Trámite *</Label>
+              <Select value={form.tramite_id} onValueChange={v => set('tramite_id', v)}>
+                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white focus:ring-lime-400">
+                  <SelectValue placeholder="Seleccioná el trámite" />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-700 max-h-52">
+                  {tramites.map(t => (
+                    <SelectItem key={t.id} value={t.id} className="text-zinc-200 focus:bg-zinc-800">
+                      {t.tipo}{t.numero_referencia ? ` · ${t.numero_referencia}` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-zinc-300">Nombre del receptor *</Label>
+                <Input value={form.receptor_nombre} onChange={e => set('receptor_nombre', e.target.value)}
+                  placeholder="Juan García" required
+                  className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-lime-400" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-zinc-300">DNI del receptor *</Label>
+                <Input value={form.receptor_dni} onChange={e => set('receptor_dni', e.target.value)}
+                  placeholder="12345678" required
+                  className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-lime-400" />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-zinc-300">Observaciones</Label>
+              <Textarea value={form.observaciones} onChange={e => set('observaciones', e.target.value)}
+                placeholder="Notas sobre la entrega..." rows={2}
+                className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-lime-400 resize-none" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex gap-3">
+          <Button type="submit" disabled={saving} className="bg-lime-400 text-black hover:bg-lime-300 font-semibold gap-2">
+            {saving && <Loader2 size={14} className="animate-spin" />}
+            Registrar entrega
+          </Button>
+          <Link href="/crm/entregas">
+            <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">Cancelar</Button>
+          </Link>
+        </div>
+      </form>
+    </div>
+  )
+}
