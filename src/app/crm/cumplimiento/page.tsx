@@ -96,7 +96,7 @@ export default async function CumplimientoPage() {
     .eq('anio', anio - 1)
     .maybeSingle()
 
-  // DDJJ pendientes (no firmadas o vencidas)
+  // DDJJ pendientes
   const { count: ddjjPendientes } = await supabase
     .from('declaraciones_juradas')
     .select('*', { count: 'exact', head: true })
@@ -113,6 +113,7 @@ export default async function CumplimientoPage() {
 
   return (
     <div>
+      {/* HEADER */}
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-white mb-1 flex items-center gap-2">
           <ShieldAlert size={20} className="text-lime-400" />Centro de Cumplimiento UIF
@@ -122,36 +123,78 @@ export default async function CumplimientoPage() {
         </p>
       </div>
 
-      {/* === ROS === */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        {[
-          { label: 'Inusuales', val: rosInusuales ?? 0, color: 'text-yellow-400', icon: AlertTriangle },
-          { label: 'En análisis', val: rosAnalisis ?? 0, color: 'text-orange-400', icon: Clock },
-          { label: 'Sospechosas', val: rosSospechosas ?? 0, color: 'text-red-400', icon: ShieldAlert },
-          { label: 'Reportadas', val: rosReportadas ?? 0, color: 'text-blue-400', icon: FileCheck2 },
-        ].map(s => (
-          <Card key={s.label} className="bg-zinc-900 border-zinc-800">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-zinc-400 text-xs mb-1">{s.label}</p>
-                <p className={`text-2xl font-bold ${s.color}`}>{s.val}</p>
-              </div>
-              <s.icon size={20} className={s.color} />
-            </CardContent>
-          </Card>
-        ))}
+      {/* NAVEGACIÓN RÁPIDA — siempre visible arriba */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+        <NavCard
+          href="/crm/cumplimiento/ros"
+          icon={FileWarning}
+          label="Reportes ROS"
+          desc="Operaciones LA / FT / FP"
+          count={(rosInusuales ?? 0) + (rosAnalisis ?? 0) + (rosSospechosas ?? 0)}
+          countLabel="pendientes"
+          urgent={(rosSospechosas ?? 0) > 0}
+        />
+        <NavCard
+          href="/crm/cumplimiento/ddjj"
+          icon={FileCheck2}
+          label="Declaraciones"
+          desc="DDJJ de PEP, BF, fondos"
+          count={ddjjPendientes ?? 0}
+          countLabel={ddjjPendientes ? 'sin firmar' : 'al día'}
+          urgent={(ddjjPendientes ?? 0) > 0}
+        />
+        <NavCard
+          href="/crm/cumplimiento/rsa"
+          icon={ClipboardList}
+          label="RSA anual"
+          desc="Autoevaluación de riesgos"
+          count={rsaPrevio ? 1 : 0}
+          countLabel={rsaPrevio ? rsaPrevio.estado : 'sin cargar'}
+        />
+        <NavCard
+          href="/crm/cumplimiento/capacitacion"
+          icon={GraduationCap}
+          label="Capacitación"
+          desc="PLA/FT obligatoria anual"
+          count={proximaCap ? 1 : 0}
+          countLabel={proximaCap ? 'programada' : 'sin programar'}
+          urgent={!proximaCap}
+        />
       </div>
 
-      {/* === DOS COLUMNAS === */}
+      {/* STATS ROS */}
+      <div className="mb-2">
+        <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">Estado de los ROS</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          {[
+            { label: 'Inusuales', val: rosInusuales ?? 0, color: 'text-yellow-400', icon: AlertTriangle },
+            { label: 'En análisis', val: rosAnalisis ?? 0, color: 'text-orange-400', icon: Clock },
+            { label: 'Sospechosas', val: rosSospechosas ?? 0, color: 'text-red-400', icon: ShieldAlert },
+            { label: 'Reportadas', val: rosReportadas ?? 0, color: 'text-blue-400', icon: FileCheck2 },
+          ].map(s => (
+            <Card key={s.label} className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-zinc-400 text-xs mb-1">{s.label}</p>
+                  <p className={`text-2xl font-bold ${s.color}`}>{s.val}</p>
+                </div>
+                <s.icon size={20} className={s.color} />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* CONTENIDO PRINCIPAL */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* IZQUIERDA: ROS pendientes */}
+        {/* IZQUIERDA: ROS pendientes + legajos */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wider">
               ROS pendientes ({rosTyped.length})
             </h2>
             <Link href="/crm/cumplimiento/ros/nuevo">
-              <Button size="sm" className="bg-lime-400 text-black hover:bg-lime-300 font-medium gap-1.5 h-7 text-xs">
+              <Button size="sm" className="bg-lime-400 text-black hover:bg-lime-300 font-medium gap-1.5 h-8 text-xs">
                 <FileWarning size={12} />Reportar operación inusual
               </Button>
             </Link>
@@ -168,7 +211,6 @@ export default async function CumplimientoPage() {
                 const horas = ros.fecha_limite_reporte ? horasRestantes(ros.fecha_limite_reporte) : null
                 const urgente = horas !== null && horas < 6 && ros.estado === 'sospechosa'
                 const vencido = horas !== null && horas === 0 && ros.estado === 'sospechosa'
-
                 return (
                   <Card key={ros.id}
                     className={`bg-zinc-900 border ${
@@ -256,14 +298,12 @@ export default async function CumplimientoPage() {
           )}
         </div>
 
-        {/* DERECHA: Resumen anual y próximas tareas */}
+        {/* DERECHA: resumen anual + tareas */}
         <div className="space-y-4">
-          {/* Stats año */}
           <Card className="bg-zinc-900 border-zinc-800">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm text-zinc-300 flex items-center gap-2">
-                <TrendingUp size={14} className="text-lime-400" />
-                Resumen {anio}
+                <TrendingUp size={14} className="text-lime-400" />Resumen {anio}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
@@ -280,43 +320,31 @@ export default async function CumplimientoPage() {
             </CardContent>
           </Card>
 
-          {/* RSA */}
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-zinc-300 flex items-center gap-2">
-                <ClipboardList size={14} className="text-lime-400" />
-                Autoevaluación anual (RSA)
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-xs text-zinc-500">
-                El primer RSA debió presentarse entre el 2/ene y el 15/mar del año siguiente.
-                Res. UIF 242/2023 art. 28.
-              </p>
-              {rsaPrevio ? (
-                <div className="p-3 rounded-lg border border-zinc-800 bg-zinc-800/30">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-zinc-200 text-sm font-medium">RSA {anio - 1}</span>
-                    <Badge className="text-xs bg-zinc-800 border border-zinc-700 text-zinc-300 capitalize">
-                      {rsaPrevio.estado}
-                    </Badge>
-                  </div>
+          {rsaPrevio && (
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm text-zinc-300 flex items-center gap-2">
+                  <ClipboardList size={14} className="text-lime-400" />RSA {anio - 1}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between mb-2">
+                  <Badge className="text-xs bg-zinc-800 border border-zinc-700 text-zinc-300 capitalize">
+                    {rsaPrevio.estado}
+                  </Badge>
                   {rsaPrevio.fecha_presentacion && (
-                    <p className="text-xs text-zinc-500">Presentado: {formatFecha(rsaPrevio.fecha_presentacion)}</p>
+                    <span className="text-xs text-zinc-500">{formatFecha(rsaPrevio.fecha_presentacion)}</span>
                   )}
                 </div>
-              ) : (
-                <p className="text-zinc-500 text-xs">Sin RSA cargado para {anio - 1}.</p>
-              )}
-              <Link href="/crm/cumplimiento/rsa">
-                <Button variant="outline" size="sm" className="w-full border-zinc-700 text-zinc-300 hover:bg-zinc-800 gap-2">
-                  <FileText size={12} />Gestionar RSA
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
+                <Link href="/crm/cumplimiento/rsa">
+                  <Button variant="outline" size="sm" className="w-full border-zinc-700 text-zinc-300 hover:bg-zinc-800 gap-2 h-8 text-xs">
+                    <FileText size={12} />Gestionar RSA
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          )}
 
-          {/* DDJJ pendientes */}
           {(ddjjPendientes ?? 0) > 0 && (
             <Card className="bg-yellow-500/5 border-yellow-500/30">
               <CardContent className="p-4">
@@ -329,7 +357,7 @@ export default async function CumplimientoPage() {
                 <p className="text-yellow-400/70 text-xs mb-2">
                   Hay declaraciones juradas pendientes de firma.
                 </p>
-                <Link href="/crm/cumplimiento/ddjj">
+                <Link href="/crm/cumplimiento/ddjj?estado=pendientes">
                   <Button size="sm" className="w-full bg-yellow-400/10 text-yellow-300 hover:bg-yellow-400/20 border border-yellow-400/30 text-xs">
                     Ver pendientes
                   </Button>
@@ -338,53 +366,22 @@ export default async function CumplimientoPage() {
             </Card>
           )}
 
-          {/* Próxima capacitación */}
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-zinc-300 flex items-center gap-2">
-                <GraduationCap size={14} className="text-lime-400" />
-                Capacitación
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {proximaCap ? (
-                <div>
-                  <p className="text-zinc-200 text-sm font-medium">{proximaCap.titulo}</p>
-                  <p className="text-zinc-500 text-xs flex items-center gap-1 mt-1">
-                    <Calendar size={11} />{formatFecha(proximaCap.fecha)}
-                  </p>
-                </div>
-              ) : (
-                <p className="text-zinc-500 text-xs mb-3">Sin capacitaciones programadas. La Res. 242/2023 exige al menos una anual.</p>
-              )}
-              <Link href="/crm/cumplimiento/capacitacion">
-                <Button variant="outline" size="sm" className="w-full mt-3 border-zinc-700 text-zinc-300 hover:bg-zinc-800 gap-2">
-                  Ver capacitaciones
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Quick links */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-8">
-        {[
-          { href: '/crm/cumplimiento/ros', label: 'Gestión de ROS', icon: FileWarning, desc: 'LA / FT / FP' },
-          { href: '/crm/cumplimiento/ddjj', label: 'Declaraciones', icon: FileCheck2, desc: 'PEP, fondos, BF' },
-          { href: '/crm/cumplimiento/rsa', label: 'RSA anual', icon: ClipboardList, desc: 'Autoevaluación' },
-          { href: '/crm/cumplimiento/capacitacion', label: 'Capacitación', icon: GraduationCap, desc: 'PLA/FT' },
-        ].map(it => (
-          <Link key={it.href} href={it.href}>
-            <Card className="bg-zinc-900 border-zinc-800 hover:border-lime-400/30 transition-colors h-full">
-              <CardContent className="p-4">
-                <it.icon size={18} className="text-lime-400 mb-3" />
-                <p className="text-white text-sm font-medium">{it.label}</p>
-                <p className="text-zinc-500 text-xs">{it.desc}</p>
+          {proximaCap && (
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm text-zinc-300 flex items-center gap-2">
+                  <GraduationCap size={14} className="text-lime-400" />Próxima capacitación
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-zinc-200 text-sm font-medium">{proximaCap.titulo}</p>
+                <p className="text-zinc-500 text-xs flex items-center gap-1 mt-1">
+                  <Calendar size={11} />{formatFecha(proximaCap.fecha)}
+                </p>
               </CardContent>
             </Card>
-          </Link>
-        ))}
+          )}
+        </div>
       </div>
     </div>
   )
@@ -396,5 +393,44 @@ function Row({ label, value, highlight = false }: { label: string; value: number
       <span className="text-zinc-500">{label}</span>
       <span className={highlight ? 'text-lime-400 font-semibold' : 'text-zinc-200'}>{value}</span>
     </div>
+  )
+}
+
+function NavCard({
+  href, icon: Icon, label, desc, count, countLabel, urgent = false,
+}: {
+  href: string
+  icon: React.ElementType
+  label: string
+  desc: string
+  count: number
+  countLabel: string
+  urgent?: boolean
+}) {
+  return (
+    <Link href={href} className="group">
+      <Card className={`h-full transition-all ${
+        urgent
+          ? 'bg-zinc-900 border-yellow-500/30 hover:border-yellow-400/50'
+          : 'bg-zinc-900 border-zinc-800 hover:border-lime-400/40'
+      }`}>
+        <CardContent className="p-4 h-full flex flex-col">
+          <div className="flex items-start justify-between mb-3">
+            <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
+              urgent ? 'bg-yellow-400/10 border border-yellow-400/20' : 'bg-lime-400/10 border border-lime-400/20'
+            }`}>
+              <Icon size={16} className={urgent ? 'text-yellow-400' : 'text-lime-400'} />
+            </div>
+            <ArrowRight size={14} className="text-zinc-600 group-hover:text-lime-400 transition-colors" />
+          </div>
+          <p className="text-white font-semibold text-sm">{label}</p>
+          <p className="text-zinc-500 text-xs mb-3">{desc}</p>
+          <div className="mt-auto pt-2 border-t border-zinc-800/60 flex items-baseline gap-1.5">
+            <span className={`text-xl font-bold ${urgent ? 'text-yellow-400' : 'text-zinc-200'}`}>{count}</span>
+            <span className="text-zinc-500 text-xs">{countLabel}</span>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
   )
 }
