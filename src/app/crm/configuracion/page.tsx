@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
-import { Loader2, Save, Settings } from 'lucide-react'
+import { Loader2, Save, Settings, Users, ArrowRight } from 'lucide-react'
+import Link from 'next/link'
 
 interface ConfigEntry { clave: string; valor: string; descripcion: string | null }
 
@@ -88,6 +89,22 @@ export default function ConfiguracionPage() {
         </div>
         <p className="text-zinc-400 text-sm">Datos de la escribanía y parámetros del sistema.</p>
       </div>
+
+      {/* Atajo a Equipo */}
+      <Link href="/crm/configuracion/equipo">
+        <Card className="bg-zinc-900 border-zinc-800 hover:border-lime-400/30 transition-colors cursor-pointer mb-6 max-w-xl">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-lime-400/10 border border-lime-400/20 flex items-center justify-center">
+              <Users size={18} className="text-lime-400" />
+            </div>
+            <div className="flex-1">
+              <p className="text-zinc-200 text-sm font-medium">Gestionar equipo</p>
+              <p className="text-zinc-500 text-xs">Invitar, asignar roles y desactivar miembros de la escribanía.</p>
+            </div>
+            <ArrowRight size={14} className="text-zinc-500" />
+          </CardContent>
+        </Card>
+      </Link>
 
       <form onSubmit={handleSave} className="space-y-5 max-w-xl">
         {/* Datos de la escribanía */}

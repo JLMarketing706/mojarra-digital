@@ -834,6 +834,90 @@ export interface AuditLog {
   cambios?: Record<string, unknown>
   ip?: string
   user_agent?: string
+  escribania_id?: string
+}
+
+// ─── MULTI-TENANCY (FASE 6) ──────────────────────────────
+export type PlanEscribania = 'trial' | 'basico' | 'profesional' | 'estudio'
+export type EstadoEscribania = 'trial' | 'activa' | 'suspendida' | 'cancelada'
+
+export interface Escribania {
+  id: string
+  razon_social: string
+  nombre_fantasia?: string
+  cuit?: string
+  matricula?: string
+  registro_notarial?: string
+  jurisdiccion?: string
+
+  dom_calle?: string
+  dom_numero?: string
+  dom_piso?: string
+  dom_localidad?: string
+  dom_provincia?: string
+  dom_codigo_postal?: string
+  dom_pais?: string
+
+  telefono?: string
+  email?: string
+  sitio_web?: string
+
+  plan: PlanEscribania
+  estado: EstadoEscribania
+  max_usuarios: number
+  trial_until?: string
+
+  soporte_habilitado_until?: string
+  soporte_habilitado_por?: string
+
+  created_at: string
+  updated_at: string
+}
+
+export const LABEL_PLAN: Record<PlanEscribania, string> = {
+  trial: 'Trial (30 días)',
+  basico: 'Básico',
+  profesional: 'Profesional',
+  estudio: 'Estudio',
+}
+
+export const LABEL_ESTADO_ESCRIBANIA: Record<EstadoEscribania, string> = {
+  trial: 'En prueba',
+  activa: 'Activa',
+  suspendida: 'Suspendida',
+  cancelada: 'Cancelada',
+}
+
+export type RolInvitable = 'escribano_titular' | 'oficial_cumplimiento' | 'escribano_adscripto' | 'empleado_admin'
+
+export interface Invitacion {
+  id: string
+  escribania_id: string
+  email: string
+  rol: RolInvitable
+  token: string
+  mensaje?: string
+  expira_at: string
+  aceptada_at?: string
+  aceptada_por?: string
+  cancelada_at?: string
+  invitado_por: string
+  created_at: string
+  escribania?: Escribania
+  invitador?: Profile
+}
+
+export const LABEL_ROL_INVITABLE: Record<RolInvitable, string> = {
+  escribano_titular: 'Escribano titular',
+  oficial_cumplimiento: 'Oficial de Cumplimiento',
+  escribano_adscripto: 'Escribano adscripto',
+  empleado_admin: 'Empleado administrativo',
+}
+
+export interface SuperAdmin {
+  profile_id: string
+  notas?: string
+  created_at: string
 }
 
 // ─── HELPERS DE LABEL ────────────────────────────────────
