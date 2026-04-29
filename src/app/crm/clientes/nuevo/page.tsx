@@ -217,10 +217,16 @@ export default function NuevoClientePage() {
     }
 
     const niv = (data as { nivel_riesgo?: string }).nivel_riesgo
-    if (niv === 'alto') toast.warning('Cliente creado. Riesgo ALTO asignado automáticamente.')
-    else toast.success(`Cliente creado. Riesgo ${niv ?? 'bajo'}.`)
+    if (niv === 'alto') {
+      toast.warning('Cliente creado · Riesgo ALTO. Adjuntá la documentación de respaldo más abajo.')
+    } else {
+      toast.success(`Cliente creado · Riesgo ${niv ?? 'bajo'}. Ya podés adjuntar la documentación.`)
+    }
 
-    router.push(`/crm/clientes/${data.id}`)
+    // Si tiene estado civil que requiere respaldo (casado/divorciado/viudo/unión),
+    // redirigir directo a la zona de carga de documentos del legajo.
+    const requiereDocs = ['casado', 'divorciado', 'viudo', 'union_convivencial'].includes(form.estado_civil)
+    router.push(`/crm/clientes/${data.id}${requiereDocs ? '#legajo' : ''}`)
   }
 
   const ocrBadge = (campo: string) =>
@@ -396,6 +402,24 @@ export default function NuevoClientePage() {
                   placeholder="+54 11 1234-5678" className={inputCls} />
               </div>
             </div>
+
+            {form.estado_civil && form.estado_civil !== 'soltero' && (
+              <div className="p-3 rounded-lg bg-lime-400/5 border border-lime-400/20 flex gap-2 items-start">
+                <Upload size={14} className="text-lime-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-lime-300 text-xs font-medium">
+                    Vas a poder adjuntar la documentación de respaldo después de guardar
+                  </p>
+                  <p className="text-zinc-400 text-xs mt-0.5">
+                    {form.estado_civil === 'casado' && 'Acta de matrimonio.'}
+                    {form.estado_civil === 'divorciado' && 'Sentencia de divorcio firme.'}
+                    {form.estado_civil === 'viudo' && 'Acta de defunción del cónyuge.'}
+                    {form.estado_civil === 'union_convivencial' && 'Declaración de unión convivencial.'}
+                    {' '}En la ficha del cliente vas a tener la zona de carga.
+                  </p>
+                </div>
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label className="text-zinc-300">Email</Label>
               <Input type="email" value={form.email} onChange={e => set('email', e.target.value)}

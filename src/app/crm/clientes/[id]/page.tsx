@@ -123,6 +123,23 @@ export default async function FichaClientePage({
         </div>
       )}
 
+      {/* Atajo a documentos del legajo */}
+      <div className="mb-6 p-4 rounded-lg border border-zinc-800 bg-gradient-to-br from-zinc-900 to-zinc-900/40">
+        <div className="flex items-center gap-2 mb-3">
+          <FileText size={16} className="text-lime-400" />
+          <h3 className="text-zinc-200 text-sm font-semibold">Documentación del legajo</h3>
+        </div>
+        <p className="text-zinc-400 text-xs mb-3">
+          Subí los documentos de respaldo en cada bloque correspondiente más abajo
+          (DNI, sentencia de divorcio, acta de matrimonio, poderes, origen de fondos, etc.).
+          Cada documento se vincula al campo que respalda y queda en el legajo.
+        </p>
+        <a href="#legajo" className="inline-flex items-center gap-1.5 text-lime-400 hover:text-lime-300 text-xs font-medium">
+          Ir a la sección de documentos
+          <ArrowLeft size={12} className="rotate-180" />
+        </a>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* COLUMNA IZQUIERDA — DATOS */}
         <div className="space-y-6">
@@ -154,30 +171,28 @@ export default async function FichaClientePage({
             </CardContent>
           </Card>
 
-          {/* Estado civil + respaldo */}
-          {c.estado_civil && (
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm text-zinc-300">Estado civil</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Field label="Estado" value={c.estado_civil} />
-                <UploadDocumento
-                  clienteId={c.id}
-                  categoria="estado_civil"
-                  campoValida="estado_civil"
-                  label="Documentación de respaldo"
-                  helpText={
-                    c.estado_civil === 'casado' ? 'Acta de matrimonio.' :
-                    c.estado_civil === 'divorciado' ? 'Sentencia de divorcio firme.' :
-                    c.estado_civil === 'viudo' ? 'Acta de defunción del cónyuge.' :
-                    c.estado_civil === 'union_convivencial' ? 'Declaración de unión convivencial.' :
-                    'Acta o documento que respalde el estado civil declarado.'
-                  }
-                />
-              </CardContent>
-            </Card>
-          )}
+          {/* Estado civil + respaldo (SIEMPRE visible) */}
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm text-zinc-300">Estado civil</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Field label="Estado" value={c.estado_civil ?? '— sin definir —'} />
+              <UploadDocumento
+                clienteId={c.id}
+                categoria="estado_civil"
+                campoValida="estado_civil"
+                label="Documentación de respaldo"
+                helpText={
+                  c.estado_civil === 'casado' ? 'Acta de matrimonio.' :
+                  c.estado_civil === 'divorciado' ? 'Sentencia de divorcio firme.' :
+                  c.estado_civil === 'viudo' ? 'Acta de defunción del cónyuge.' :
+                  c.estado_civil === 'union_convivencial' ? 'Declaración de unión convivencial.' :
+                  'Acta de matrimonio, sentencia de divorcio, acta de defunción del cónyuge o declaración de unión convivencial.'
+                }
+              />
+            </CardContent>
+          </Card>
 
           {/* Domicilio */}
           {(c.dom_calle || c.domicilio) && (
@@ -193,8 +208,8 @@ export default async function FichaClientePage({
             </Card>
           )}
 
-          {/* Cónyuge */}
-          {(c.conyuge_nombre || c.conyuge_dni) && (
+          {/* Cónyuge (visible siempre que el estado civil lo amerite) */}
+          {(c.estado_civil === 'casado' || c.estado_civil === 'union_convivencial' || c.conyuge_nombre || c.conyuge_dni) && (
             <Card className="bg-zinc-900 border-zinc-800">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm text-zinc-300 flex items-center gap-2">
@@ -311,7 +326,7 @@ export default async function FichaClientePage({
           </Card>
 
           {/* Documentos por categoría */}
-          <Card className="bg-zinc-900 border-zinc-800">
+          <Card id="legajo" className="bg-zinc-900 border-zinc-800 scroll-mt-20">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm text-zinc-300 flex items-center gap-2">
                 <FileText size={14} className="text-lime-400" />Otros documentos del legajo
