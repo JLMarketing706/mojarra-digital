@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Feather,
   ShieldAlert,
+  Crown,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -35,9 +36,10 @@ const navItems = [
 
 interface SidebarProps {
   className?: string
+  esSuperAdmin?: boolean
 }
 
-export function CRMSidebar({ className }: SidebarProps) {
+export function CRMSidebar({ className, esSuperAdmin = false }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false)
   const pathname = usePathname()
 
@@ -86,6 +88,20 @@ export function CRMSidebar({ className }: SidebarProps) {
 
       {/* Bottom links */}
       <div className="border-t border-zinc-800 px-2 py-3 space-y-0.5 shrink-0">
+        {esSuperAdmin && (
+          <Link
+            href="/admin"
+            className={cn(
+              'flex items-center gap-3 px-2 py-2 rounded-md text-sm transition-colors',
+              'text-yellow-400 hover:bg-yellow-400/10 hover:text-yellow-300'
+            )}
+            title="Panel de Super Admin"
+          >
+            <Crown size={16} className="shrink-0" />
+            {!collapsed && <span>Admin (SaaS)</span>}
+          </Link>
+        )}
+
         <Link
           href="/crm/configuracion"
           className={cn(

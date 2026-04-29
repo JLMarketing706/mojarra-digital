@@ -4,6 +4,11 @@ import { CRMSidebar } from '@/components/crm/sidebar'
 import { CRMTopbar } from '@/components/crm/topbar'
 import type { Profile } from '@/types'
 
+const ROLES_STAFF = [
+  'escribano_titular', 'oficial_cumplimiento', 'escribano_adscripto', 'empleado_admin',
+  'secretaria', 'protocolista', 'escribano',
+]
+
 export default async function CRMLayout({
   children,
 }: {
@@ -20,14 +25,22 @@ export default async function CRMLayout({
     .eq('id', user.id)
     .single()
 
-  const rolesStaff = ['secretaria', 'protocolista', 'escribano']
-  if (!profile || !rolesStaff.includes(profile.rol)) {
+  if (!profile || !ROLES_STAFF.includes(profile.rol)) {
     redirect('/portal/dashboard')
   }
 
+  // ¿Es super admin?
+  const { data: superAdmin } = await supabase
+    .from('super_admins')
+    .select('profile_id')
+    .eq('profile_id', user.id)
+    .maybeSingle()
+
+  const esSuperAdmin = !!superAdmin
+
   return (
     <div className="dark flex h-screen bg-[#0a0a0a] overflow-hidden">
-      <CRMSidebar />
+      <CRMSidebar esSuperAdmin={esSuperAdmin} />
       <div className="flex flex-col flex-1 overflow-hidden">
         <CRMTopbar
           profile={profile as Profile}
