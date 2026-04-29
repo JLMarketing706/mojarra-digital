@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import type { RolInvitable } from '@/types'
+import { sendEmail } from '@/lib/email/send'
+import { templateInvitacion } from '@/lib/email/templates'
+import { LABEL_ROL_INVITABLE, type RolInvitable } from '@/types'
 
 const ROLES_VALIDOS: RolInvitable[] = [
   'escribano_titular', 'oficial_cumplimiento', 'escribano_adscripto', 'empleado_admin',
@@ -40,9 +42,9 @@ export async function POST(req: NextRequest) {
   }
 
   // Verificar que la escribanía no haya alcanzado su límite de usuarios
-  const { data: escribania } = await supabase
+  const { data: escribaniaInfo } = await supabase
     .from('escribanias')
-    .select('max_usuarios')
+    .select('max_usuarios, razon_social, nombre_fantasia')
     .eq('id', profile.escribania_id)
     .single()
 
@@ -53,9 +55,9 @@ export async function POST(req: NextRequest) {
     .eq('activo', true)
     .is('desactivado_at', null)
 
-  if (escribania && usuariosActivos !== null && usuariosActivos >= escribania.max_usuarios) {
+  if (escribaniaInfo && usuariosActivos !== null && usuariosActivos >= escribaniaInfo.max_usuarios) {
     return NextResponse.json({
-      error: `Tu plan permite ${escribania.max_usuarios} usuarios. Desactivá uno o actualizá el plan.`,
+      error: `Tu plan permite ${escribaniaInfo.max_usuarios} usuarios. Desactivá uno o actualizá el plan.`,
     }, { status: 400 })
   }
 
@@ -97,16 +99,42 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No se pudo crear la invitación' }, { status: 500 })
   }
 
-  // TODO: enviar email vía Resend (configurar en próxima iteración)
-  // Por ahora devolvemos el link de invitación al titular para que lo comparta
+  // Construir link
   const url = new URL(req.url)
-  const baseUrl = `${url.protocol}//${url.host}`
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? `${url.protocol}//${url.host}`
   const linkInvitacion = `${baseUrl}/aceptar-invitacion/${token}`
+
+  // Datos para el email
+  const { data: invitador } = await supabase
+    .from('profiles')
+    .select('nombre, apellido')
+    .eq('id', user.id)
+    .single()
+
+  // Enviar email
+  const tpl = templateInvitacion({
+    nombreInvitador: invitador
+      ? `${invitador.nombre} ${invitador.apellido}`.trim()
+      : 'Tu colega',
+    escribaniaNombre: escribaniaInfo?.nombre_fantasia || escribaniaInfo?.razon_social || 'la escribanía',
+    rolLabel: LABEL_ROL_INVITABLE[rol],
+    linkInvitacion,
+    mensaje,
+    expiraEn: '7 días',
+  })
+
+  const emailResult = await sendEmail({
+    to: email,
+    subject: tpl.subject,
+    html: tpl.html,
+  })
 
   return NextResponse.json({
     invitacion: inv,
     linkInvitacion,
-    nota: 'El email automático se configurará pronto. Por ahora, copiá y enviá el link manualmente.',
+    emailEnviado: emailResult.ok,
+    emailOmitido: emailResult.skipped ?? false,
+    emailError: emailResult.error,
   })
 }
 

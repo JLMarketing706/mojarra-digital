@@ -122,14 +122,27 @@ export default function EquipoPage() {
       body: JSON.stringify(form),
     })
     setEnviando(false)
-    const json = (await res.json()) as { error?: string; linkInvitacion?: string }
+    const json = (await res.json()) as {
+      error?: string
+      linkInvitacion?: string
+      emailEnviado?: boolean
+      emailOmitido?: boolean
+      emailError?: string
+    }
     if (!res.ok) {
       toast.error(json.error ?? 'No se pudo invitar')
       return
     }
-    if (json.linkInvitacion) {
-      setLinkGenerado(json.linkInvitacion)
-      toast.success('Invitación creada — copiá el link y enviáselo')
+    if (json.emailEnviado) {
+      toast.success(`Invitación enviada por email a ${form.email}`)
+    } else if (json.emailOmitido) {
+      // Resend no configurado: mostramos el link para copy-paste
+      if (json.linkInvitacion) setLinkGenerado(json.linkInvitacion)
+      toast.warning('Email no configurado todavía — usá el link para enviar manual')
+    } else {
+      // Falló el envío pero la invitación quedó creada
+      if (json.linkInvitacion) setLinkGenerado(json.linkInvitacion)
+      toast.warning(`Invitación creada pero no se pudo mandar el email: ${json.emailError ?? '?'}`)
     }
     setForm({ email: '', rol: 'escribano_adscripto', mensaje: '' })
     cargar()
