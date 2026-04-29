@@ -11,10 +11,13 @@ import { Badge } from '@/components/ui/badge'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+} from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import {
   ArrowLeft, Loader2, UserPlus, Mail, Copy, X, Users, ShieldOff,
-  RefreshCw, Send, Check, XCircle, Trash2,
+  RefreshCw, Send, Check, XCircle, Trash2, Calendar, MessageCircle,
 } from 'lucide-react'
 import Link from 'next/link'
 import { formatFecha, formatFechaHora } from '@/lib/utils'
@@ -24,9 +27,15 @@ import {
   type Profile,
 } from '@/types'
 
-interface Miembro extends Profile {
-  desactivado_at: string | null
-}
+type Miembro = Profile
+
+const MOTIVOS_DESACTIVACION = [
+  { v: 'vacaciones', label: 'Vacaciones' },
+  { v: 'licencia', label: 'Licencia (médica/personal)' },
+  { v: 'suspension', label: 'Suspensión' },
+  { v: 'baja', label: 'Baja definitiva (renunció / despido)' },
+  { v: 'otro', label: 'Otro' },
+]
 
 interface InvitacionView {
   id: string
@@ -51,6 +60,12 @@ export default function EquipoPage() {
   const [showForm, setShowForm] = useState(false)
   const [enviando, setEnviando] = useState(false)
   const [linkGenerado, setLinkGenerado] = useState<string | null>(null)
+  const [filtro, setFiltro] = useState<'activos' | 'desactivados' | 'todos'>('activos')
+
+  // Estado del diálogo de desactivación
+  const [desactivando, setDesactivando] = useState<Miembro | null>(null)
+  const [desactivacionMotivo, setDesactivacionMotivo] = useState('vacaciones')
+  const [desactivacionFecha, setDesactivacionFecha] = useState('')
 
   const [form, setForm] = useState({
     email: '',
@@ -128,18 +143,35 @@ export default function EquipoPage() {
     cargar()
   }
 
-  async function toggleMiembro(m: Miembro) {
-    const desactivar = !m.desactivado_at
+  async function reactivar(m: Miembro) {
     const { error } = await supabase
       .from('profiles')
       .update({
-        activo: !desactivar,
-        desactivado_at: desactivar ? new Date().toISOString() : null,
-        desactivado_por: desactivar ? yo?.id : null,
+        activo: true,
+        desactivado_at: null,
+        desactivado_por: null,
+        desactivacion_motivo: null,
+        reactivacion_programada: null,
       })
       .eq('id', m.id)
-    if (error) { toast.error('No se pudo actualizar'); return }
-    toast.success(desactivar ? 'Miembro desactivado' : 'Miembro reactivado')
+    if (error) { toast.error('No se pudo reactivar'); return }
+    toast.success(`${m.nombre} reactivado/a`)
+    cargar()
+  }
+
+  async function desactivarConMotivo(m: Miembro, motivo: string, fechaReactivacion: string) {
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        activo: false,
+        desactivado_at: new Date().toISOString(),
+        desactivado_por: yo?.id,
+        desactivacion_motivo: motivo || null,
+        reactivacion_programada: fechaReactivacion || null,
+      })
+      .eq('id', m.id)
+    if (error) { toast.error('No se pudo desactivar'); return }
+    toast.success(`${m.nombre} desactivado/a${fechaReactivacion ? ` hasta ${fechaReactivacion}` : ''}`)
     cargar()
   }
 
@@ -174,6 +206,35 @@ export default function EquipoPage() {
 
   const miembrosActivos = miembros.filter(m => !m.desactivado_at).length
   const cupo = escribania ? escribania.max_usuarios - miembrosActivos : 0
+
+  // Aplicar filtros
+  const miembrosFiltrados = miembros.filter(m => {
+    if (filtro === 'activos') return !m.desactivado_at
+    if (filtro === 'desactivados') return !!m.desactivado_at
+    return true
+  })
+
+  // Volviendo de licencia próximamente
+  const ahora = new Date()
+  const en7Dias = new Date(ahora)
+  en7Dias.setDate(en7Dias.getDate() + 7)
+  const proximosARegresar = miembros.filter(m =>
+    m.reactivacion_programada
+    && new Date(m.reactivacion_programada) > ahora
+    && new Date(m.reactivacion_programada) <= en7Dias
+  )
+
+  function abrirDialogDesactivar(m: Miembro) {
+    setDesactivando(m)
+    setDesactivacionMotivo('vacaciones')
+    setDesactivacionFecha('')
+  }
+
+  async function confirmarDesactivar() {
+    if (!desactivando) return
+    await desactivarConMotivo(desactivando, desactivacionMotivo, desactivacionFecha)
+    setDesactivando(null)
+  }
 
   return (
     <div>
@@ -282,12 +343,50 @@ export default function EquipoPage() {
         </Card>
       )}
 
-      {/* MIEMBROS */}
-      <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wider mb-3">
-        Miembros del equipo ({miembros.length})
-      </h2>
+      {/* VOLVIENDO DE LICENCIA */}
+      {proximosARegresar.length > 0 && (
+        <Card className="bg-blue-500/5 border-blue-500/30 mb-6">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Calendar size={14} className="text-blue-400" />
+              <span className="text-blue-300 text-sm font-semibold">
+                Volviendo de licencia próximamente ({proximosARegresar.length})
+              </span>
+            </div>
+            <ul className="text-zinc-400 text-xs space-y-1">
+              {proximosARegresar.map(m => (
+                <li key={m.id}>
+                  • <span className="text-zinc-200">{m.nombre} {m.apellido}</span>
+                  {' '}({m.desactivacion_motivo})
+                  {' — '}vuelve el <span className="text-zinc-200">{formatFecha(m.reactivacion_programada!)}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* FILTROS */}
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wider">
+          Miembros del equipo ({miembrosFiltrados.length})
+        </h2>
+        <div className="flex gap-1 ml-auto">
+          {(['activos', 'desactivados', 'todos'] as const).map(f => (
+            <button key={f} onClick={() => setFiltro(f)}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors capitalize ${
+                filtro === f
+                  ? 'bg-lime-400/10 text-lime-400 border border-lime-400/30'
+                  : 'text-zinc-400 border border-zinc-700 hover:bg-zinc-800'
+              }`}>
+              {f}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="space-y-2 mb-8">
-        {miembros.map(m => {
+        {miembrosFiltrados.map(m => {
           const desactivado = !!m.desactivado_at
           const esYo = m.id === yo?.id
           return (
@@ -299,7 +398,17 @@ export default function EquipoPage() {
                       {m.nombre} {m.apellido}
                       {esYo && <span className="ml-1 text-zinc-500 text-xs">(vos)</span>}
                     </p>
-                    {desactivado && <Badge className="bg-zinc-800 text-zinc-400 border border-zinc-700 text-xs">Desactivado</Badge>}
+                    {desactivado && (
+                      <Badge className="bg-zinc-800 text-zinc-400 border border-zinc-700 text-xs capitalize">
+                        {m.desactivacion_motivo ?? 'Desactivado'}
+                      </Badge>
+                    )}
+                    {m.reactivacion_programada && (
+                      <Badge className="bg-blue-500/15 text-blue-300 border border-blue-500/30 text-xs">
+                        <Calendar size={10} className="mr-1" />
+                        vuelve {formatFecha(m.reactivacion_programada)}
+                      </Badge>
+                    )}
                   </div>
                   <p className="text-zinc-500 text-xs">{m.email}</p>
                 </div>
@@ -329,7 +438,8 @@ export default function EquipoPage() {
                   </Select>
 
                   {!esYo && (
-                    <Button onClick={() => toggleMiembro(m)} variant="outline" size="sm"
+                    <Button onClick={() => desactivado ? reactivar(m) : abrirDialogDesactivar(m)}
+                      variant="outline" size="sm"
                       className={`h-8 text-xs gap-1 ${
                         desactivado
                           ? 'border-lime-400/30 text-lime-400 hover:bg-lime-400/10'
@@ -406,6 +516,59 @@ export default function EquipoPage() {
           </div>
         </>
       )}
+
+      {/* DIALOG DE DESACTIVACIÓN */}
+      <Dialog open={!!desactivando} onOpenChange={open => !open && setDesactivando(null)}>
+        <DialogContent className="bg-zinc-900 border-zinc-700 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle>Desactivar a {desactivando?.nombre} {desactivando?.apellido}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-zinc-400 text-sm">
+              El miembro no podrá iniciar sesión mientras esté desactivado.
+              Sus acciones pasadas siguen registradas en el sistema.
+            </p>
+
+            <div className="space-y-1.5">
+              <Label className="text-zinc-300 text-sm">Motivo</Label>
+              <Select value={desactivacionMotivo} onValueChange={setDesactivacionMotivo}>
+                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white"><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-700">
+                  {MOTIVOS_DESACTIVACION.map(m => (
+                    <SelectItem key={m.v} value={m.v} className="text-zinc-200 focus:bg-zinc-800">
+                      {m.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-zinc-300 text-sm flex items-center gap-1.5">
+                <Calendar size={12} />Fecha de reactivación automática (opcional)
+              </Label>
+              <Input type="date"
+                min={new Date().toISOString().split('T')[0]}
+                value={desactivacionFecha}
+                onChange={e => setDesactivacionFecha(e.target.value)}
+                className="bg-zinc-800 border-zinc-700 text-white" />
+              <p className="text-zinc-500 text-xs">
+                Si ponés una fecha, el sistema reactivará al miembro automáticamente ese día.
+                Útil para vacaciones o licencias programadas.
+              </p>
+            </div>
+
+            <div className="flex gap-2 justify-end pt-2">
+              <Button variant="outline" onClick={() => setDesactivando(null)}
+                className="border-zinc-700 text-zinc-300">Cancelar</Button>
+              <Button onClick={confirmarDesactivar}
+                className="bg-red-500 text-white hover:bg-red-400">
+                Desactivar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

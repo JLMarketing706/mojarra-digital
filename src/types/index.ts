@@ -36,6 +36,13 @@ export interface Profile {
   avatar_url?: string
   activo: boolean
   created_at: string
+
+  // Multi-tenancy + licencias
+  escribania_id?: string
+  desactivado_at?: string
+  desactivado_por?: string
+  desactivacion_motivo?: string
+  reactivacion_programada?: string
 }
 
 // ─── CLIENTES ────────────────────────────────────────────

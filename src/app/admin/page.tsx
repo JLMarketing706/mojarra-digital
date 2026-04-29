@@ -88,7 +88,8 @@ export default async function AdminDashboard() {
   )
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white p-6 max-w-7xl mx-auto">
+    <div className="dark min-h-screen bg-[#0a0a0a] text-white">
+      <div className="max-w-7xl mx-auto p-6">
       {/* Header */}
       <div className="mb-8 flex items-center justify-between flex-wrap gap-3">
         <div>
@@ -101,7 +102,8 @@ export default async function AdminDashboard() {
           </p>
         </div>
         <Link href="/crm/dashboard">
-          <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
+          <Button variant="outline"
+            className="border-zinc-700 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 hover:text-white">
             Ir al CRM →
           </Button>
         </Link>
@@ -220,10 +222,11 @@ export default async function AdminDashboard() {
           <span>
             <strong className="text-zinc-300">Privacidad:</strong> como super admin podés ver
             métricas agregadas y gestionar suscripciones. Para acceder a los datos de PII de
-            clientes finales (DNIs, sentencias, etc.) la escribanía debe activar el "modo soporte"
+            clientes finales (DNIs, sentencias, etc.) la escribanía debe activar el &quot;modo soporte&quot;
             desde su panel de configuración. Todos los accesos quedan auditados.
           </span>
         </p>
+      </div>
       </div>
     </div>
   )

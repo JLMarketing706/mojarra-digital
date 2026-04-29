@@ -113,21 +113,17 @@ export function CRMSidebar({ className, esSuperAdmin = false }: SidebarProps) {
           {!collapsed && <span>Configuración</span>}
         </Link>
 
-        {/* Toggle */}
+        {/* Toggle ancho del sidebar */}
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-start gap-3 px-2 text-zinc-500 hover:text-zinc-100 hover:bg-zinc-800"
+          className="w-full justify-center px-2 text-zinc-500 hover:text-zinc-100 hover:bg-zinc-800"
           onClick={() => setCollapsed(!collapsed)}
+          title={collapsed ? 'Expandir menú' : 'Achicar menú'}
         >
-          {collapsed ? (
-            <ChevronRight size={16} className="shrink-0" />
-          ) : (
-            <>
-              <ChevronLeft size={16} className="shrink-0" />
-              <span className="text-xs">Colapsar</span>
-            </>
-          )}
+          {collapsed
+            ? <ChevronRight size={16} className="shrink-0" />
+            : <ChevronLeft size={16} className="shrink-0" />}
         </Button>
       </div>
     </aside>
