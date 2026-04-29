@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button'
 import {
   ShieldAlert, AlertTriangle, Clock, FileCheck2, FileWarning,
   GraduationCap, ClipboardList, ArrowRight, Calendar,
-  TrendingUp, FileText,
+  TrendingUp, FileText, BookOpenText, ShieldCheck,
+  History, ClipboardCheck,
 } from 'lucide-react'
 import Link from 'next/link'
 import { formatFecha, formatFechaHora } from '@/lib/utils'
@@ -111,6 +112,25 @@ export default async function CumplimientoPage() {
     .limit(1)
     .maybeSingle()
 
+  // Manual vigente
+  const { data: manualVigente } = await supabase
+    .from('manual_procedimientos')
+    .select('id, version, vigente')
+    .eq('vigente', true)
+    .maybeSingle()
+
+  // Cantidad de listas de sanción
+  const { count: totalListas } = await supabase
+    .from('listas_sancion')
+    .select('*', { count: 'exact', head: true })
+    .eq('vigente', true)
+
+  // Revisiones externas pendientes
+  const { count: revisionesPend } = await supabase
+    .from('revisiones_externas')
+    .select('*', { count: 'exact', head: true })
+    .in('estado', ['pendiente', 'en_proceso'])
+
   return (
     <div>
       {/* HEADER */}
@@ -124,7 +144,7 @@ export default async function CumplimientoPage() {
       </div>
 
       {/* NAVEGACIÓN RÁPIDA — siempre visible arriba */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         <NavCard
           href="/crm/cumplimiento/ros"
           icon={FileWarning}
@@ -159,6 +179,43 @@ export default async function CumplimientoPage() {
           count={proximaCap ? 1 : 0}
           countLabel={proximaCap ? 'programada' : 'sin programar'}
           urgent={!proximaCap}
+        />
+      </div>
+
+      {/* SEGUNDA FILA NAV — fase 3 */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+        <NavCard
+          href="/crm/cumplimiento/manual"
+          icon={BookOpenText}
+          label="Manual PLA/FT"
+          desc="Procedimientos versionados"
+          count={manualVigente ? 1 : 0}
+          countLabel={manualVigente ? `v${manualVigente.version} vigente` : 'sin manual'}
+          urgent={!manualVigente}
+        />
+        <NavCard
+          href="/crm/cumplimiento/screening"
+          icon={ShieldCheck}
+          label="Screening de listas"
+          desc="PEP, OFAC, ONU, GAFI"
+          count={totalListas ?? 0}
+          countLabel="entradas"
+        />
+        <NavCard
+          href="/crm/cumplimiento/revisiones"
+          icon={ClipboardCheck}
+          label="Revisiones externas"
+          desc="Auditorías independientes"
+          count={revisionesPend ?? 0}
+          countLabel={revisionesPend ? 'en curso' : 'al día'}
+        />
+        <NavCard
+          href="/crm/cumplimiento/auditoria"
+          icon={History}
+          label="Audit logs"
+          desc="Trazabilidad completa"
+          count={0}
+          countLabel="ver actividad"
         />
       </div>
 

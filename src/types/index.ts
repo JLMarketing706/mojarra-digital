@@ -623,6 +623,112 @@ export interface CapacitacionAsistente {
   profile?: Profile
 }
 
+// ─── MANUAL DE PROCEDIMIENTOS (FASE 3) ───────────────────
+export interface ManualProcedimientos {
+  id: string
+  version: string
+  titulo: string
+  contenido: string
+  resumen_cambios?: string
+  vigente: boolean
+  fecha_vigencia?: string
+  pdf_url?: string
+  aprobado_por?: string
+  fecha_aprobacion?: string
+  created_by?: string
+  created_at: string
+}
+
+export interface ManualAcuse {
+  id: string
+  manual_id: string
+  profile_id: string
+  fecha_acuse: string
+  ip_acuse?: string
+  observaciones?: string
+  profile?: Profile
+}
+
+// ─── REVISIONES EXTERNAS (FASE 3) ────────────────────────
+export type EstadoRevision = 'pendiente' | 'en_proceso' | 'completada' | 'archivada'
+
+export interface RevisionExterna {
+  id: string
+  fecha: string
+  revisor_nombre: string
+  revisor_matricula?: string
+  revisor_email?: string
+  alcance?: string
+  hallazgos?: string
+  plan_accion?: string
+  estado: EstadoRevision
+  informe_url?: string
+  acta_url?: string
+  created_by?: string
+  created_at: string
+  updated_at: string
+}
+
+// ─── SCREENING DE LISTAS (FASE 3) ────────────────────────
+export type OrigenLista = 'PEP_AR' | 'OFAC' | 'ONU' | 'UE' | 'GAFI' | 'INTERPOL' | 'OTRO'
+export type EstadoScreening = 'pendiente' | 'confirmado' | 'descartado'
+
+export interface ListaSancion {
+  id: string
+  origen: OrigenLista
+  nombre_completo: string
+  alias?: string
+  documento?: string
+  pais?: string
+  fecha_nacimiento?: string
+  cargo?: string
+  motivo?: string
+  fecha_inclusion?: string
+  observaciones?: string
+  vigente: boolean
+  created_at: string
+}
+
+export interface ScreeningResultado {
+  id: string
+  cliente_id?: string
+  cliente_juridico_id?: string
+  lista_id: string
+  similitud: number
+  motivo_match?: string
+  estado: EstadoScreening
+  observaciones?: string
+  reviewed_by?: string
+  reviewed_at?: string
+  created_at: string
+  cliente?: Cliente
+  lista?: ListaSancion
+}
+
+export const LABEL_LISTA: Record<OrigenLista, string> = {
+  PEP_AR: 'PEP Argentina',
+  OFAC: 'OFAC (USA)',
+  ONU: 'ONU',
+  UE: 'Unión Europea',
+  GAFI: 'GAFI',
+  INTERPOL: 'Interpol',
+  OTRO: 'Otra',
+}
+
+// ─── AUDIT LOGS (FASE 3) ─────────────────────────────────
+export interface AuditLog {
+  id: string
+  ts: string
+  actor_id?: string
+  actor_email?: string
+  accion: string
+  tabla: string
+  registro_id?: string
+  cambios?: Record<string, unknown>
+  ip?: string
+  user_agent?: string
+}
+
 // ─── HELPERS DE LABEL ────────────────────────────────────
 export const LABEL_NIVEL_RIESGO: Record<NivelRiesgo, string> = {
   bajo: 'Bajo',
