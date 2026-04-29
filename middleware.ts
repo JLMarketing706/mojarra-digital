@@ -2,7 +2,17 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 import { createServerClient } from '@supabase/ssr'
 
-const ROLES_STAFF = ['secretaria', 'protocolista', 'escribano']
+const ROLES_STAFF = [
+  // Roles UIF (Res. 242/2023)
+  'escribano_titular',
+  'oficial_cumplimiento',
+  'escribano_adscripto',
+  'empleado_admin',
+  // Roles legacy (compatibilidad)
+  'secretaria',
+  'protocolista',
+  'escribano',
+]
 
 export async function middleware(request: NextRequest) {
   const { supabaseResponse, user } = await updateSession(request)

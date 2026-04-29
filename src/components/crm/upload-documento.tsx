@@ -124,14 +124,9 @@ export function UploadDocumento({
         .from('documentos-privados')
         .upload(path, file, { contentType: file.type, upsert: false })
       if (upErr) {
-        console.error(upErr)
         toast.error('Error al subir el archivo.')
         return
       }
-
-      const { data: signed } = await supabase.storage
-        .from('documentos-privados')
-        .createSignedUrl(path, 60 * 60 * 24 * 365 * 5) // 5 años
 
       const subc = subcategoriaDefault || subcategoria || 'otro'
       const { error: insErr } = await supabase.from('documentos').insert({
@@ -139,7 +134,8 @@ export function UploadDocumento({
         tramite_id: tramiteId ?? null,
         nombre: file.name,
         tipo: subc,
-        url: signed?.signedUrl ?? '',
+        // No persistimos URL firmada larga: se genera on-demand desde /api/documentos/[id]
+        url: '',
         storage_path: path,
         mime_type: file.type,
         tamano_bytes: file.size,
@@ -290,7 +286,7 @@ export function UploadDocumento({
                 <FileText size={13} className="text-zinc-500 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <a href={d.url} target="_blank" rel="noopener noreferrer"
+                    <a href={`/api/documentos/${d.id}`} target="_blank" rel="noopener noreferrer"
                       className="text-zinc-200 text-xs font-medium truncate hover:text-lime-400 max-w-[180px]">
                       {d.nombre}
                     </a>
@@ -318,7 +314,7 @@ export function UploadDocumento({
                     </p>
                   )}
                 </div>
-                <a href={d.url} target="_blank" rel="noopener noreferrer">
+                <a href={`/api/documentos/${d.id}`} target="_blank" rel="noopener noreferrer">
                   <Button type="button" size="sm" variant="ghost"
                     className="h-6 w-6 p-0 text-zinc-500 hover:text-lime-400">
                     <ExternalLink size={12} />

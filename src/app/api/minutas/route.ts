@@ -8,6 +8,13 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'No autorizado.' }, { status: 401 })
 
+  const { data: profile } = await supabase
+    .from('profiles').select('rol').eq('id', user.id).single()
+  const ROLES_STAFF = ['escribano_titular', 'oficial_cumplimiento', 'escribano_adscripto', 'empleado_admin', 'secretaria', 'protocolista', 'escribano']
+  if (!profile || !ROLES_STAFF.includes(profile.rol)) {
+    return NextResponse.json({ error: 'Permiso insuficiente' }, { status: 403 })
+  }
+
   try {
     const { tramiteId } = await request.json() as { tramiteId: string }
     if (!tramiteId) return NextResponse.json({ error: 'tramiteId requerido.' }, { status: 400 })

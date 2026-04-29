@@ -105,15 +105,15 @@ export function TramiteAcciones({ tramiteId, estadoActual, profiles }: Props) {
       return
     }
 
-    const { data: { publicUrl } } = supabase.storage
-      .from('documentos-privados')
-      .getPublicUrl(uploadData.path)
-
+    // No persistimos URL: el endpoint /api/documentos/[id] genera signed URL on-demand
     const { error } = await supabase.from('documentos').insert({
       tramite_id: tramiteId,
       nombre: file.name,
       tipo: file.name.split('.').pop() ?? 'archivo',
-      url: publicUrl,
+      url: '',
+      storage_path: uploadData.path,
+      mime_type: file.type,
+      tamano_bytes: file.size,
       visible_cliente: visibleCliente,
     })
 

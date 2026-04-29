@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { extraerDatosDocumento } from '@/lib/claude/ocr'
+import { createClient } from '@/lib/supabase/server'
 
-// Rate limiting simple en memoria (producción debería usar Redis)
+// Rate limiting simple en memoria (producción debería usar Redis/Upstash)
 const requestCounts = new Map<string, { count: number; resetAt: number }>()
 const MAX_REQUESTS = 10
 const WINDOW_MS = 60_000 // 1 minuto
 
-function checkRateLimit(ip: string): boolean {
+function checkRateLimit(key: string): boolean {
   const now = Date.now()
-  const entry = requestCounts.get(ip)
+  const entry = requestCounts.get(key)
 
   if (!entry || now > entry.resetAt) {
-    requestCounts.set(ip, { count: 1, resetAt: now + WINDOW_MS })
+    requestCounts.set(key, { count: 1, resetAt: now + WINDOW_MS })
     return true
   }
 
@@ -21,9 +22,15 @@ function checkRateLimit(ip: string): boolean {
 }
 
 export async function POST(request: NextRequest) {
-  const ip = request.headers.get('x-forwarded-for') ?? 'unknown'
+  // Auth: solo usuarios autenticados pueden usar el OCR (cuesta plata)
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  }
 
-  if (!checkRateLimit(ip)) {
+  // Rate limit por usuario
+  if (!checkRateLimit(user.id)) {
     return NextResponse.json(
       { error: 'Demasiadas solicitudes. Intentá en un momento.' },
       { status: 429 }

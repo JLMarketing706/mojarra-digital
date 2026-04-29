@@ -158,20 +158,16 @@ export default function CargaDatosPage() {
           .from('documentos-privados')
           .upload(path, archivo)
 
-        if (uploadError) {
-          console.error('Error subiendo documento:', uploadError)
-          continue
-        }
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('documentos-privados')
-          .getPublicUrl(uploadData.path)
+        if (uploadError) continue
 
         await supabase.from('documentos').insert({
           cliente_id: cliente.id,
           nombre: archivo.name,
           tipo: ext === 'pdf' ? 'pdf' : 'imagen',
-          url: publicUrl,
+          url: '',
+          storage_path: uploadData.path,
+          mime_type: archivo.type,
+          tamano_bytes: archivo.size,
           visible_cliente: false,
         })
       }
