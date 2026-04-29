@@ -363,6 +363,18 @@ export interface IndiceNotarial {
 }
 
 // ─── DOCUMENTOS ──────────────────────────────────────────
+export type CategoriaDoc =
+  | 'identificacion'
+  | 'estado_civil'
+  | 'pep'
+  | 'sujeto_obligado'
+  | 'origen_fondos'
+  | 'inmueble'
+  | 'sociedad'
+  | 'poder'
+  | 'beneficiario_final'
+  | 'otros'
+
 export interface Documento {
   id: string
   tramite_id?: string
@@ -370,9 +382,104 @@ export interface Documento {
   nombre: string
   tipo?: string
   url: string
+  storage_path?: string
+  mime_type?: string
+  tamano_bytes?: number
+
+  // Categorización UIF
+  categoria?: CategoriaDoc
+  subcategoria?: string
+  campo_valida?: string
+
+  // Vigencia
+  fecha_emision?: string
+  fecha_vencimiento?: string
+
+  // Verificación
+  verificado: boolean
+  verificado_por?: string
+  verificado_at?: string
+  observaciones?: string
+
+  // Otros
+  declaracion_jurada_id?: string
   subido_por?: string
   visible_cliente: boolean
   created_at: string
+}
+
+export const LABEL_CATEGORIA_DOC: Record<CategoriaDoc, string> = {
+  identificacion: 'Identificación',
+  estado_civil: 'Estado civil',
+  pep: 'PEP',
+  sujeto_obligado: 'Sujeto Obligado',
+  origen_fondos: 'Origen de fondos',
+  inmueble: 'Inmueble',
+  sociedad: 'Sociedad',
+  poder: 'Poder',
+  beneficiario_final: 'Beneficiario Final',
+  otros: 'Otros',
+}
+
+// Subcategorías sugeridas por categoría
+export const SUBCATEGORIAS_DOC: Record<CategoriaDoc, { v: string; label: string }[]> = {
+  identificacion: [
+    { v: 'dni_frente', label: 'DNI frente' },
+    { v: 'dni_dorso', label: 'DNI dorso' },
+    { v: 'pasaporte', label: 'Pasaporte' },
+    { v: 'cedula', label: 'Cédula' },
+    { v: 'selfie_kyc', label: 'Selfie KYC' },
+    { v: 'cuit_constancia', label: 'Constancia CUIT/CUIL' },
+  ],
+  estado_civil: [
+    { v: 'acta_matrimonio', label: 'Acta de matrimonio' },
+    { v: 'sentencia_divorcio', label: 'Sentencia de divorcio' },
+    { v: 'acta_defuncion_conyuge', label: 'Acta defunción del cónyuge' },
+    { v: 'declaracion_union_convivencial', label: 'Declaración unión convivencial' },
+  ],
+  pep: [
+    { v: 'ddjj_pep', label: 'DDJJ PEP firmada' },
+    { v: 'designacion_cargo', label: 'Designación / acta cargo' },
+  ],
+  sujeto_obligado: [
+    { v: 'constancia_uif', label: 'Constancia inscripción UIF' },
+    { v: 'ddjj_so', label: 'DDJJ Sujeto Obligado' },
+  ],
+  origen_fondos: [
+    { v: 'escritura_previa', label: 'Escritura de venta anterior' },
+    { v: 'constancia_bancaria', label: 'Resumen / constancia bancaria' },
+    { v: 'recibo_sueldo', label: 'Recibo de sueldo / constancia laboral' },
+    { v: 'declaratoria_herederos', label: 'Declaratoria / partición' },
+    { v: 'mutuo', label: 'Mutuo / contrato de préstamo' },
+    { v: 'venta_acciones', label: 'Constancia venta de acciones / títulos' },
+    { v: 'ddjj_origen_fondos', label: 'DDJJ origen y licitud de fondos' },
+  ],
+  inmueble: [
+    { v: 'informe_dominio', label: 'Informe de dominio' },
+    { v: 'cedula_catastral', label: 'Cédula catastral' },
+    { v: 'libre_deuda', label: 'Certificado libre deuda' },
+    { v: 'plano_mensura', label: 'Plano de mensura' },
+    { v: 'titulo_propiedad', label: 'Título de propiedad' },
+  ],
+  sociedad: [
+    { v: 'estatuto', label: 'Estatuto / contrato social' },
+    { v: 'acta_designacion', label: 'Acta de designación de autoridades' },
+    { v: 'certificado_vigencia', label: 'Certificado registral de vigencia' },
+    { v: 'balance', label: 'Estado contable / balance' },
+  ],
+  poder: [
+    { v: 'poder_general', label: 'Poder general' },
+    { v: 'poder_especial', label: 'Poder especial' },
+    { v: 'certif_vigencia_poder', label: 'Certificado de vigencia del poder' },
+  ],
+  beneficiario_final: [
+    { v: 'ddjj_bf', label: 'DDJJ Beneficiario Final' },
+    { v: 'organigrama', label: 'Organigrama / cadena de titularidad' },
+  ],
+  otros: [
+    { v: 'consentimiento_datos', label: 'Consentimiento Ley 25.326' },
+    { v: 'otro', label: 'Otro' },
+  ],
 }
 
 // ─── ALERTAS UIF ─────────────────────────────────────────

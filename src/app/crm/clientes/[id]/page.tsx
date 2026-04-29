@@ -9,6 +9,7 @@ import { estadoTramiteLabel, estadoTramiteColor, formatFecha } from '@/lib/utils
 import { ArrowLeft, Pencil, FileText, ShieldAlert, MapPin, Briefcase, Heart, AlertTriangle, Clock } from 'lucide-react'
 import type { Metadata } from 'next'
 import type { NivelRiesgo, Cliente } from '@/types'
+import { UploadDocumento } from '@/components/crm/upload-documento'
 
 export const metadata: Metadata = { title: 'Ficha de cliente' }
 
@@ -138,11 +139,45 @@ export default async function FichaClientePage({
               <Field label="Nacimiento" value={c.fecha_nacimiento ? formatFecha(c.fecha_nacimiento) : null} />
               <Field label="Lugar nac." value={c.lugar_nacimiento} />
               <Field label="Nacionalidad" value={c.nacionalidad} />
-              <Field label="Estado civil" value={c.estado_civil} />
               <Field label="Email" value={c.email} />
               <Field label="Teléfono" value={c.telefono} />
+
+              <div className="pt-3 border-t border-zinc-800">
+                <UploadDocumento
+                  clienteId={c.id}
+                  categoria="identificacion"
+                  campoValida="documento"
+                  label="DNI / Pasaporte"
+                  helpText="Subí el DNI frente y dorso, pasaporte, constancia CUIT, etc."
+                />
+              </div>
             </CardContent>
           </Card>
+
+          {/* Estado civil + respaldo */}
+          {c.estado_civil && (
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm text-zinc-300">Estado civil</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Field label="Estado" value={c.estado_civil} />
+                <UploadDocumento
+                  clienteId={c.id}
+                  categoria="estado_civil"
+                  campoValida="estado_civil"
+                  label="Documentación de respaldo"
+                  helpText={
+                    c.estado_civil === 'casado' ? 'Acta de matrimonio.' :
+                    c.estado_civil === 'divorciado' ? 'Sentencia de divorcio firme.' :
+                    c.estado_civil === 'viudo' ? 'Acta de defunción del cónyuge.' :
+                    c.estado_civil === 'union_convivencial' ? 'Declaración de unión convivencial.' :
+                    'Acta o documento que respalde el estado civil declarado.'
+                  }
+                />
+              </CardContent>
+            </Card>
+          )}
 
           {/* Domicilio */}
           {(c.dom_calle || c.domicilio) && (
@@ -170,6 +205,16 @@ export default async function FichaClientePage({
                 <Field label="Nombre" value={c.conyuge_nombre} />
                 <Field label="DNI" value={c.conyuge_dni} mono />
                 {c.conyuge_es_pep && <Badge className="bg-yellow-500/15 text-yellow-300 border-0">Cónyuge PEP</Badge>}
+
+                <div className="pt-3 border-t border-zinc-800">
+                  <UploadDocumento
+                    clienteId={c.id}
+                    categoria="identificacion"
+                    campoValida="conyuge_dni"
+                    label="DNI del cónyuge"
+                    helpText="DNI o documento del cónyuge (requerido para evaluar PEP por parentesco)."
+                  />
+                </div>
               </CardContent>
             </Card>
           )}
@@ -205,7 +250,7 @@ export default async function FichaClientePage({
               </div>
 
               {c.es_pep && (
-                <div className="p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/20 space-y-1.5">
+                <div className="p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/20 space-y-2">
                   <p className="text-yellow-300 text-xs font-semibold tracking-wide uppercase">PEP</p>
                   {c.tipo_pep && <p className="text-zinc-200 text-sm">{TIPO_PEP_LABEL[c.tipo_pep]}</p>}
                   {c.cargo_pep && <p className="text-zinc-400 text-xs">{c.cargo_pep}</p>}
@@ -216,11 +261,18 @@ export default async function FichaClientePage({
                       {c.periodo_pep_hasta ? ` hasta ${formatFecha(c.periodo_pep_hasta)}` : ' (vigente)'}
                     </p>
                   )}
+                  <UploadDocumento
+                    clienteId={c.id}
+                    categoria="pep"
+                    campoValida="es_pep"
+                    label="Respaldo PEP"
+                    helpText="DDJJ PEP firmada o constancia de cargo / parentesco."
+                  />
                 </div>
               )}
 
               {c.es_sujeto_obligado && (
-                <div className="p-3 rounded-lg bg-orange-500/5 border border-orange-500/20 space-y-1">
+                <div className="p-3 rounded-lg bg-orange-500/5 border border-orange-500/20 space-y-2">
                   <p className="text-orange-300 text-xs font-semibold tracking-wide uppercase">Sujeto Obligado UIF</p>
                   {c.uif_inscripcion_numero && (
                     <p className="text-zinc-200 text-sm font-mono">N° {c.uif_inscripcion_numero}</p>
@@ -228,6 +280,13 @@ export default async function FichaClientePage({
                   {c.uif_inscripcion_fecha && (
                     <p className="text-zinc-500 text-xs">Inscripto: {formatFecha(c.uif_inscripcion_fecha)}</p>
                   )}
+                  <UploadDocumento
+                    clienteId={c.id}
+                    categoria="sujeto_obligado"
+                    campoValida="es_sujeto_obligado"
+                    label="Constancia de inscripción UIF"
+                    helpText="Adjuntá la constancia oficial de inscripción como Sujeto Obligado."
+                  />
                 </div>
               )}
 
@@ -248,6 +307,35 @@ export default async function FichaClientePage({
                   </span>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Documentos por categoría */}
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm text-zinc-300 flex items-center gap-2">
+                <FileText size={14} className="text-lime-400" />Otros documentos del legajo
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <UploadDocumento
+                clienteId={c.id}
+                categoria="poder"
+                label="Poderes vigentes"
+                helpText="Si actúa como apoderado, adjuntá el poder y el certificado de vigencia."
+              />
+              <UploadDocumento
+                clienteId={c.id}
+                categoria="origen_fondos"
+                label="Origen de fondos (general)"
+                helpText="Documentación de respaldo no asociada a un trámite específico."
+              />
+              <UploadDocumento
+                clienteId={c.id}
+                categoria="otros"
+                label="Otros"
+                helpText="Cualquier otra documentación del legajo."
+              />
             </CardContent>
           </Card>
 
