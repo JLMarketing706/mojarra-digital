@@ -470,6 +470,159 @@ export interface Configuracion {
   descripcion?: string
 }
 
+// ─── DECLARACIONES JURADAS (FASE 2) ──────────────────────
+export type TipoDDJJ =
+  | 'pep'
+  | 'sujeto_obligado'
+  | 'origen_fondos'
+  | 'beneficiario_final'
+  | 'domicilio'
+  | 'datos_personales'
+  | 'gafi'
+  | 'situacion_fiscal'
+
+export type MetodoFirma = 'digital' | 'fisica' | 'electronica'
+
+export interface DeclaracionJurada {
+  id: string
+  tipo: TipoDDJJ
+  cliente_id?: string
+  cliente_juridico_id?: string
+  tramite_id?: string
+  beneficiario_final_id?: string
+  contenido?: Record<string, unknown>
+  pdf_url?: string
+  firmada: boolean
+  fecha_firma?: string
+  metodo_firma?: MetodoFirma
+  ip_firma?: string
+  vigente: boolean
+  fecha_emision: string
+  fecha_vencimiento?: string
+  emitido_por?: string
+  observaciones?: string
+  created_at: string
+
+  cliente?: Cliente
+  cliente_juridico?: ClienteJuridico
+  tramite?: Tramite
+}
+
+export const LABEL_DDJJ: Record<TipoDDJJ, string> = {
+  pep: 'Persona Expuesta Políticamente',
+  sujeto_obligado: 'Sujeto Obligado UIF',
+  origen_fondos: 'Origen y licitud de fondos',
+  beneficiario_final: 'Beneficiario Final',
+  domicilio: 'Declaración de domicilio',
+  datos_personales: 'Consentimiento Datos Personales (Ley 25.326)',
+  gafi: 'No estar en listas GAFI',
+  situacion_fiscal: 'Situación fiscal',
+}
+
+// ─── ROS — REPORTES DE OPERACIÓN SOSPECHOSA (FASE 2) ─────
+export type TipoROS = 'LA' | 'FT' | 'FP'
+export type EstadoROS = 'inusual' | 'en_analisis' | 'sospechosa' | 'reportada' | 'descartada'
+
+export interface ROS {
+  id: string
+  tramite_id: string
+  tipo: TipoROS
+  estado: EstadoROS
+  motivos_inusualidad?: string
+  analisis_oc?: string
+  hechos_sospechosos?: string
+  fecha_deteccion: string
+  fecha_conclusion_sospecha?: string
+  fecha_limite_reporte?: string
+  fecha_reportado?: string
+  numero_constancia?: string
+  acuse_url?: string
+  operacion_concretada: boolean
+  detectado_por?: string
+  reportado_por?: string
+  created_at: string
+  updated_at: string
+
+  tramite?: Tramite
+}
+
+export const LABEL_TIPO_ROS: Record<TipoROS, string> = {
+  LA: 'Lavado de Activos',
+  FT: 'Financiamiento del Terrorismo',
+  FP: 'Financiamiento de la Proliferación',
+}
+
+export const LABEL_ESTADO_ROS: Record<EstadoROS, string> = {
+  inusual: 'Inusual (en revisión)',
+  en_analisis: 'En análisis del OC',
+  sospechosa: 'Sospechosa (a reportar)',
+  reportada: 'Reportada a UIF',
+  descartada: 'Descartada',
+}
+
+// ─── AUTOEVALUACIÓN ANUAL (RSA — FASE 2) ─────────────────
+export type EstadoAutoevaluacion = 'borrador' | 'cerrado' | 'presentado'
+
+export interface AutoevaluacionRiesgo {
+  id: string
+  anio: number
+  total_clientes: number
+  clientes_riesgo_alto: number
+  clientes_riesgo_medio: number
+  clientes_riesgo_bajo: number
+  total_operaciones: number
+  operaciones_uif: number
+  total_pep: number
+  total_bf_identificados: number
+  total_ros: number
+  total_ros_la: number
+  total_ros_ft: number
+  total_ros_fp: number
+  metodologia?: string
+  riesgos_identificados?: string
+  controles_aplicados?: string
+  plan_mitigacion?: string
+  conclusiones?: string
+  estado: EstadoAutoevaluacion
+  fecha_cierre?: string
+  fecha_presentacion?: string
+  numero_constancia?: string
+  informe_pdf_url?: string
+  acuse_url?: string
+  preparado_por?: string
+  firmado_por?: string
+  created_at: string
+  updated_at: string
+}
+
+// ─── CAPACITACIONES (FASE 2) ─────────────────────────────
+export type ModalidadCapacitacion = 'presencial' | 'virtual' | 'mixta'
+
+export interface Capacitacion {
+  id: string
+  fecha: string
+  titulo: string
+  contenido?: string
+  instructor?: string
+  duracion_horas?: number
+  modalidad?: ModalidadCapacitacion
+  norma_origen?: string
+  constancia_url?: string
+  created_at: string
+}
+
+export interface CapacitacionAsistente {
+  id: string
+  capacitacion_id: string
+  profile_id: string
+  asistio: boolean
+  evaluacion_aprobada?: boolean
+  observaciones?: string
+  created_at: string
+
+  profile?: Profile
+}
+
 // ─── HELPERS DE LABEL ────────────────────────────────────
 export const LABEL_NIVEL_RIESGO: Record<NivelRiesgo, string> = {
   bajo: 'Bajo',

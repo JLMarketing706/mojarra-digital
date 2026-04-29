@@ -17,7 +17,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Feather,
-  Bell,
+  ShieldAlert,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -27,6 +27,7 @@ const navItems = [
   { href: '/crm/tramites', label: 'Trámites', icon: FileText },
   { href: '/crm/indice', label: 'Índice Notarial', icon: BookOpen },
   { href: '/crm/uif', label: 'UIF', icon: AlertTriangle },
+  { href: '/crm/cumplimiento', label: 'Cumplimiento', icon: ShieldAlert },
   { href: '/crm/agenda', label: 'Agenda', icon: CalendarDays },
   { href: '/crm/entregas', label: 'Entregas', icon: PackageCheck },
   { href: '/crm/informes', label: 'Informes Reg.', icon: FileSearch },
