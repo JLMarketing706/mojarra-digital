@@ -49,13 +49,14 @@ export default function CargaDatosPage() {
     setForm(p => ({ ...p, [key]: value }))
   }
 
-  async function procesarDocumentoOCR(archivo: File) {
+  async function procesarDocumentoOCR(archivosOcr: File[]) {
+    if (archivosOcr.length === 0) return
     setProcesandoOCR(true)
     setCamposAutocompletados([])
 
     try {
       const fd = new FormData()
-      fd.append('archivo', archivo)
+      archivosOcr.slice(0, 4).forEach((f) => fd.append('archivos', f))
 
       const res = await fetch('/api/ocr', { method: 'POST', body: fd })
       const json = await res.json() as { datos?: DatosDocumento; error?: string }
@@ -108,11 +109,11 @@ export default function CargaDatosPage() {
 
     setArchivos(prev => [...prev, ...files])
 
-    // Si es imagen o PDF pequeño, procesar con OCR automáticamente
-    const docPrincipal = files[0]
-    const tiposOCR = ['image/jpeg', 'image/png', 'image/webp']
-    if (tiposOCR.includes(docPrincipal.type) || docPrincipal.type === 'application/pdf') {
-      procesarDocumentoOCR(docPrincipal)
+    // Procesar todas las imágenes/PDFs en una sola pasada (frente + dorso del DNI, etc.)
+    const tiposOCR = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
+    const ocrCandidatos = files.filter(f => tiposOCR.includes(f.type))
+    if (ocrCandidatos.length > 0) {
+      procesarDocumentoOCR(ocrCandidatos)
     }
   }
 

@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { extraerDatosDocumento } from '@/lib/claude/ocr'
+import { extraerDatosDocumento, type ImagenOcr, type OcrMimeType } from '@/lib/claude/ocr'
 import { createClient } from '@/lib/supabase/server'
 
 // Rate limiting simple en memoria (producción debería usar Redis/Upstash)
 const requestCounts = new Map<string, { count: number; resetAt: number }>()
 const MAX_REQUESTS = 10
 const WINDOW_MS = 60_000 // 1 minuto
+
+const TIPOS_PERMITIDOS: OcrMimeType[] = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
+const MAX_SIZE = 5 * 1024 * 1024 // 5MB por archivo
+const MAX_ARCHIVOS = 4           // ej: frente + dorso, o varias páginas de un poder
 
 function checkRateLimit(key: string): boolean {
   const now = Date.now()
@@ -39,34 +43,51 @@ export async function POST(request: NextRequest) {
 
   try {
     const formData = await request.formData()
-    const archivo = formData.get('archivo') as File | null
+    // Soporta:
+    //  - 'archivo' (single legacy)
+    //  - 'archivos' (varios) — appendea con el mismo key cada archivo
+    //  - 'frente' / 'dorso' (nombres semánticos)
+    const archivos: File[] = []
+    for (const key of ['archivo', 'frente', 'dorso']) {
+      const f = formData.get(key)
+      if (f instanceof File) archivos.push(f)
+    }
+    formData.getAll('archivos').forEach((f) => {
+      if (f instanceof File) archivos.push(f)
+    })
 
-    if (!archivo) {
+    if (archivos.length === 0) {
       return NextResponse.json({ error: 'No se recibió ningún archivo.' }, { status: 400 })
     }
-
-    const tiposPermitidos = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
-    if (!tiposPermitidos.includes(archivo.type)) {
+    if (archivos.length > MAX_ARCHIVOS) {
       return NextResponse.json(
-        { error: 'Tipo de archivo no soportado. Usá JPG, PNG, WEBP o PDF.' },
+        { error: `Máximo ${MAX_ARCHIVOS} archivos por solicitud.` },
         { status: 400 }
       )
     }
 
-    const MAX_SIZE = 5 * 1024 * 1024 // 5MB
-    if (archivo.size > MAX_SIZE) {
-      return NextResponse.json(
-        { error: 'El archivo supera el tamaño máximo de 5MB.' },
-        { status: 400 }
-      )
+    const imagenes: ImagenOcr[] = []
+    for (const archivo of archivos) {
+      if (!TIPOS_PERMITIDOS.includes(archivo.type as OcrMimeType)) {
+        return NextResponse.json(
+          { error: `Tipo de archivo no soportado: ${archivo.name}. Usá JPG, PNG, WEBP o PDF.` },
+          { status: 400 }
+        )
+      }
+      if (archivo.size > MAX_SIZE) {
+        return NextResponse.json(
+          { error: `El archivo ${archivo.name} supera el tamaño máximo de 5MB.` },
+          { status: 400 }
+        )
+      }
+      const buffer = await archivo.arrayBuffer()
+      imagenes.push({
+        base64: Buffer.from(buffer).toString('base64'),
+        mimeType: archivo.type as OcrMimeType,
+      })
     }
 
-    const buffer = await archivo.arrayBuffer()
-    const base64 = Buffer.from(buffer).toString('base64')
-
-    const mimeType = archivo.type as 'image/jpeg' | 'image/png' | 'image/webp' | 'application/pdf'
-    const datos = await extraerDatosDocumento(base64, mimeType)
-
+    const datos = await extraerDatosDocumento(imagenes)
     return NextResponse.json({ datos })
   } catch (error) {
     console.error('Error en OCR:', error)

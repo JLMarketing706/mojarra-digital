@@ -128,13 +128,19 @@ export default function NuevoClientePage() {
 
   const requiereConyuge = form.estado_civil === 'casado' || form.estado_civil === 'union_convivencial'
 
-  async function handleOCR(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const [archivoFrente, setArchivoFrente] = useState<File | null>(null)
+  const [archivoDorso, setArchivoDorso] = useState<File | null>(null)
+
+  async function ejecutarOCR() {
+    if (!archivoFrente) {
+      toast.error('Subí al menos la foto del frente.')
+      return
+    }
     setProcesandoOCR(true)
     try {
       const fd = new FormData()
-      fd.append('archivo', file)
+      fd.append('frente', archivoFrente)
+      if (archivoDorso) fd.append('dorso', archivoDorso)
       const res = await fetch('/api/ocr', { method: 'POST', body: fd })
       const json = (await res.json()) as { datos?: DatosDocumento; error?: string }
       if (!res.ok || !json.datos) {
@@ -286,8 +292,8 @@ export default function NuevoClientePage() {
       {/* OCR */}
       {form.tipo_persona === 'humana' && (
         <Card className="bg-zinc-900 border-zinc-800 mb-6">
-          <CardContent className="p-4">
-            <label className="flex items-center gap-3 cursor-pointer">
+          <CardContent className="p-4 space-y-4">
+            <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-lime-400/10 flex items-center justify-center shrink-0">
                 {procesandoOCR ? <Loader2 size={18} className="text-lime-400 animate-spin" /> : <Scan size={18} className="text-lime-400" />}
               </div>
@@ -295,13 +301,52 @@ export default function NuevoClientePage() {
                 <p className="text-zinc-200 text-sm font-medium">
                   {procesandoOCR ? 'Leyendo documento...' : 'Escanear DNI con IA'}
                 </p>
-                <p className="text-zinc-500 text-xs">Subí una imagen del DNI para autocompletar los campos</p>
+                <p className="text-zinc-500 text-xs">Subí frente y dorso del DNI para autocompletar los campos</p>
               </div>
-              <input type="file" accept="image/*,application/pdf" className="hidden" onChange={handleOCR} disabled={procesandoOCR} />
-              <Button variant="outline" size="sm" className="ml-auto border-zinc-700 text-zinc-300 gap-1.5 pointer-events-none">
-                <Upload size={14} />Subir
-              </Button>
-            </label>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <label className="flex flex-col gap-1.5 cursor-pointer">
+                <span className="text-zinc-400 text-xs uppercase tracking-wide">Frente *</span>
+                <div className="border border-dashed border-zinc-700 rounded-md p-3 text-center text-zinc-300 text-sm hover:border-lime-400 transition-colors">
+                  <Upload size={14} className="inline mr-1.5" />
+                  {archivoFrente ? archivoFrente.name : 'Elegir archivo'}
+                </div>
+                <input
+                  type="file"
+                  accept="image/*,application/pdf"
+                  className="hidden"
+                  disabled={procesandoOCR}
+                  onChange={e => setArchivoFrente(e.target.files?.[0] ?? null)}
+                />
+              </label>
+
+              <label className="flex flex-col gap-1.5 cursor-pointer">
+                <span className="text-zinc-400 text-xs uppercase tracking-wide">Dorso (opcional)</span>
+                <div className="border border-dashed border-zinc-700 rounded-md p-3 text-center text-zinc-300 text-sm hover:border-lime-400 transition-colors">
+                  <Upload size={14} className="inline mr-1.5" />
+                  {archivoDorso ? archivoDorso.name : 'Elegir archivo'}
+                </div>
+                <input
+                  type="file"
+                  accept="image/*,application/pdf"
+                  className="hidden"
+                  disabled={procesandoOCR}
+                  onChange={e => setArchivoDorso(e.target.files?.[0] ?? null)}
+                />
+              </label>
+            </div>
+
+            <Button
+              type="button"
+              onClick={ejecutarOCR}
+              disabled={!archivoFrente || procesandoOCR}
+              className="w-full bg-lime-400 text-black hover:bg-lime-300 font-semibold disabled:opacity-50"
+            >
+              {procesandoOCR
+                ? <><Loader2 size={14} className="animate-spin mr-2" />Procesando...</>
+                : <><Scan size={14} className="mr-2" />Escanear y completar</>}
+            </Button>
           </CardContent>
         </Card>
       )}
