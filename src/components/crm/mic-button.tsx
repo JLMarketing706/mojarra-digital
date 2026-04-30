@@ -84,14 +84,15 @@ export function MicButton({ value, onChange, replace = false, className, title }
       title={title ?? (escuchando ? 'Detener dictado' : 'Dictar por voz')}
       aria-label={escuchando ? 'Detener dictado' : 'Dictar por voz'}
       className={
-        'inline-flex items-center justify-center h-7 w-7 rounded-md border transition-colors ' +
+        'inline-flex items-center gap-1.5 h-7 px-2 rounded-md border transition-colors text-xs font-medium ' +
         (escuchando
           ? 'bg-red-500/20 border-red-500/60 text-red-400 animate-pulse'
-          : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-lime-400 hover:border-lime-400/50') +
+          : 'bg-zinc-800 border-zinc-700 text-lime-400 hover:bg-zinc-700 hover:border-lime-400/50') +
         (className ? ` ${className}` : '')
       }
     >
-      <Mic size={14} />
+      <Mic size={12} />
+      <span>{escuchando ? 'Grabando' : 'Grabar'}</span>
     </button>
   )
 }

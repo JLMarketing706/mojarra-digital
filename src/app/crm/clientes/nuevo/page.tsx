@@ -333,14 +333,13 @@ export default function NuevoClientePage() {
 
               <Button
                 type="button"
-                size="sm"
                 onClick={ejecutarOCR}
                 disabled={!archivoFrente || procesandoOCR}
-                className="bg-lime-400 text-black hover:bg-lime-300 font-semibold h-8 px-3 text-xs disabled:opacity-50 shrink-0"
+                className="bg-lime-400 text-black hover:bg-lime-300 disabled:hover:bg-lime-400 font-semibold h-8 px-3 text-xs gap-1 shrink-0"
               >
                 {procesandoOCR
                   ? <Loader2 size={12} className="animate-spin" />
-                  : <><Scan size={12} className="mr-1" />Escanear</>}
+                  : <><Scan size={12} />Escanear</>}
               </Button>
             </div>
           </CardContent>
