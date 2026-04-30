@@ -215,13 +215,44 @@ export default function NuevoClientePage() {
     }
 
     const { data, error } = await supabase.from('clientes').insert(payload).select().single()
-    setSaving(false)
 
     if (error) {
+      setSaving(false)
       console.error(error)
       toast.error('Error al guardar el cliente.')
       return
     }
+
+    // Subir frente y dorso del DNI (los archivos que se usaron para OCR)
+    // así quedan archivados en el legajo y disponibles para imprimir.
+    const archivosDNI: Array<{ file: File; subcategoria: string }> = []
+    if (archivoFrente) archivosDNI.push({ file: archivoFrente, subcategoria: 'dni_frente' })
+    if (archivoDorso) archivosDNI.push({ file: archivoDorso, subcategoria: 'dni_dorso' })
+
+    if (archivosDNI.length > 0) {
+      for (const { file, subcategoria } of archivosDNI) {
+        const ext = file.name.split('.').pop() ?? 'jpg'
+        const path = `clientes/${data.id}/${Date.now()}-${subcategoria}.${ext}`
+        const { data: up, error: upErr } = await supabase.storage
+          .from('documentos-privados')
+          .upload(path, file)
+        if (upErr || !up) continue
+        await supabase.from('documentos').insert({
+          cliente_id: data.id,
+          nombre: file.name,
+          tipo: file.type === 'application/pdf' ? 'pdf' : 'imagen',
+          url: '',
+          storage_path: up.path,
+          mime_type: file.type,
+          tamano_bytes: file.size,
+          categoria: 'identificacion',
+          subcategoria,
+          visible_cliente: false,
+        })
+      }
+    }
+
+    setSaving(false)
 
     const niv = (data as { nivel_riesgo?: string }).nivel_riesgo
     if (niv === 'alto') {
