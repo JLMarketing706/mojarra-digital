@@ -257,12 +257,6 @@ export default function HomePage() {
                   Solicitar demo gratis <ArrowRight size={18} />
                 </Button>
               </Link>
-              <Link href="/login">
-                <Button size="lg" variant="outline"
-                  className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white px-8 py-6 text-base gap-2">
-                  Ya soy cliente <ChevronRight size={16} />
-                </Button>
-              </Link>
             </div>
 
             <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-zinc-400">
@@ -625,10 +619,10 @@ export default function HomePage() {
                 Solicitar demo gratis <ArrowRight size={18} />
               </Button>
             </Link>
-            <a href="tel:01143215678">
-              <Button size="lg" variant="outline"
-                className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 px-10 py-6 text-base gap-2">
-                <Phone size={16} /> (011) 4321-5678
+            <a href="tel:+5491158637931">
+              <Button size="lg"
+                className="bg-white text-zinc-800 hover:bg-zinc-100 font-semibold px-10 py-6 text-base gap-2 shadow-lg">
+                <Phone size={16} /> +54 9 11 5863-7931
               </Button>
             </a>
           </div>

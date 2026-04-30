@@ -137,7 +137,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                 </li>
                 <li className="flex items-center gap-2">
                   <Phone size={14} className="text-lime-400 shrink-0" />
-                  <span>(011) 4321-5678</span>
+                  <span>+54 9 11 5863-7931</span>
                 </li>
               </ul>
             </div>
