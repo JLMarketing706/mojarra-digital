@@ -250,7 +250,7 @@ export default function EquipoPage() {
   }
 
   return (
-    <div>
+    <div className="max-w-3xl mx-auto">
       <div className="mb-6">
         <Link href="/crm/configuracion">
           <Button variant="ghost" size="sm" className="gap-1.5 text-zinc-400 -ml-2 mb-4">

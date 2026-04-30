@@ -302,7 +302,7 @@ export default function NuevoClientePage() {
     )
 
   return (
-    <div>
+    <div className="max-w-5xl mx-auto">
       <div className="mb-6">
         <Link href="/crm/clientes">
           <Button variant="ghost" size="sm" className="gap-1.5 text-zinc-400 -ml-2 mb-4">
