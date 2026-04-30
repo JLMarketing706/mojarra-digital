@@ -1,81 +1,130 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { createClient as createServerClient } from '@/lib/supabase/server'
 
 // POST /api/invitaciones/aceptar
-// Body: { token, nombre, apellido }
+// Body: { token, nombre, apellido, password }
 //
-// Cuando un invitado acepta su invitación:
-// 1. Su cuenta de Auth ya fue creada vía signUp en el cliente.
-// 2. handle_new_user() creó un profile con rol='cliente' por defecto.
-// 3. Acá usamos service_role para promoverlo al rol invitado y vincular escribanía.
+// El invitado acepta su invitación: este endpoint hace TODO en el server
+// usando service role:
+//   1. Valida la invitación (no usada, no cancelada, no expirada)
+//   2. Crea la cuenta de auth con email confirmado (no requiere verificación)
+//   3. Actualiza el profile: vincula a la escribanía, asigna el rol invitado
+//   4. Marca la invitación como aceptada
+//   5. Audit log
+//
+// Mover esto al backend evita depender del flag "Allow public signups" en
+// Supabase Auth (que normalmente conviene tener apagado).
+
+interface Body {
+  token?: string
+  nombre?: string
+  apellido?: string
+  password?: string
+}
 
 export async function POST(req: NextRequest) {
-  const ssrClient = await createServerClient()
-  const { data: { user } } = await ssrClient.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  const body = (await req.json()) as Body
 
-  const body = (await req.json()) as { token?: string; nombre?: string; apellido?: string }
-  if (!body.token) return NextResponse.json({ error: 'Token requerido' }, { status: 400 })
+  const token = body.token?.trim() ?? ''
+  const nombre = body.nombre?.trim() ?? ''
+  const apellido = body.apellido?.trim() ?? ''
+  const password = body.password ?? ''
 
-  // Cliente con service role: bypassea RLS para esta operación crítica
+  if (!token) return NextResponse.json({ error: 'Token requerido' }, { status: 400 })
+  if (!nombre || !apellido) {
+    return NextResponse.json({ error: 'Nombre y apellido son obligatorios' }, { status: 400 })
+  }
+  if (password.length < 8) {
+    return NextResponse.json({ error: 'La contraseña debe tener al menos 8 caracteres' }, { status: 400 })
+  }
+
   const admin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { autoRefreshToken: false, persistSession: false } },
   )
 
-  // 1. Cargar invitación válida
+  // 1. Cargar y validar invitación
   const { data: inv } = await admin
     .from('invitaciones')
     .select('id, escribania_id, email, rol, expira_at, aceptada_at, cancelada_at')
-    .eq('token', body.token)
+    .eq('token', token)
     .maybeSingle()
 
   if (!inv) return NextResponse.json({ error: 'Invitación no encontrada' }, { status: 404 })
-  if (inv.aceptada_at) return NextResponse.json({ error: 'Ya aceptada' }, { status: 400 })
-  if (inv.cancelada_at) return NextResponse.json({ error: 'Cancelada' }, { status: 400 })
+  if (inv.aceptada_at) return NextResponse.json({ error: 'La invitación ya fue aceptada' }, { status: 400 })
+  if (inv.cancelada_at) return NextResponse.json({ error: 'La invitación fue cancelada' }, { status: 400 })
   if (new Date(inv.expira_at) < new Date()) {
-    return NextResponse.json({ error: 'Expirada' }, { status: 400 })
+    return NextResponse.json({ error: 'La invitación expiró' }, { status: 400 })
   }
 
-  // Validar que el email del usuario logueado coincida con el de la invitación
-  if (user.email?.toLowerCase() !== inv.email.toLowerCase()) {
-    return NextResponse.json({
-      error: `La invitación es para ${inv.email}. Iniciá sesión con ese email.`,
-    }, { status: 403 })
+  const email = inv.email.toLowerCase()
+
+  // 2. Crear / reutilizar el user de auth
+  let userId: string | null = null
+
+  const { data: created, error: createErr } = await admin.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { nombre, apellido },
+  })
+
+  if (createErr) {
+    const msg = createErr.message?.toLowerCase() ?? ''
+    if (msg.includes('already') || msg.includes('exists') || msg.includes('registered')) {
+      // El email ya tiene cuenta — buscarla por email
+      const { data: list } = await admin.auth.admin.listUsers()
+      const existing = list?.users.find(u => u.email?.toLowerCase() === email)
+      if (!existing) {
+        return NextResponse.json({
+          error: 'Ya existe una cuenta con ese email pero no se pudo recuperar. Probá iniciar sesión.',
+        }, { status: 500 })
+      }
+      userId = existing.id
+    } else {
+      console.error('[aceptar-invitacion] createUser error', createErr)
+      return NextResponse.json({ error: createErr.message }, { status: 500 })
+    }
+  } else if (created.user) {
+    userId = created.user.id
   }
 
-  // 2. Actualizar profile: vincular escribanía + promover rol
+  if (!userId) {
+    return NextResponse.json({ error: 'No se pudo crear la cuenta' }, { status: 500 })
+  }
+
+  // 3. Actualizar profile: vincular escribanía + promover rol
+  // (handle_new_user ya creó la fila con rol='cliente')
   const { error: profileErr } = await admin
     .from('profiles')
     .update({
+      nombre,
+      apellido,
       escribania_id: inv.escribania_id,
       rol: inv.rol,
-      nombre: body.nombre || undefined,
-      apellido: body.apellido || undefined,
       activo: true,
     })
-    .eq('id', user.id)
+    .eq('id', userId)
 
   if (profileErr) {
-    console.error(profileErr)
+    console.error('[aceptar-invitacion] profile update error', profileErr)
     return NextResponse.json({ error: 'No se pudo actualizar el perfil' }, { status: 500 })
   }
 
-  // 3. Marcar invitación como aceptada
+  // 4. Marcar invitación como aceptada
   await admin
     .from('invitaciones')
     .update({
       aceptada_at: new Date().toISOString(),
-      aceptada_por: user.id,
+      aceptada_por: userId,
     })
     .eq('id', inv.id)
 
-  // 4. Audit log
+  // 5. Audit log
   await admin.from('audit_logs').insert({
-    actor_id: user.id,
-    actor_email: user.email,
+    actor_id: userId,
+    actor_email: email,
     accion: 'INVITATION_ACCEPTED',
     tabla: 'invitaciones',
     registro_id: inv.id,
@@ -83,5 +132,5 @@ export async function POST(req: NextRequest) {
     escribania_id: inv.escribania_id,
   })
 
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({ ok: true, email })
 }

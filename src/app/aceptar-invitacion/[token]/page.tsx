@@ -79,45 +79,31 @@ export default function AceptarInvitacionPage() {
     if (password.length < 8) { toast.error('La contraseña debe tener al menos 8 caracteres'); return }
     setAceptando(true)
 
-    // 1. Crear cuenta de Auth con el email de la invitación
-    const { data: signUp, error: signErr } = await supabase.auth.signUp({
-      email: invitacion.email,
-      password,
-      options: { data: { nombre, apellido } },
-    })
-
-    if (signErr || !signUp.user) {
-      // Si ya existe el usuario, lo logueamos
-      if (signErr?.message.toLowerCase().includes('already')) {
-        const { error: loginErr } = await supabase.auth.signInWithPassword({
-          email: invitacion.email,
-          password,
-        })
-        if (loginErr) {
-          toast.error('Ya tenés cuenta con ese email pero la contraseña no coincide. Probá iniciar sesión.')
-          setAceptando(false)
-          return
-        }
-      } else {
-        console.error(signErr)
-        toast.error(signErr?.message ?? 'No se pudo crear la cuenta')
-        setAceptando(false)
-        return
-      }
-    }
-
-    // 2. Llamar a un endpoint server-side que actualice el profile
-    //    (vincula a la escribanía y asigna el rol invitado, marca la invitación como aceptada)
+    // El backend hace TODO: crea la cuenta auth, actualiza profile,
+    // marca la invitación como aceptada. No hace falta supabase.auth.signUp
+    // desde el cliente (eso falla si los signups públicos están apagados).
     const res = await fetch('/api/invitaciones/aceptar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token, nombre, apellido }),
+      body: JSON.stringify({ token, nombre, apellido, password }),
     })
 
     if (!res.ok) {
       const j = (await res.json()) as { error?: string }
       toast.error(j.error ?? 'No se pudo completar la aceptación')
       setAceptando(false)
+      return
+    }
+
+    // Login automático con las credenciales recién creadas
+    const { error: loginErr } = await supabase.auth.signInWithPassword({
+      email: invitacion.email,
+      password,
+    })
+
+    if (loginErr) {
+      toast.success('Cuenta creada. Iniciá sesión para continuar.')
+      router.push('/login')
       return
     }
 
