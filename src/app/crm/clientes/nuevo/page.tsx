@@ -292,25 +292,19 @@ export default function NuevoClientePage() {
       {/* OCR */}
       {form.tipo_persona === 'humana' && (
         <Card className="bg-zinc-900 border-zinc-800 mb-6">
-          <CardContent className="p-4 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-lime-400/10 flex items-center justify-center shrink-0">
-                {procesandoOCR ? <Loader2 size={18} className="text-lime-400 animate-spin" /> : <Scan size={18} className="text-lime-400" />}
-              </div>
-              <div>
-                <p className="text-zinc-200 text-sm font-medium">
-                  {procesandoOCR ? 'Leyendo documento...' : 'Escanear DNI con IA'}
-                </p>
-                <p className="text-zinc-500 text-xs">Subí frente y dorso del DNI para autocompletar los campos</p>
-              </div>
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Scan size={14} className="text-lime-400" />
+              <p className="text-zinc-200 text-xs font-medium">Escanear DNI con IA</p>
+              <span className="text-zinc-500 text-xs">— frente {archivoDorso ? '+ dorso' : '(+ dorso opcional)'}</span>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <label className="flex flex-col gap-1.5 cursor-pointer">
-                <span className="text-zinc-400 text-xs uppercase tracking-wide">Frente *</span>
-                <div className="border border-dashed border-zinc-700 rounded-md p-3 text-center text-zinc-300 text-sm hover:border-lime-400 transition-colors">
-                  <Upload size={14} className="inline mr-1.5" />
-                  {archivoFrente ? archivoFrente.name : 'Elegir archivo'}
+            <div className="flex items-center gap-2">
+              <label className="flex-1 cursor-pointer">
+                <div className={`px-2.5 py-1.5 rounded text-xs text-center truncate transition-colors ${
+                  archivoFrente ? 'bg-lime-400/10 border border-lime-400/40 text-lime-300' : 'bg-zinc-800 border border-zinc-700 text-zinc-400 hover:border-zinc-600'
+                }`}>
+                  {archivoFrente ? `✓ ${archivoFrente.name}` : 'Frente *'}
                 </div>
                 <input
                   type="file"
@@ -321,11 +315,11 @@ export default function NuevoClientePage() {
                 />
               </label>
 
-              <label className="flex flex-col gap-1.5 cursor-pointer">
-                <span className="text-zinc-400 text-xs uppercase tracking-wide">Dorso (opcional)</span>
-                <div className="border border-dashed border-zinc-700 rounded-md p-3 text-center text-zinc-300 text-sm hover:border-lime-400 transition-colors">
-                  <Upload size={14} className="inline mr-1.5" />
-                  {archivoDorso ? archivoDorso.name : 'Elegir archivo'}
+              <label className="flex-1 cursor-pointer">
+                <div className={`px-2.5 py-1.5 rounded text-xs text-center truncate transition-colors ${
+                  archivoDorso ? 'bg-lime-400/10 border border-lime-400/40 text-lime-300' : 'bg-zinc-800 border border-zinc-700 text-zinc-400 hover:border-zinc-600'
+                }`}>
+                  {archivoDorso ? `✓ ${archivoDorso.name}` : 'Dorso'}
                 </div>
                 <input
                   type="file"
@@ -335,18 +329,19 @@ export default function NuevoClientePage() {
                   onChange={e => setArchivoDorso(e.target.files?.[0] ?? null)}
                 />
               </label>
-            </div>
 
-            <Button
-              type="button"
-              onClick={ejecutarOCR}
-              disabled={!archivoFrente || procesandoOCR}
-              className="w-full bg-lime-400 text-black hover:bg-lime-300 font-semibold disabled:opacity-50"
-            >
-              {procesandoOCR
-                ? <><Loader2 size={14} className="animate-spin mr-2" />Procesando...</>
-                : <><Scan size={14} className="mr-2" />Escanear y completar</>}
-            </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={ejecutarOCR}
+                disabled={!archivoFrente || procesandoOCR}
+                className="bg-lime-400 text-black hover:bg-lime-300 font-semibold h-8 px-3 text-xs disabled:opacity-50 shrink-0"
+              >
+                {procesandoOCR
+                  ? <Loader2 size={12} className="animate-spin" />
+                  : <><Scan size={12} className="mr-1" />Escanear</>}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}

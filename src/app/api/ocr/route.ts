@@ -91,8 +91,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ datos })
   } catch (error) {
     console.error('Error en OCR:', error)
+    const detalle = error instanceof Error ? error.message : 'desconocido'
     return NextResponse.json(
-      { error: 'Error al procesar el documento. Intentá de nuevo.' },
+      { error: `Error al procesar el documento: ${detalle}` },
       { status: 500 }
     )
   }
