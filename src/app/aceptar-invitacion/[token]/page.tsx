@@ -44,15 +44,12 @@ export default function AceptarInvitacionPage() {
 
   const cargar = useCallback(async () => {
     setLoading(true)
-    const { data } = await supabase
-      .from('invitaciones')
-      .select(`
-        id, email, rol, expira_at, aceptada_at, cancelada_at, mensaje,
-        escribania:escribanias(id, razon_social, nombre_fantasia),
-        invitador:profiles!invitado_por(nombre, apellido)
-      `)
-      .eq('token', token)
-      .maybeSingle()
+    // Lookup vía endpoint con service_role: el invitado todavía no
+    // tiene sesión, así que las RLS de invitaciones no le dejan
+    // leer su propia fila directamente desde el cliente.
+    const res = await fetch(`/api/invitaciones/lookup?token=${encodeURIComponent(token)}`)
+    const json = (await res.json()) as { invitacion?: unknown; error?: string }
+    const data = json.invitacion ?? null
 
     if (!data) {
       setError('Invitación no encontrada o inválida.')
