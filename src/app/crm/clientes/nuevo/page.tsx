@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import type { DatosDocumento } from '@/lib/claude/ocr'
+import { MicButton } from '@/components/crm/mic-button'
 import type { TipoPersona, TipoDocumento, Sexo, EstadoCivil, TipoPEP } from '@/types'
 
 const ESTADOS_CIVILES: { v: EstadoCivil; label: string }[] = [
@@ -669,10 +670,14 @@ export default function NuevoClientePage() {
 
         {/* NOTAS */}
         <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader><CardTitle className="text-sm text-zinc-300">Notas internas</CardTitle></CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-sm text-zinc-300">Notas internas</CardTitle>
+            <MicButton value={form.notas} onChange={v => set('notas', v)} />
+          </CardHeader>
           <CardContent>
             <Textarea value={form.notas} onChange={e => set('notas', e.target.value)}
-              placeholder="Observaciones internas..." rows={3}
+              placeholder="Observaciones internas... (también podés dictarlas con el micrófono)"
+              rows={3}
               className={inputCls + ' resize-none'} />
           </CardContent>
         </Card>

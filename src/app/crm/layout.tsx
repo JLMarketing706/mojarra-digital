@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { CRMSidebar } from '@/components/crm/sidebar'
 import { CRMTopbar } from '@/components/crm/topbar'
+import { TrialBanner } from '@/components/crm/trial-banner'
 import type { Profile } from '@/types'
 
 const ROLES_STAFF = [
@@ -38,6 +39,19 @@ export default async function CRMLayout({
 
   const esSuperAdmin = !!superAdmin
 
+  // Estado de la escribanía para el banner de trial
+  let estadoEscribania: string | null = null
+  let trialUntil: string | null = null
+  if (profile.escribania_id) {
+    const { data: escribania } = await supabase
+      .from('escribanias')
+      .select('estado, trial_until')
+      .eq('id', profile.escribania_id)
+      .single()
+    estadoEscribania = escribania?.estado ?? null
+    trialUntil = escribania?.trial_until ?? null
+  }
+
   return (
     <div className="dark flex h-screen bg-[#0a0a0a] overflow-hidden">
       <CRMSidebar esSuperAdmin={esSuperAdmin} />
@@ -46,6 +60,9 @@ export default async function CRMLayout({
           profile={profile as Profile}
           userId={user.id}
         />
+        {estadoEscribania && (
+          <TrialBanner estado={estadoEscribania} trialUntil={trialUntil} />
+        )}
         <main className="flex-1 overflow-y-auto p-6 crm-scroll">
           {children}
         </main>

@@ -10,6 +10,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { MicButton } from '@/components/crm/mic-button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
@@ -317,7 +318,10 @@ export default function NuevoTramitePage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-zinc-300">Descripción</Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-zinc-300">Descripción</Label>
+                <MicButton value={form.descripcion} onChange={v => set('descripcion', v)} />
+              </div>
               <Textarea value={form.descripcion} onChange={e => set('descripcion', e.target.value)}
                 placeholder="Descripción breve del trámite..." rows={2}
                 className={inputCls + ' resize-none'} />
@@ -417,7 +421,10 @@ export default function NuevoTramitePage() {
             )}
 
             <div className="space-y-1.5">
-              <Label className="text-zinc-300">Origen de los fondos</Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-zinc-300">Origen de los fondos</Label>
+                <MicButton value={form.origen_fondos} onChange={v => set('origen_fondos', v)} />
+              </div>
               <Textarea value={form.origen_fondos} onChange={e => set('origen_fondos', e.target.value)}
                 placeholder="Ej: venta de inmueble anterior, ahorros, herencia, préstamo bancario..." rows={2}
                 className={inputCls + ' resize-none'} />
@@ -466,10 +473,14 @@ export default function NuevoTramitePage() {
 
         {/* NOTAS */}
         <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader><CardTitle className="text-sm text-zinc-300">Notas internas</CardTitle></CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-sm text-zinc-300">Notas internas</CardTitle>
+            <MicButton value={form.notas_internas} onChange={v => set('notas_internas', v)} />
+          </CardHeader>
           <CardContent>
             <Textarea value={form.notas_internas} onChange={e => set('notas_internas', e.target.value)}
-              placeholder="Notas visibles solo para el staff..." rows={2}
+              placeholder="Notas visibles solo para el staff... (también podés dictar)"
+              rows={2}
               className={inputCls + ' resize-none'} />
           </CardContent>
         </Card>
