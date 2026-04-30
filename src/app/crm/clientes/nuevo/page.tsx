@@ -335,7 +335,7 @@ export default function NuevoClientePage() {
                 type="button"
                 onClick={ejecutarOCR}
                 disabled={!archivoFrente || procesandoOCR}
-                className="bg-lime-400 text-black hover:bg-lime-300 disabled:hover:bg-lime-400 font-semibold h-8 px-3 text-xs gap-1 shrink-0"
+                className="bg-lime-400 text-black hover:bg-lime-300 disabled:opacity-100 disabled:bg-lime-400/40 disabled:text-black/60 font-semibold h-8 px-3 text-xs gap-1 shrink-0"
               >
                 {procesandoOCR
                   ? <Loader2 size={12} className="animate-spin" />
