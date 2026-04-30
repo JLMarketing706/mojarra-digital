@@ -102,18 +102,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No se pudo crear la escribanía' }, { status: 500 })
   }
 
-  // 4. Actualizar profile (creado por trigger handle_new_user) con rol y escribanía
+  // 4. Upsert profile (si el trigger handle_new_user falló, lo creamos acá)
   const { error: profileError } = await admin
     .from('profiles')
-    .update({
+    .upsert({
+      id: userId,
       nombre,
       apellido,
+      email,
       telefono,
       rol: 'escribano_titular',
       escribania_id: escribania.id,
       activo: true,
-    })
-    .eq('id', userId)
+    }, { onConflict: 'id' })
 
   if (profileError) {
     // Rollback escribanía + user

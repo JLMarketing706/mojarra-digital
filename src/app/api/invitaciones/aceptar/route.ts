@@ -94,18 +94,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No se pudo crear la cuenta' }, { status: 500 })
   }
 
-  // 3. Actualizar profile: vincular escribanía + promover rol
-  // (handle_new_user ya creó la fila con rol='cliente')
+  // 3. Upsert profile (si el trigger handle_new_user falló, lo creamos acá)
   const { error: profileErr } = await admin
     .from('profiles')
-    .update({
+    .upsert({
+      id: userId,
       nombre,
       apellido,
+      email,
       escribania_id: inv.escribania_id,
       rol: inv.rol,
       activo: true,
-    })
-    .eq('id', userId)
+    }, { onConflict: 'id' })
 
   if (profileErr) {
     console.error('[aceptar-invitacion] profile update error', profileErr)
