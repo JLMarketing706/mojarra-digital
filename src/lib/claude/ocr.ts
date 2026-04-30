@@ -20,7 +20,7 @@ export async function extraerDatosDocumento(
   mimeType: 'image/jpeg' | 'image/png' | 'image/webp' | 'application/pdf'
 ): Promise<DatosDocumento> {
   const response = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-6',
     max_tokens: 1024,
     system: `Sos un sistema de extracción de datos para una escribanía argentina.
 Tu tarea es analizar documentos (DNI, escrituras, títulos de propiedad, sentencias, poderes) y extraer los datos estructurados.

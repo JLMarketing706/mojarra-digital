@@ -14,7 +14,7 @@ export interface DatosIndiceVoz {
 
 export async function clasificarDictadoVoz(textoTranscripto: string): Promise<DatosIndiceVoz> {
   const response = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-6',
     max_tokens: 512,
     system: `Sos un asistente notarial argentino. Recibís el dictado de un escribano y debés clasificar los datos en los campos del índice notarial.
 Campos del índice: numero_escritura (entero), folio (texto), fecha (DD/MM/AAAA), tipo_acto, partes (nombres de las partes), inmueble (descripción del inmueble si aplica), observaciones.

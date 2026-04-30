@@ -13,7 +13,7 @@ export async function revisarDatosMinuta(tramite: Tramite): Promise<ObservacionM
   const contexto = JSON.stringify(tramite, null, 2)
 
   const response = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-6',
     max_tokens: 1024,
     system: `Sos un asistente notarial argentino experto en revisión de minutas y expedientes.
 Revisás los datos de un trámite notarial y detectás posibles errores, inconsistencias o datos faltantes antes de enviarlos al registro.
