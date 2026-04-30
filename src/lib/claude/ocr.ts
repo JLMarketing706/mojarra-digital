@@ -15,7 +15,9 @@ export interface DatosDocumento {
   apellido?: string
   dni?: string
   cuil?: string
-  fecha_nacimiento?: string
+  sexo?: 'F' | 'M' | 'X'
+  fecha_nacimiento?: string  // DD/MM/AAAA
+  nacionalidad?: string
   domicilio?: string
   estado_civil?: string
   fecha?: string
@@ -50,8 +52,10 @@ export async function extraerDatosDocumento(
 Tu tarea es analizar documentos (DNI, escrituras, títulos de propiedad, sentencias, poderes) y extraer los datos estructurados.
 Cuando recibas varias imágenes del mismo documento (ej: frente y dorso de DNI), combiná la información de todas ellas en un único JSON.
 Siempre respondé con un JSON válido y nada más. Si un campo no está presente en el documento, omitilo del JSON.
-Los campos posibles son: tipo_documento, nombre, apellido, dni, cuil, fecha_nacimiento, domicilio, estado_civil, fecha, datos_adicionales.
+Los campos posibles son: tipo_documento, nombre, apellido, dni, cuil, sexo, fecha_nacimiento, nacionalidad, domicilio, estado_civil, fecha, datos_adicionales.
 Para tipo_documento usá: dni, escritura, titulo_propiedad, sentencia, poder, otro.
+Para sexo usá únicamente: "F", "M" o "X" (un solo caracter).
+Para nacionalidad usá el gentilicio en español ("Argentina", "Uruguaya", "Brasileña", etc.) — no códigos ISO.
 Fechas en formato DD/MM/AAAA. DNI sin puntos. CUIL con guiones (XX-XXXXXXXX-X).`,
     messages: [
       {

@@ -150,12 +150,39 @@ export default function NuevoClientePage() {
       }
       const d = json.datos
       const completados: string[] = []
+      // DD/MM/AAAA → YYYY-MM-DD para inputs de tipo date
+      const parseFecha = (v?: string): string | null => {
+        if (!v) return null
+        const m = v.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/)
+        if (!m) return null
+        const [, dd, mm, yyyy] = m
+        const year = yyyy.length === 2 ? `20${yyyy}` : yyyy
+        return `${year}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`
+      }
       setForm(prev => {
         const next = { ...prev }
         if (d.nombre) { next.nombre = d.nombre; completados.push('nombre') }
         if (d.apellido) { next.apellido = d.apellido; completados.push('apellido') }
         if (d.dni) { next.dni = d.dni; completados.push('dni'); next.tipo_documento = 'DNI' }
         if (d.cuil) { next.cuil = d.cuil; completados.push('cuil') }
+        if (d.sexo && ['F', 'M', 'X'].includes(d.sexo)) {
+          next.sexo = d.sexo
+          completados.push('sexo')
+        }
+        const fecha = parseFecha(d.fecha_nacimiento)
+        if (fecha) { next.fecha_nacimiento = fecha; completados.push('fecha_nacimiento') }
+        if (d.nacionalidad) {
+          // Claude puede devolver gentilicio ("Argentina") o código ISO ("AR").
+          // Resolvemos ambos contra NACIONALIDADES_COMUNES.
+          const v = d.nacionalidad.trim()
+          const match = NACIONALIDADES_COMUNES.find(
+            n => n.v.toUpperCase() === v.toUpperCase() || n.label.toLowerCase() === v.toLowerCase()
+          )
+          if (match) {
+            next.nacionalidad = match.v
+            completados.push('nacionalidad')
+          }
+        }
         if (d.domicilio) { next.dom_calle = d.domicilio; completados.push('dom_calle') }
         return next
       })
@@ -424,7 +451,7 @@ export default function NuevoClientePage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-zinc-300">Sexo</Label>
+                <Label className="text-zinc-300 flex items-center">Sexo{ocrBadge('sexo')}</Label>
                 <Select value={form.sexo} onValueChange={v => set('sexo', v as Sexo)}>
                   <SelectTrigger className={selectTriggerCls}><SelectValue placeholder="—" /></SelectTrigger>
                   <SelectContent className={selectContentCls}>
@@ -435,11 +462,11 @@ export default function NuevoClientePage() {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-zinc-300">Fecha de nacimiento</Label>
+                <Label className="text-zinc-300 flex items-center">Fecha de nacimiento{ocrBadge('fecha_nacimiento')}</Label>
                 <Input type="date" value={form.fecha_nacimiento} onChange={e => set('fecha_nacimiento', e.target.value)} className={inputCls} />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-zinc-300">Nacionalidad</Label>
+                <Label className="text-zinc-300 flex items-center">Nacionalidad{ocrBadge('nacionalidad')}</Label>
                 <Select value={form.nacionalidad} onValueChange={v => set('nacionalidad', v)}>
                   <SelectTrigger className={selectTriggerCls}><SelectValue /></SelectTrigger>
                   <SelectContent className={selectContentCls}>
