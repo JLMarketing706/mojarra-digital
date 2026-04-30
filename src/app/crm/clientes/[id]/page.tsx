@@ -325,8 +325,47 @@ export default async function FichaClientePage({
             </CardContent>
           </Card>
 
-          {/* Documentos por categoría */}
+          {/* Consultas UIF / Documentos obligatorios para clientes en actividad UIF */}
           <Card id="legajo" className="bg-zinc-900 border-zinc-800 scroll-mt-20">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm text-zinc-300 flex items-center gap-2">
+                <ShieldAlert size={14} className="text-lime-400" />
+                Consultas UIF y declaraciones
+                <Badge className="bg-lime-400/10 text-lime-300 border border-lime-400/30 text-[10px] ml-auto">
+                  Obligatorio actividad UIF
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <UploadDocumento
+                clienteId={c.id}
+                categoria="renaper"
+                label="Consulta RENAPER"
+                helpText="PDF/captura del Registro Nacional de las Personas."
+              />
+              <UploadDocumento
+                clienteId={c.id}
+                categoria="repet"
+                label="Consulta REPET"
+                helpText="Resultado de búsqueda en repet.jus.gob.ar (vinculación con terrorismo / lavado)."
+              />
+              <UploadDocumento
+                clienteId={c.id}
+                categoria="nosis"
+                label="Informe NOSIS"
+                helpText="Informe crediticio del cliente."
+              />
+              <UploadDocumento
+                clienteId={c.id}
+                categoria="ddjj_uif"
+                label="DJ UIF firmada"
+                helpText="Declaración jurada que firma el cliente antes de la escritura (PEP, sujeto obligado, origen de fondos)."
+              />
+            </CardContent>
+          </Card>
+
+          {/* Otros documentos del legajo */}
+          <Card className="bg-zinc-900 border-zinc-800">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm text-zinc-300 flex items-center gap-2">
                 <FileText size={14} className="text-lime-400" />Otros documentos del legajo

@@ -380,6 +380,10 @@ export type CategoriaDoc =
   | 'sociedad'
   | 'poder'
   | 'beneficiario_final'
+  | 'renaper'
+  | 'repet'
+  | 'nosis'
+  | 'ddjj_uif'
   | 'otros'
 
 export interface Documento {
@@ -425,6 +429,10 @@ export const LABEL_CATEGORIA_DOC: Record<CategoriaDoc, string> = {
   sociedad: 'Sociedad',
   poder: 'Poder',
   beneficiario_final: 'Beneficiario Final',
+  renaper: 'Consulta RENAPER',
+  repet: 'Consulta REPET',
+  nosis: 'Informe NOSIS',
+  ddjj_uif: 'DJ UIF firmada',
   otros: 'Otros',
 }
 
@@ -482,6 +490,25 @@ export const SUBCATEGORIAS_DOC: Record<CategoriaDoc, { v: string; label: string 
   beneficiario_final: [
     { v: 'ddjj_bf', label: 'DDJJ Beneficiario Final' },
     { v: 'organigrama', label: 'Organigrama / cadena de titularidad' },
+  ],
+  renaper: [
+    { v: 'consulta_pdf', label: 'Consulta (PDF)' },
+    { v: 'consulta_captura', label: 'Captura de pantalla' },
+  ],
+  repet: [
+    { v: 'busqueda_persona', label: 'Búsqueda persona física' },
+    { v: 'busqueda_entidad', label: 'Búsqueda entidad' },
+    { v: 'sin_coincidencias', label: 'Constancia sin coincidencias' },
+  ],
+  nosis: [
+    { v: 'informe_basico', label: 'Informe básico' },
+    { v: 'informe_completo', label: 'Informe completo' },
+  ],
+  ddjj_uif: [
+    { v: 'completa', label: 'DJ completa firmada' },
+    { v: 'pep', label: 'DJ PEP firmada' },
+    { v: 'sujeto_obligado', label: 'DJ Sujeto Obligado firmada' },
+    { v: 'origen_fondos', label: 'DJ origen de fondos firmada' },
   ],
   otros: [
     { v: 'consentimiento_datos', label: 'Consentimiento Ley 25.326' },
