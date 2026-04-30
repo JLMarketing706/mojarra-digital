@@ -251,7 +251,7 @@ export default function HomePage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 mb-10">
-              <Link href="/consulta">
+              <Link href="/solicitar-demo">
                 <Button size="lg"
                   className="bg-lime-400 text-black hover:bg-lime-300 font-bold px-8 py-6 text-base gap-2 shadow-lg shadow-lime-400/20">
                   Solicitar demo gratis <ArrowRight size={18} />
@@ -361,7 +361,7 @@ export default function HomePage() {
                   </div>
                 ))}
               </div>
-              <Link href="/consulta">
+              <Link href="/solicitar-demo">
                 <Button className="bg-lime-400 text-black hover:bg-lime-300 font-semibold gap-2 px-6 py-5">
                   Ver una demo en vivo <ArrowRight size={16} />
                 </Button>
@@ -544,7 +544,7 @@ export default function HomePage() {
                     </div>
                   )}
                 </div>
-                <Link href="/consulta">
+                <Link href="/solicitar-demo">
                   <Button
                     className={`w-full mb-8 font-semibold ${
                       destacado
@@ -619,7 +619,7 @@ export default function HomePage() {
             reales de tu escribanía y respondemos todas tus preguntas.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/consulta">
+            <Link href="/solicitar-demo">
               <Button size="lg"
                 className="bg-lime-400 text-black hover:bg-lime-300 font-bold px-10 py-6 text-base gap-2 shadow-lg shadow-lime-400/30">
                 Solicitar demo gratis <ArrowRight size={18} />

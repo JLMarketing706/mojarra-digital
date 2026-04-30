@@ -107,6 +107,54 @@ export function templateInvitacion(p: InvitacionTemplateParams): {
   return { subject, html }
 }
 
+interface SolicitudDemoParams {
+  nombre: string
+  escribania: string
+  email: string
+  whatsapp?: string | null
+  comentario?: string | null
+}
+
+export function templateSolicitudDemo(p: SolicitudDemoParams): {
+  subject: string
+  html: string
+} {
+  const subject = `🆕 Demo solicitada: ${p.escribania} (${p.nombre})`
+
+  const filas: Array<[string, string]> = [
+    ['Nombre', p.nombre],
+    ['Escribanía', p.escribania],
+    ['Email', p.email],
+    ['WhatsApp', p.whatsapp || '—'],
+    ['Comentario', p.comentario || '—'],
+  ]
+  const filasHtml = filas
+    .map(([label, value]) =>
+      `<tr><td style="padding:8px 12px;color:#52525b;font-weight:600;border-bottom:1px solid #e4e4e7;width:30%;">${escapeHtml(label)}</td><td style="padding:8px 12px;color:#18181b;border-bottom:1px solid #e4e4e7;">${escapeHtml(value)}</td></tr>`
+    )
+    .join('')
+
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="utf-8" /></head>
+<body style="margin:0;padding:24px;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#18181b;">
+  <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:8px;padding:24px;border:1px solid #e4e4e7;">
+    <div style="margin-bottom:16px;">
+      <span style="display:inline-block;background:#a3e635;color:#000;padding:4px 10px;border-radius:4px;font-size:12px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;">Nueva solicitud de demo</span>
+    </div>
+    <h1 style="margin:0 0 16px;font-size:20px;font-weight:600;">${escapeHtml(p.escribania)}</h1>
+    <table style="width:100%;border-collapse:collapse;font-size:14px;">${filasHtml}</table>
+    <p style="margin:24px 0 0;color:#71717a;font-size:13px;">
+      Contactá al lead y mandale el link de registro:
+      <code style="background:#f4f4f5;padding:2px 6px;border-radius:3px;">https://mojarradigital.com/registro</code>
+    </p>
+  </div>
+</body>
+</html>`
+
+  return { subject, html }
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, '&amp;')

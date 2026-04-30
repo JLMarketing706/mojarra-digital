@@ -51,17 +51,12 @@ function Navbar() {
         </nav>
 
         <div className="hidden md:flex items-center gap-2">
-          <Link href="/cliente">
-            <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white text-xs">
-              ¿Sos cliente?
-            </Button>
-          </Link>
           <Link href="/login">
             <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white">
               Iniciar sesión
             </Button>
           </Link>
-          <Link href="/consulta">
+          <Link href="/solicitar-demo">
             <Button size="sm" className="bg-lime-400 text-black hover:bg-lime-300 font-semibold px-5">
               Solicitar demo
             </Button>
@@ -81,15 +76,11 @@ function Navbar() {
               {label}
             </a>
           ))}
-          <Link href="/cliente" onClick={() => setOpen(false)}
-            className="block text-zinc-300 hover:text-white py-1 font-medium">
-            ¿Sos cliente de una escribanía?
-          </Link>
           <div className="pt-2 flex flex-col gap-2">
             <Link href="/login" onClick={() => setOpen(false)}>
               <Button variant="outline" size="sm" className="w-full border-zinc-700 text-zinc-300">Iniciar sesión</Button>
             </Link>
-            <Link href="/consulta" onClick={() => setOpen(false)}>
+            <Link href="/solicitar-demo" onClick={() => setOpen(false)}>
               <Button size="sm" className="w-full bg-lime-400 text-black font-semibold">Solicitar demo</Button>
             </Link>
           </div>
@@ -132,8 +123,8 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                 <li><a href="#funciones" className="hover:text-white transition-colors">Funciones</a></li>
                 <li><a href="#precios" className="hover:text-white transition-colors">Precios</a></li>
                 <li><a href="#testimonios" className="hover:text-white transition-colors">Clientes</a></li>
-                <li><Link href="/consulta" className="hover:text-white transition-colors">Solicitar demo</Link></li>
-                <li><Link href="/cliente" className="hover:text-white transition-colors">Portal del cliente</Link></li>
+                <li><Link href="/solicitar-demo" className="hover:text-white transition-colors">Solicitar demo</Link></li>
+                <li><Link href="/login" className="hover:text-white transition-colors">Iniciar sesión</Link></li>
               </ul>
             </div>
 
