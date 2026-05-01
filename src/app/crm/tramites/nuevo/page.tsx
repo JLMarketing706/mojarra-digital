@@ -24,6 +24,7 @@ import { LABEL_TIPO_ACTO, LABEL_FORMA_PAGO } from '@/types'
 import { formatMonto, parseMonto } from '@/lib/utils'
 import { useFormDraft } from '@/lib/use-form-draft'
 import { DraftBanner, DraftSavedIndicator } from '@/components/crm/draft-banner'
+import { CompradoresVendedoresForm, type PartePrincipal } from '@/components/crm/compradores-vendedores-form'
 
 // ─── Clases de estilo ─────────────────────────────────────
 const inputCls = 'bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-lime-400'
@@ -246,6 +247,11 @@ export default function NuevoTramitePage() {
   const [moneda, setMoneda] = useState('ARS')
   const [criptoNombre, setCriptoNombre] = useState('')
 
+  // Compradores y vendedores (solo para compraventa)
+  const [compradores, setCompradores] = useState<PartePrincipal[]>([])
+  const [vendedores, setVendedores] = useState<PartePrincipal[]>([])
+  // esCompraventa se calcula más abajo, después de declarar `form`
+
   const [form, setForm] = useState({
     tipo_acto: '' as TipoActo | '',
     cliente_id: searchParams.get('cliente_id') ?? '',
@@ -325,12 +331,31 @@ export default function NuevoTramitePage() {
     setForm(p => ({ ...p, [key]: value }))
   }
 
+  // Detectar compraventa: por subtipo elegido o por tipo_acto UIF
+  const esCompraventa = subtipo.toLowerCase().includes('compraventa') || form.tipo_acto === 'compraventa_inmueble'
+
   // Auto-save: combina form + selecciones derivadas en un único objeto serializable
-  type DraftShape = { form: typeof form; categoria: string; subtipo: string; moneda: string; criptoNombre: string }
-  const draftState: DraftShape = { form, categoria, subtipo, moneda, criptoNombre }
+  type DraftShape = {
+    form: typeof form
+    categoria: string
+    subtipo: string
+    moneda: string
+    criptoNombre: string
+    compradores: PartePrincipal[]
+    vendedores: PartePrincipal[]
+  }
+  const draftState: DraftShape = { form, categoria, subtipo, moneda, criptoNombre, compradores, vendedores }
   const { hasDraft, restoreDraft, clearDraft, draftSavedAt } = useFormDraft<DraftShape>(
     'nuevo-tramite', draftState,
-    s => { setForm(s.form); setCategoria(s.categoria); setSubtipo(s.subtipo); setMoneda(s.moneda); setCriptoNombre(s.criptoNombre) },
+    s => {
+      setForm(s.form)
+      setCategoria(s.categoria)
+      setSubtipo(s.subtipo)
+      setMoneda(s.moneda)
+      setCriptoNombre(s.criptoNombre)
+      setCompradores(s.compradores ?? [])
+      setVendedores(s.vendedores ?? [])
+    },
   )
 
   // Cálculo en vivo UIF
@@ -351,9 +376,27 @@ export default function NuevoTramitePage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.cliente_id) { toast.error('Tenés que seleccionar un cliente.'); return }
     if (!tipoFinal) { toast.error('Indicá el tipo de operación.'); return }
+
+    // Validación según sea compraventa o no
+    if (esCompraventa) {
+      const compradoresValidos = compradores.filter(c => c.cliente_id)
+      const vendedoresValidos = vendedores.filter(v => v.cliente_id)
+      if (compradoresValidos.length === 0) {
+        toast.error('Agregá al menos un comprador.'); return
+      }
+      if (vendedoresValidos.length === 0) {
+        toast.error('Agregá al menos un vendedor.'); return
+      }
+    } else if (!form.cliente_id) {
+      toast.error('Tenés que seleccionar un cliente.'); return
+    }
     setSaving(true)
+
+    // En compraventa, el cliente_id principal del trámite = primer comprador
+    const clientePrincipalId = esCompraventa
+      ? (compradores.find(c => c.cliente_id)?.cliente_id ?? form.cliente_id)
+      : form.cliente_id
 
     // Calcular monto en ARS si la moneda es extranjera
     let montoARS = parseMonto(form.monto)
@@ -371,7 +414,7 @@ export default function NuevoTramitePage() {
     const payload = {
       tipo: tipoFinal,
       tipo_acto: form.tipo_acto || null,
-      cliente_id: form.cliente_id,
+      cliente_id: clientePrincipalId,
       escribano_id: form.escribano_id || null,
       descripcion: form.descripcion || null,
       numero_referencia: form.numero_referencia || null,
@@ -420,6 +463,64 @@ export default function NuevoTramitePage() {
     if (clienteSeleccionado?.es_pep) alertas.push({ tramite_id: t.id, tipo: 'pep', tipo_alerta: 'pep_detectado', descripcion: 'Cliente PEP — debida diligencia reforzada' })
     if (clienteSeleccionado?.es_sujeto_obligado) alertas.push({ tramite_id: t.id, tipo: 'sujeto_obligado', tipo_alerta: 'sujeto_obligado', descripcion: 'Cliente es Sujeto Obligado UIF' })
     if (alertas.length > 0) await supabase.from('alertas_uif').insert(alertas)
+
+    // Insertar partes (compradores, vendedores y sus "otros" anidados) si es compraventa
+    if (esCompraventa) {
+      let orden = 0
+      const principales: Array<{ tempId: string; payload: Record<string, unknown> }> = []
+      for (const c of compradores.filter(p => p.cliente_id)) {
+        principales.push({
+          tempId: c.id,
+          payload: {
+            tramite_id: t.id, cliente_id: c.cliente_id, rol: 'comprador',
+            observacion: c.observacion || null, orden: orden++,
+          },
+        })
+      }
+      for (const v of vendedores.filter(p => p.cliente_id)) {
+        principales.push({
+          tempId: v.id,
+          payload: {
+            tramite_id: t.id, cliente_id: v.cliente_id, rol: 'vendedor',
+            observacion: v.observacion || null, orden: orden++,
+          },
+        })
+      }
+
+      if (principales.length > 0) {
+        const { data: insertados, error: errPart } = await supabase
+          .from('tramite_partes')
+          .insert(principales.map(p => p.payload))
+          .select('id, cliente_id, rol, orden')
+        if (errPart) console.error('Error insertando partes principales:', errPart)
+
+        // Mapear tempId → id real, para usar como parte_padre_id de los "otros"
+        const idMap = new Map<string, string>()
+        if (insertados) {
+          for (let i = 0; i < principales.length; i++) {
+            idMap.set(principales[i].tempId, (insertados[i] as { id: string }).id)
+          }
+        }
+
+        const otrosPayload: Array<Record<string, unknown>> = []
+        for (const c of [...compradores, ...vendedores].filter(p => p.cliente_id)) {
+          const padreReal = idMap.get(c.id)
+          if (!padreReal) continue
+          for (const o of c.otros.filter(o => o.cliente_id)) {
+            otrosPayload.push({
+              tramite_id: t.id, cliente_id: o.cliente_id, rol: o.rol,
+              observacion: o.observacion || null,
+              parte_padre_id: padreReal,
+              orden: orden++,
+            })
+          }
+        }
+        if (otrosPayload.length > 0) {
+          const { error: errOtros } = await supabase.from('tramite_partes').insert(otrosPayload)
+          if (errOtros) console.error('Error insertando otros:', errOtros)
+        }
+      }
+    }
 
     setSaving(false)
     clearDraft()
@@ -505,33 +606,35 @@ export default function NuevoTramitePage() {
 
             {/* Cliente y Escribano */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className="text-zinc-300">Cliente <span className="text-lime-400">*</span></Label>
-                <Select value={form.cliente_id} onValueChange={v => set('cliente_id', v)}>
-                  <SelectTrigger className={selectTriggerCls}>
-                    <SelectValue placeholder="Seleccioná cliente" />
-                  </SelectTrigger>
-                  <SelectContent className={selectContentCls + ' max-h-64'}>
-                    {clientes.map(c => (
-                      <SelectItem key={c.id} value={c.id} className={selectItemCls}>
-                        {c.apellido}, {c.nombre} {c.dni ? `· ${c.dni}` : c.cuil ? `· ${c.cuil}` : ''}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {clienteSeleccionado && (
-                  <div className="flex items-center gap-2 mt-1.5">
-                    {clienteSeleccionado.nivel_riesgo && (
-                      <Badge className={`text-xs uppercase border ${RIESGO_BADGE[clienteSeleccionado.nivel_riesgo]}`}>
-                        Riesgo {clienteSeleccionado.nivel_riesgo}
-                      </Badge>
-                    )}
-                    {clienteSeleccionado.es_pep && <Badge className="bg-yellow-500/20 text-yellow-300 border-0 text-xs">PEP</Badge>}
-                    {clienteSeleccionado.es_sujeto_obligado && <Badge className="bg-orange-500/20 text-orange-300 border-0 text-xs">SO</Badge>}
-                  </div>
-                )}
-              </div>
-              <div className="space-y-1.5">
+              {!esCompraventa && (
+                <div className="space-y-1.5">
+                  <Label className="text-zinc-300">Cliente <span className="text-lime-400">*</span></Label>
+                  <Select value={form.cliente_id} onValueChange={v => set('cliente_id', v)}>
+                    <SelectTrigger className={selectTriggerCls}>
+                      <SelectValue placeholder="Seleccioná cliente" />
+                    </SelectTrigger>
+                    <SelectContent className={selectContentCls + ' max-h-64'}>
+                      {clientes.map(c => (
+                        <SelectItem key={c.id} value={c.id} className={selectItemCls}>
+                          {c.apellido}, {c.nombre} {c.dni ? `· ${c.dni}` : c.cuil ? `· ${c.cuil}` : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {clienteSeleccionado && (
+                    <div className="flex items-center gap-2 mt-1.5">
+                      {clienteSeleccionado.nivel_riesgo && (
+                        <Badge className={`text-xs uppercase border ${RIESGO_BADGE[clienteSeleccionado.nivel_riesgo]}`}>
+                          Riesgo {clienteSeleccionado.nivel_riesgo}
+                        </Badge>
+                      )}
+                      {clienteSeleccionado.es_pep && <Badge className="bg-yellow-500/20 text-yellow-300 border-0 text-xs">PEP</Badge>}
+                      {clienteSeleccionado.es_sujeto_obligado && <Badge className="bg-orange-500/20 text-orange-300 border-0 text-xs">SO</Badge>}
+                    </div>
+                  )}
+                </div>
+              )}
+              <div className={`space-y-1.5 ${esCompraventa ? 'sm:col-span-2' : ''}`}>
                 <Label className="text-zinc-300">Escribano/a asignado</Label>
                 <Select value={form.escribano_id} onValueChange={v => set('escribano_id', v)}>
                   <SelectTrigger className={selectTriggerCls}>
@@ -568,6 +671,16 @@ export default function NuevoTramitePage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* COMPRADORES / VENDEDORES (solo para compraventa) */}
+        {esCompraventa && (
+          <CompradoresVendedoresForm
+            clientes={clientes.map(c => ({ id: c.id, nombre: c.nombre, apellido: c.apellido, dni: c.dni }))}
+            compradores={compradores}
+            vendedores={vendedores}
+            onChange={(c, v) => { setCompradores(c); setVendedores(v) }}
+          />
+        )}
 
         {/* DATOS DE ESCRITURA */}
         <Card className="bg-zinc-900 border-zinc-800">
