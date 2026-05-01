@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
-import { Loader2, ArrowLeft, FileDown } from 'lucide-react'
+import { Loader2, ArrowLeft, FileDown, Upload, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 
 interface TramiteSimple { id: string; tipo: string; numero_referencia: string | null }
@@ -28,6 +28,9 @@ export default function NuevaEntregaPage() {
     observaciones: '',
   })
   const [entregaId, setEntregaId] = useState<string | null>(null)
+  const [tramiteIdRegistrada, setTramiteIdRegistrada] = useState<string | null>(null)
+  const [reciboSubido, setReciboSubido] = useState<string | null>(null)
+  const [subiendoRecibo, setSubiendoRecibo] = useState(false)
 
   useEffect(() => {
     supabase
@@ -84,6 +87,45 @@ export default function NuevaEntregaPage() {
     setSaving(false)
     toast.success('Entrega registrada. Trámite marcado como entregado.')
     setEntregaId(entrega.id)
+    setTramiteIdRegistrada(form.tramite_id)
+  }
+
+  async function subirRecibo(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !tramiteIdRegistrada) return
+    if (file.size > 10 * 1024 * 1024) { toast.error('Máximo 10 MB.'); return }
+    setSubiendoRecibo(true)
+    try {
+      const ext = file.name.split('.').pop() ?? 'pdf'
+      const path = `tramites/${tramiteIdRegistrada}/recibo-firmado-${Date.now()}.${ext}`
+      const { error: upErr } = await supabase.storage
+        .from('documentos-privados')
+        .upload(path, file, { contentType: file.type })
+      if (upErr) { toast.error('Error al subir.'); setSubiendoRecibo(false); return }
+
+      const { data: { user } } = await supabase.auth.getUser()
+      const { error: insErr } = await supabase.from('documentos').insert({
+        tramite_id: tramiteIdRegistrada,
+        nombre: file.name,
+        tipo: file.type === 'application/pdf' ? 'pdf' : 'imagen',
+        url: '',
+        storage_path: path,
+        mime_type: file.type,
+        tamano_bytes: file.size,
+        categoria: 'otros',
+        subcategoria: 'recibo_firmado',
+        subido_por: user?.id ?? null,
+        visible_cliente: false,
+        verificado: true,
+      })
+      if (insErr) { toast.error('Subido pero falló registrar.'); setSubiendoRecibo(false); return }
+
+      setReciboSubido(file.name)
+      toast.success('Recibo firmado adjuntado.')
+    } finally {
+      setSubiendoRecibo(false)
+      e.target.value = ''
+    }
   }
 
   if (entregaId) {
@@ -101,6 +143,29 @@ export default function NuevaEntregaPage() {
                 <FileDown size={15} />Descargar recibo PDF
               </Button>
             </a>
+
+            {/* Subir recibo firmado */}
+            {reciboSubido ? (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-lime-500/10 border border-lime-500/30 text-lime-300 text-sm">
+                <CheckCircle2 size={14} />
+                <span className="truncate flex-1">{reciboSubido}</span>
+              </div>
+            ) : (
+              <label className={`flex items-center justify-center gap-2 w-full h-9 px-3 rounded-md border cursor-pointer transition-colors ${
+                subiendoRecibo
+                  ? 'border-lime-400/30 bg-lime-400/5 text-lime-300'
+                  : 'border-zinc-700 bg-zinc-800/40 text-zinc-300 hover:border-lime-400/50 hover:bg-zinc-800'
+              }`}>
+                {subiendoRecibo
+                  ? <><Loader2 size={14} className="animate-spin" />Subiendo recibo...</>
+                  : <><Upload size={14} />Adjuntar recibo firmado</>
+                }
+                <input type="file" className="hidden"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={subirRecibo} disabled={subiendoRecibo} />
+              </label>
+            )}
+
             <Link href="/crm/entregas">
               <Button variant="outline" className="w-full border-zinc-700 text-zinc-300 hover:bg-zinc-800">
                 Ver todas las entregas
@@ -123,7 +188,7 @@ export default function NuevaEntregaPage() {
 
       <form onSubmit={handleSubmit} className="space-y-5 max-w-lg">
         <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader><CardTitle className="text-sm text-zinc-300">Datos de la entrega</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-sm text-zinc-300">Entrega de Documentación</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
               <Label className="text-zinc-300">Trámite *</Label>
