@@ -80,33 +80,69 @@ export function useFormDraft<T extends object>(
   }, [key])
 
   // Guardar con debounce en cada cambio (solo si difiere del baseline inicial)
+  // Mantengo refs al state/userId actuales para poder flushear desde cleanup/beforeunload
+  const stateRef = useRef(state)
+  const userIdRef = useRef(userId)
+  useEffect(() => { stateRef.current = state }, [state])
+  useEffect(() => { userIdRef.current = userId }, [userId])
+
+  /** Persiste el state actual de forma síncrona en localStorage y dispara upsert
+   *  asíncrono a Supabase. Usado por el debounce y por el cleanup. */
+  function flushNow(snapshot: T) {
+    const now = Date.now()
+    const json = JSON.stringify(snapshot)
+    if (json === baseline.current) return
+    try {
+      localStorage.setItem(lsKey, JSON.stringify({ data: snapshot, meta: { savedAt: now } }))
+    } catch { /* lleno */ }
+    if (userIdRef.current) {
+      // fire-and-forget; si la pestaña se cierra antes, al menos quedó en localStorage
+      supabase.from('form_drafts').upsert({
+        user_id: userIdRef.current,
+        form_key: key,
+        data: snapshot,
+        updated_at: new Date(now).toISOString(),
+      }).then(() => { /* ok */ })
+    }
+    baseline.current = json
+    setDraftSavedAt(now)
+  }
+
   useEffect(() => {
     if (!enabled || !mounted.current) return
     const json = JSON.stringify(state)
-    // Skip si el user todavía no modificó nada (evita pisar el draft con vacío al montar)
     if (json === baseline.current) return
     if (timer.current) clearTimeout(timer.current)
-    timer.current = setTimeout(async () => {
-      const now = Date.now()
-      // Guardar en localStorage siempre (rápido, offline)
-      try {
-        localStorage.setItem(lsKey, JSON.stringify({ data: state, meta: { savedAt: now } }))
-      } catch { /* localStorage lleno */ }
-      // Intentar guardar en Supabase si hay user
-      if (userId) {
-        await supabase.from('form_drafts').upsert({
-          user_id: userId,
-          form_key: key,
-          data: state,
-          updated_at: new Date(now).toISOString(),
-        })
+    timer.current = setTimeout(() => flushNow(state), debounceMs)
+    return () => {
+      if (timer.current) {
+        clearTimeout(timer.current)
+        // Si había un save pendiente, ejecutarlo YA con el state actual
+        // (evita perder cambios cuando el usuario sale antes del debounce)
+        flushNow(stateRef.current)
       }
-      baseline.current = json
-      setDraftSavedAt(now)
-    }, debounceMs)
-    return () => { if (timer.current) clearTimeout(timer.current) }
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, enabled, userId])
+
+  // Listener global: flush al cerrar pestaña / navegar fuera
+  useEffect(() => {
+    if (!enabled) return
+    function flush() {
+      if (timer.current) {
+        clearTimeout(timer.current)
+        timer.current = null
+        flushNow(stateRef.current)
+      }
+    }
+    window.addEventListener('beforeunload', flush)
+    window.addEventListener('pagehide', flush)
+    return () => {
+      window.removeEventListener('beforeunload', flush)
+      window.removeEventListener('pagehide', flush)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled])
 
   async function restoreDraft() {
     // Preferir el del servidor si existe
