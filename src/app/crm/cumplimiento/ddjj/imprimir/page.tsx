@@ -227,7 +227,7 @@ export default function ImprimirDDJJPage() {
 
       <style jsx global>{`
         @media print {
-          @page { margin: 1.5cm; }
+          @page { size: A4; margin: 1.5cm; }
           html, body {
             background: white !important;
             margin: 0 !important;
