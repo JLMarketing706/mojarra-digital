@@ -74,6 +74,7 @@ function joinDomicilio(c: Cliente) {
 
 export function ClienteDetalleTabs({ cliente: c, tramites, documentos }: Props) {
   const riesgo = (c.nivel_riesgo ?? 'bajo') as NivelRiesgo
+  const esJuridica = c.tipo_persona !== 'humana'
   const proximaVencida = c.proxima_actualizacion ? new Date(c.proxima_actualizacion) < new Date() : false
 
   return (
@@ -154,27 +155,57 @@ export function ClienteDetalleTabs({ cliente: c, tramites, documentos }: Props) 
             </Card>
           )}
 
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-zinc-300">Estado civil</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-zinc-200 text-sm capitalize">{c.estado_civil ?? '— sin definir —'}</p>
-              <UploadDocumento
-                clienteId={c.id}
-                categoria="estado_civil"
-                campoValida="estado_civil"
-                label="Documentación de respaldo"
-                helpText={
-                  c.estado_civil === 'casado' ? 'Acta de matrimonio.' :
-                  c.estado_civil === 'divorciado' ? 'Sentencia de divorcio firme.' :
-                  c.estado_civil === 'viudo' ? 'Acta de defunción del cónyuge.' :
-                  c.estado_civil === 'union_convivencial' ? 'Declaración de unión convivencial.' :
-                  'Acta de matrimonio, sentencia, defunción o declaración de unión.'
-                }
-              />
-            </CardContent>
-          </Card>
+          {esJuridica ? (
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm text-zinc-300">Representación</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <UploadDocumento
+                  clienteId={c.id}
+                  categoria="poder"
+                  label="Poder"
+                  helpText="Poder vigente del representante."
+                />
+                <UploadDocumento
+                  clienteId={c.id}
+                  categoria="sociedad"
+                  subcategoriaDefault="estatuto"
+                  label="Estatuto"
+                  helpText="Estatuto / contrato social inscripto."
+                />
+                <UploadDocumento
+                  clienteId={c.id}
+                  categoria="sociedad"
+                  subcategoriaDefault="acta_designacion"
+                  label="Designación de autoridades"
+                  helpText="Acta de designación vigente."
+                />
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm text-zinc-300">Estado civil</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-zinc-200 text-sm capitalize">{c.estado_civil ?? '— sin definir —'}</p>
+                <UploadDocumento
+                  clienteId={c.id}
+                  categoria="estado_civil"
+                  campoValida="estado_civil"
+                  label="Documentación de respaldo"
+                  helpText={
+                    c.estado_civil === 'casado' ? 'Acta de matrimonio.' :
+                    c.estado_civil === 'divorciado' ? 'Sentencia de divorcio firme.' :
+                    c.estado_civil === 'viudo' ? 'Acta de defunción del cónyuge.' :
+                    c.estado_civil === 'union_convivencial' ? 'Declaración de unión convivencial.' :
+                    'Acta de matrimonio, sentencia, defunción o declaración de unión.'
+                  }
+                />
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {(c.estado_civil === 'casado' || c.estado_civil === 'union_convivencial' || c.conyuge_nombre || c.conyuge_dni) && (
