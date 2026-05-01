@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { revisarDatosMinuta } from '@/lib/claude/minutas'
+import { ROLES_STAFF } from '@/types'
 import type { Tramite } from '@/types'
 
 export async function POST(request: NextRequest) {
@@ -10,9 +11,8 @@ export async function POST(request: NextRequest) {
 
   const { data: profile } = await supabase
     .from('profiles').select('rol').eq('id', user.id).single()
-  const ROLES_STAFF = ['escribano_titular', 'oficial_cumplimiento', 'escribano_adscripto', 'empleado_admin', 'secretaria', 'protocolista', 'escribano']
-  if (!profile || !ROLES_STAFF.includes(profile.rol)) {
-    return NextResponse.json({ error: 'Permiso insuficiente' }, { status: 403 })
+  if (!profile || !ROLES_STAFF.includes(profile.rol as typeof ROLES_STAFF[number])) {
+    return NextResponse.json({ error: 'Tu rol no tiene acceso a esta función.' }, { status: 403 })
   }
 
   try {

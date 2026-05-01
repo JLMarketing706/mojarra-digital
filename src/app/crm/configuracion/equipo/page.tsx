@@ -220,6 +220,13 @@ export default function EquipoPage() {
   const miembrosActivos = miembros.filter(m => !m.desactivado_at).length
   const cupo = escribania ? escribania.max_usuarios - miembrosActivos : 0
 
+  // #3: Conteo de escribanos (titular/adscripto/subrogante/interino) — máximo 5 por escribanía
+  const ROLES_ESCRIB = ['escribano_titular', 'escribano_adscripto', 'escribano_subrogante', 'escribano_interino']
+  const escribanosActivos = miembros.filter(m => !m.desactivado_at && ROLES_ESCRIB.includes(m.rol)).length
+  const cupoEscribanos = 5 - escribanosActivos
+  const formEsEscribano = ROLES_ESCRIB.includes(form.rol)
+  const sinCupoEscribano = formEsEscribano && cupoEscribanos <= 0
+
   // Aplicar filtros
   const miembrosFiltrados = miembros.filter(m => {
     if (filtro === 'activos') return !m.desactivado_at
@@ -269,6 +276,10 @@ export default function EquipoPage() {
                   {' · '}
                   {miembrosActivos} de {escribania.max_usuarios} usuarios activos
                   {cupo > 0 ? ` (cupo: ${cupo})` : ' (sin cupo libre)'}
+                  {' · '}
+                  <span className={escribanosActivos >= 5 ? 'text-yellow-400' : 'text-zinc-400'}>
+                    {escribanosActivos}/5 escribanos
+                  </span>
                 </>
               )}
             </p>
@@ -316,8 +327,13 @@ export default function EquipoPage() {
                   rows={2} placeholder="Hola Juan, te sumo al equipo..."
                   className={inputCls + ' resize-none'} />
               </div>
-              <Button type="submit" disabled={enviando}
-                className="bg-lime-400 text-black hover:bg-lime-300 font-semibold gap-2">
+              {sinCupoEscribano && (
+                <p className="text-xs text-yellow-400">
+                  ⚠ Esta escribanía ya tiene 5 escribanos. Cambiá a otro rol o desactivá uno existente.
+                </p>
+              )}
+              <Button type="submit" disabled={enviando || sinCupoEscribano}
+                className="bg-lime-400 text-black hover:bg-lime-300 font-semibold gap-2 disabled:opacity-50">
                 {enviando && <Loader2 size={14} className="animate-spin" />}
                 <Send size={14} />Generar invitación
               </Button>

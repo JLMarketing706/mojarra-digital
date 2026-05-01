@@ -1,0 +1,142 @@
+'use client'
+
+import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { estadoTramiteLabel } from '@/lib/utils'
+import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
+import { Loader2, X } from 'lucide-react'
+
+const ESTADOS = ['iniciado', 'en_proceso', 'en_registro', 'observado', 'listo', 'entregado']
+
+const colorMap: Record<string, string> = {
+  borrador: 'text-zinc-400',
+  iniciado: 'text-zinc-400',
+  en_proceso: 'text-blue-300',
+  en_registro: 'text-yellow-300',
+  observado: 'text-orange-300',
+  listo: 'text-lime-300',
+  entregado: 'text-zinc-500',
+}
+
+interface Props {
+  tramiteId: string
+  estadoActual: string
+}
+
+export function EstadoTramiteSelector({ tramiteId, estadoActual }: Props) {
+  const supabase = createClient()
+  const router = useRouter()
+  const [guardando, setGuardando] = useState(false)
+  const [showObsDialog, setShowObsDialog] = useState(false)
+  const [fechaLimite, setFechaLimite] = useState('')
+  const [obsTexto, setObsTexto] = useState('')
+
+  // Normalizar legacy 'borrador' → 'iniciado'
+  const estadoNorm = estadoActual === 'borrador' ? 'iniciado' : estadoActual
+
+  async function aplicarEstado(
+    nuevoEstado: string,
+    extra: { fecha_limite_observacion?: string; observacion_registro?: string } = {},
+  ) {
+    setGuardando(true)
+    const { error } = await supabase
+      .from('tramites')
+      .update({ estado: nuevoEstado, updated_at: new Date().toISOString(), ...extra })
+      .eq('id', tramiteId)
+    setGuardando(false)
+    if (error) { toast.error('Error al actualizar el estado.'); return false }
+    toast.success(`Estado: ${estadoTramiteLabel(nuevoEstado)}`)
+    router.refresh()
+    return true
+  }
+
+  async function handleChange(nuevoEstado: string) {
+    if (nuevoEstado === estadoNorm) return
+    if (nuevoEstado === 'observado') {
+      // abrir diálogo para pedir fecha límite obligatoria
+      setFechaLimite('')
+      setObsTexto('')
+      setShowObsDialog(true)
+      return
+    }
+    await aplicarEstado(nuevoEstado)
+  }
+
+  async function confirmarObservado() {
+    if (!fechaLimite) { toast.error('La fecha límite es obligatoria.'); return }
+    const ok = await aplicarEstado('observado', {
+      fecha_limite_observacion: fechaLimite,
+      observacion_registro: obsTexto || undefined,
+    })
+    if (ok) setShowObsDialog(false)
+  }
+
+  return (
+    <>
+      <Select value={estadoNorm} onValueChange={handleChange} disabled={guardando}>
+        <SelectTrigger className={`h-7 text-xs border-0 bg-transparent p-0 shadow-none focus:ring-0 w-auto gap-1 ${colorMap[estadoNorm] ?? 'text-zinc-400'}`}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent className="bg-zinc-900 border-zinc-700">
+          {ESTADOS.map(e => (
+            <SelectItem key={e} value={e} className="text-zinc-200 focus:bg-zinc-800 text-xs">
+              {estadoTramiteLabel(e)}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {/* Diálogo: requerir fecha límite cuando se marca como Observado */}
+      {showObsDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={e => e.stopPropagation()}>
+          <div className="w-full max-w-md rounded-xl bg-zinc-950 border border-zinc-800 p-5 shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-semibold text-orange-300">Marcar como observado</h3>
+              <Button variant="ghost" size="sm" onClick={() => setShowObsDialog(false)}
+                className="h-7 w-7 p-0 text-zinc-400 hover:text-white">
+                <X size={14} />
+              </Button>
+            </div>
+            <p className="text-zinc-400 text-xs mb-4">
+              El registro otorga un plazo para subsanar observaciones. Cargá la fecha límite.
+            </p>
+            <div className="space-y-3">
+              <div>
+                <Label className="text-zinc-300 text-xs">Fecha límite <span className="text-orange-400">*</span></Label>
+                <Input type="date" value={fechaLimite} min={new Date().toISOString().split('T')[0]}
+                  onChange={e => setFechaLimite(e.target.value)}
+                  className="bg-zinc-800 border-zinc-700 text-white mt-1" />
+                <p className="text-xs text-zinc-500 mt-1">Recibirás aviso 15 días antes del vencimiento.</p>
+              </div>
+              <div>
+                <Label className="text-zinc-300 text-xs">Observación recibida (opcional)</Label>
+                <Textarea value={obsTexto} onChange={e => setObsTexto(e.target.value)}
+                  rows={3} placeholder="Ej: falta firma del cónyuge en folio 3, reverso..."
+                  className="bg-zinc-800 border-zinc-700 text-white mt-1 resize-none" />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-5 justify-end">
+              <Button variant="outline" size="sm" onClick={() => setShowObsDialog(false)}
+                className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
+                Cancelar
+              </Button>
+              <Button size="sm" onClick={confirmarObservado} disabled={guardando || !fechaLimite}
+                className="bg-orange-500 text-white hover:bg-orange-400 gap-1.5">
+                {guardando && <Loader2 size={13} className="animate-spin" />}
+                Confirmar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}

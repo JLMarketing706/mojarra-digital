@@ -7,8 +7,10 @@
 export type Rol =
   // Roles UIF (Res. 242/2023)
   | 'escribano_titular'
-  | 'oficial_cumplimiento'
   | 'escribano_adscripto'
+  | 'escribano_subrogante'
+  | 'escribano_interino'
+  | 'oficial_cumplimiento'
   | 'empleado_admin'
   | 'auditor_externo'
   | 'cliente'
@@ -18,7 +20,8 @@ export type Rol =
   | 'escribano'
 
 export const ROLES_STAFF: Rol[] = [
-  'escribano_titular', 'oficial_cumplimiento', 'escribano_adscripto', 'empleado_admin',
+  'escribano_titular', 'escribano_adscripto', 'escribano_subrogante', 'escribano_interino',
+  'oficial_cumplimiento', 'empleado_admin',
   'secretaria', 'protocolista', 'escribano',
 ]
 
@@ -82,6 +85,10 @@ export interface Cliente {
   dom_pais?: string
   // Legacy
   domicilio?: string
+
+  // Padres (relevante para solteros)
+  nombre_padre?: string
+  nombre_madre?: string
 
   // Cónyuge
   conyuge_nombre?: string
@@ -922,7 +929,13 @@ export const LABEL_ESTADO_ESCRIBANIA: Record<EstadoEscribania, string> = {
   cancelada: 'Cancelada',
 }
 
-export type RolInvitable = 'escribano_titular' | 'oficial_cumplimiento' | 'escribano_adscripto' | 'empleado_admin'
+export type RolInvitable =
+  | 'escribano_titular'
+  | 'escribano_adscripto'
+  | 'escribano_subrogante'
+  | 'escribano_interino'
+  | 'oficial_cumplimiento'
+  | 'empleado_admin'
 
 export interface Invitacion {
   id: string
@@ -943,10 +956,18 @@ export interface Invitacion {
 
 export const LABEL_ROL_INVITABLE: Record<RolInvitable, string> = {
   escribano_titular: 'Escribano titular',
-  oficial_cumplimiento: 'Oficial de Cumplimiento',
   escribano_adscripto: 'Escribano adscripto',
+  escribano_subrogante: 'Escribano subrogante',
+  escribano_interino: 'Escribano interino',
+  oficial_cumplimiento: 'Oficial de Cumplimiento',
   empleado_admin: 'Empleado administrativo',
 }
+
+// Roles que se consideran "escribanos" (cuentan contra el límite de 5 por escribanía)
+export const ROLES_ESCRIBANO: RolInvitable[] = [
+  'escribano_titular', 'escribano_adscripto', 'escribano_subrogante', 'escribano_interino',
+]
+export const MAX_ESCRIBANOS_POR_ESCRIBANIA = 5
 
 export interface SuperAdmin {
   profile_id: string
@@ -984,8 +1005,10 @@ export const LABEL_FORMA_PAGO: Record<FormaPago, string> = {
 
 export const LABEL_ROL: Record<Rol, string> = {
   escribano_titular: 'Escribano titular',
-  oficial_cumplimiento: 'Oficial de Cumplimiento',
   escribano_adscripto: 'Escribano adscripto',
+  escribano_subrogante: 'Escribano subrogante',
+  escribano_interino: 'Escribano interino',
+  oficial_cumplimiento: 'Oficial de Cumplimiento',
   empleado_admin: 'Empleado administrativo',
   auditor_externo: 'Auditor externo',
   cliente: 'Cliente',

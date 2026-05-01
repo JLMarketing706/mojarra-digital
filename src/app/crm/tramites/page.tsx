@@ -1,15 +1,16 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { estadoTramiteLabel, estadoTramiteColor, formatFecha } from '@/lib/utils'
+import { formatFecha } from '@/lib/utils'
+import { EstadoTramiteSelector } from '@/components/crm/estado-tramite-selector'
 import { FilePlus, AlertTriangle } from 'lucide-react'
+import { estadoTramiteLabel, estadoUifLabel, estadoUifColor } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
 import type { Metadata } from 'next'
 
-export const metadata: Metadata = { title: 'Trámites' }
+export const metadata: Metadata = { title: 'Operaciones' }
 
-const ESTADOS = ['todos', 'iniciado', 'en_proceso', 'en_registro', 'listo', 'entregado']
+const ESTADOS = ['todos', 'iniciado', 'en_proceso', 'en_registro', 'observado', 'listo', 'entregado']
 
 export default async function TramitesPage({
   searchParams,
@@ -34,12 +35,12 @@ export default async function TramitesPage({
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-white mb-1">Trámites</h1>
+          <h1 className="text-2xl font-semibold text-white mb-1">Operaciones</h1>
           <p className="text-zinc-400 text-sm">{tramites?.length ?? 0} resultados</p>
         </div>
         <Link href="/crm/tramites/nuevo">
           <Button className="bg-lime-400 text-black hover:bg-lime-300 font-medium gap-2">
-            <FilePlus size={16} />Nuevo trámite
+            <FilePlus size={16} />Nueva operación
           </Button>
         </Link>
       </div>
@@ -72,6 +73,7 @@ export default async function TramitesPage({
               <th className="text-left px-4 py-3 text-zinc-400 font-medium">Estado</th>
               <th className="text-left px-4 py-3 text-zinc-400 font-medium hidden md:table-cell">Ref.</th>
               <th className="text-left px-4 py-3 text-zinc-400 font-medium hidden lg:table-cell">UIF</th>
+              <th className="text-left px-4 py-3 text-zinc-400 font-medium hidden lg:table-cell">Informe</th>
               <th className="text-left px-4 py-3 text-zinc-400 font-medium hidden md:table-cell">Actualizado</th>
               <th className="px-4 py-3" />
             </tr>
@@ -79,7 +81,7 @@ export default async function TramitesPage({
           <tbody>
             {!tramites || tramites.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-zinc-500">
+                <td colSpan={8} className="px-4 py-10 text-center text-zinc-500">
                   No se encontraron trámites.
                 </td>
               </tr>
@@ -101,9 +103,7 @@ export default async function TramitesPage({
                       ) : '—'}
                     </td>
                     <td className="px-4 py-3">
-                      <Badge className={`text-xs ${estadoTramiteColor(t.estado)}`}>
-                        {estadoTramiteLabel(t.estado)}
-                      </Badge>
+                      <EstadoTramiteSelector tramiteId={t.id} estadoActual={t.estado} />
                     </td>
                     <td className="px-4 py-3 text-zinc-500 text-xs hidden md:table-cell">
                       {t.numero_referencia ?? '—'}
@@ -112,6 +112,11 @@ export default async function TramitesPage({
                       {t.requiere_uif && (
                         <AlertTriangle size={14} className="text-yellow-400" />
                       )}
+                    </td>
+                    <td className="px-4 py-3 hidden lg:table-cell">
+                      <Badge className={`text-xs border ${estadoUifColor(t.estado_uif)}`}>
+                        {estadoUifLabel(t.estado_uif)}
+                      </Badge>
                     </td>
                     <td className="px-4 py-3 text-zinc-500 text-xs hidden md:table-cell">
                       {formatFecha(t.updated_at)}

@@ -4,6 +4,7 @@ import { CRMSidebar } from '@/components/crm/sidebar'
 import { CRMTopbar } from '@/components/crm/topbar'
 import { CRMFooter } from '@/components/crm/footer'
 import { TrialBanner } from '@/components/crm/trial-banner'
+import { AsistenteWidget } from '@/components/crm/asistente-widget'
 import type { Profile } from '@/types'
 
 const ROLES_STAFF = [
@@ -69,6 +70,7 @@ export default async function CRMLayout({
           <CRMFooter />
         </main>
       </div>
+      <AsistenteWidget />
     </div>
   )
 }

@@ -5,9 +5,12 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { estadoTramiteLabel, estadoTramiteColor, formatFecha, formatFechaHora } from '@/lib/utils'
-import { ArrowLeft, AlertTriangle, FileText, Feather } from 'lucide-react'
+import { estadoTramiteLabel, estadoTramiteColor, formatFecha, formatFechaHora, diasHastaVencimiento } from '@/lib/utils'
+import { ArrowLeft, AlertTriangle, FileText, Feather, Clock, AlertCircle } from 'lucide-react'
 import { TramiteAcciones } from '@/components/crm/tramite-acciones'
+import { CalificacionSelector } from '@/components/crm/calificacion-selector'
+import { DocsRequeridosAlert } from '@/components/crm/docs-requeridos-alert'
+import { TramitePartesManager } from '@/components/crm/tramite-partes-manager'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Detalle de trámite' }
@@ -48,7 +51,7 @@ export default async function DetalleTramiteCRMPage({
       <div className="mb-6">
         <Link href="/crm/tramites">
           <Button variant="ghost" size="sm" className="gap-1.5 text-zinc-400 -ml-2 mb-4">
-            <ArrowLeft size={14} />Trámites
+            <ArrowLeft size={14} />Operaciones
           </Button>
         </Link>
         <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -74,6 +77,58 @@ export default async function DetalleTramiteCRMPage({
             </Button>
           </Link>
         </div>
+      </div>
+
+      {/* Alerta de observación con fecha límite */}
+      {tramite.estado === 'observado' && tramite.fecha_limite_observacion && (() => {
+        const dias = diasHastaVencimiento(tramite.fecha_limite_observacion as string)
+        const vencido = dias !== null && dias < 0
+        const proxVencer = dias !== null && dias >= 0 && dias <= 15
+        const colorBase = vencido
+          ? 'border-red-500/40 bg-red-500/10'
+          : proxVencer
+            ? 'border-orange-500/40 bg-orange-500/10'
+            : 'border-yellow-500/30 bg-yellow-500/5'
+        const Icon = vencido ? AlertCircle : Clock
+        const iconColor = vencido ? 'text-red-400' : proxVencer ? 'text-orange-400' : 'text-yellow-400'
+        const titleColor = vencido ? 'text-red-300' : proxVencer ? 'text-orange-300' : 'text-yellow-300'
+        const titulo = vencido
+          ? `⚠ Plazo VENCIDO hace ${Math.abs(dias!)} día${Math.abs(dias!) === 1 ? '' : 's'}`
+          : proxVencer
+            ? `Plazo próximo: vence en ${dias} día${dias === 1 ? '' : 's'}`
+            : `Plazo: vence en ${dias} días`
+        return (
+          <div className={`mb-6 p-4 rounded-lg border ${colorBase}`}>
+            <div className="flex items-start gap-3">
+              <Icon size={18} className={`${iconColor} shrink-0 mt-0.5`} />
+              <div className="flex-1">
+                <p className={`font-semibold text-sm ${titleColor}`}>{titulo}</p>
+                <p className="text-zinc-400 text-xs mt-0.5">
+                  Fecha límite: <strong className="text-zinc-200">{formatFecha(tramite.fecha_limite_observacion as string)}</strong>
+                </p>
+                {tramite.observacion_registro && (
+                  <p className="text-zinc-300 text-sm mt-2 italic">"{tramite.observacion_registro as string}"</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* Documentos requeridos faltantes */}
+      <div className="mb-6">
+        <DocsRequeridosAlert
+          tramite={{
+            tipo: tramite.tipo as string,
+            monto: tramite.monto as number | null,
+            monto_efectivo: tramite.monto_efectivo as number | null,
+            dispara_uif: tramite.dispara_uif as boolean | null,
+            requiere_uif: tramite.requiere_uif as boolean | null,
+            forma_pago: tramite.forma_pago as string | null,
+          }}
+          cliente={cliente as { es_pep?: boolean; es_sujeto_obligado?: boolean; tipo_persona?: string } | null}
+          documentos={documentos ?? []}
+        />
       </div>
 
       {/* Alertas UIF activas */}
@@ -123,6 +178,21 @@ export default async function DetalleTramiteCRMPage({
             </CardContent>
           </Card>
 
+          {/* Calificaciones (UIF + riesgo cliente) */}
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-zinc-300">Calificaciones</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CalificacionSelector
+                tramiteId={id}
+                clienteId={tramite.cliente_id as string}
+                estadoUifActual={tramite.estado_uif as string | null}
+                nivelRiesgoActual={cliente?.nivel_riesgo ?? null}
+              />
+            </CardContent>
+          </Card>
+
           {/* Acciones (cambio de estado, hito, documentos) */}
           <TramiteAcciones
             tramiteId={id}
@@ -133,6 +203,9 @@ export default async function DetalleTramiteCRMPage({
 
         {/* Columna derecha: Hitos + Documentos */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Múltiples partes intervinientes */}
+          <TramitePartesManager tramiteId={id} />
+
           {/* Notas internas */}
           {tramite.notas_internas && (
             <Card className="bg-zinc-900 border-zinc-800">

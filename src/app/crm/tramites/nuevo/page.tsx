@@ -16,29 +16,90 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import {
   Loader2, ArrowLeft, FileText, Coins, ShieldAlert, Calendar,
-  AlertTriangle, CheckCircle2,
+  CheckCircle2,
 } from 'lucide-react'
 import Link from 'next/link'
-import type { Cliente, Profile, TipoActo, FormaPago, NivelRiesgo } from '@/types'
+import type { Profile, TipoActo, FormaPago, NivelRiesgo } from '@/types'
 import { LABEL_TIPO_ACTO, LABEL_FORMA_PAGO } from '@/types'
+import { formatMonto, parseMonto } from '@/lib/utils'
+import { useFormDraft } from '@/lib/use-form-draft'
+import { DraftBanner, DraftSavedIndicator } from '@/components/crm/draft-banner'
 
+// ─── Clases de estilo ─────────────────────────────────────
 const inputCls = 'bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-lime-400'
 const selectTriggerCls = 'bg-zinc-800 border-zinc-700 text-white focus:ring-lime-400'
 const selectContentCls = 'bg-zinc-900 border-zinc-700'
 const selectItemCls = 'text-zinc-200 focus:bg-zinc-800'
 
-interface ClienteRow {
-  id: string
-  nombre: string
-  apellido: string
-  dni: string | null
-  cuil: string | null
-  es_pep: boolean
-  es_sujeto_obligado: boolean
-  nivel_riesgo: NivelRiesgo | null
-}
+// ─── Tipos de trámite (dos niveles) ──────────────────────
+const CATEGORIAS_TRAMITE: { label: string; subtipos: string[] }[] = [
+  {
+    label: 'Operaciones Inmobiliarias',
+    subtipos: [
+      'Escritura de compraventa',
+      'Constitución de hipotecas',
+      'Donación de inmueble',
+      'Afectación a Vivienda (Bien de Familia)',
+      'Reglamento de Propiedad Horizontal',
+      'Estudio de títulos',
+    ],
+  },
+  {
+    label: 'Trámites Personales y Familiares',
+    subtipos: [
+      'Poder general',
+      'Poder especial',
+      'Autorización de viaje para menor',
+      'Testamento',
+      'Autorización para conducir vehículo',
+      'Certificación de unión convivencial',
+      'Venia matrimonial',
+    ],
+  },
+  {
+    label: 'Certificaciones y Actas',
+    subtipos: [
+      'Certificación de firmas',
+      'Certificación de fotocopias',
+      'Acta de constatación',
+      'Acta de notificación',
+      'Protocolización de documentos',
+    ],
+  },
+  {
+    label: 'Trámites Comerciales',
+    subtipos: [
+      'Constitución de sociedad (SA)',
+      'Constitución de sociedad (SRL)',
+      'Constitución de sociedad (SAS)',
+      'Constitución de sociedad (otra)',
+      'Transferencia de fondo de comercio',
+      'Acta de asamblea',
+      'Acta de directorio',
+      'Contrato de alquiler (certificación)',
+      'Cesión de cuotas sociales',
+    ],
+  },
+  {
+    label: 'Gestión Registral',
+    subtipos: [
+      'Solicitud de informe de dominio',
+      'Solicitud de informe de inhibición',
+      'Inscripción en Registro de la Propiedad',
+      'Tramitación de segundo testimonio',
+      'Cancelación de hipoteca',
+    ],
+  },
+]
 
-interface SMVMRow { vigencia_desde: string; valor: number }
+// ─── Monedas ─────────────────────────────────────────────
+const MONEDAS = [
+  { v: 'ARS', label: 'Pesos argentinos ($)' },
+  { v: 'USD', label: 'Dólares estadounidenses (US$)' },
+  { v: 'EUR', label: 'Euros (€)' },
+  { v: 'BRL', label: 'Reales (R$)' },
+  { v: 'CRYPTO', label: 'Criptomoneda' },
+]
 
 const TIPOS_ACTO_LIST: TipoActo[] = [
   'compraventa_inmueble', 'constitucion_sociedad', 'cesion_cuotas',
@@ -49,10 +110,62 @@ const FORMAS_PAGO_LIST: FormaPago[] = [
   'efectivo', 'transferencia', 'cheque', 'mixto', 'permuta', 'credito_hipotecario', 'otra',
 ]
 
+const ESTADOS_OPERACION = [
+  { v: 'iniciado', label: 'Iniciado' },
+  { v: 'en_proceso', label: 'En proceso' },
+  { v: 'en_registro', label: 'En registro' },
+  { v: 'observado', label: 'Observado' },
+  { v: 'listo', label: 'Listo para retirar' },
+  { v: 'entregado', label: 'Entregado' },
+]
+
 const RIESGO_BADGE: Record<NivelRiesgo, string> = {
   bajo: 'bg-green-500/15 text-green-300 border-green-500/30',
   medio: 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30',
   alto: 'bg-red-500/15 text-red-300 border-red-500/30',
+}
+
+interface ClienteRow {
+  id: string; nombre: string; apellido: string
+  dni: string | null; cuil: string | null
+  es_pep: boolean; es_sujeto_obligado: boolean; nivel_riesgo: NivelRiesgo | null
+}
+interface SMVMRow { vigencia_desde: string; valor: number }
+
+// ─── Input de monto con formato es-AR ────────────────────
+function MontoInput({
+  label, value, onChange, helpText,
+}: { label: string; value: string; onChange: (v: string) => void; helpText?: string }) {
+  const [display, setDisplay] = useState(value ? formatMonto(value) : '')
+
+  function handleBlur() {
+    const num = parseMonto(display)
+    if (!isNaN(num) && num > 0) {
+      const formatted = formatMonto(num)
+      setDisplay(formatted)
+      onChange(String(num))
+    } else if (display === '') {
+      onChange('')
+    }
+  }
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setDisplay(e.target.value)
+  }
+
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-zinc-300">{label}</Label>
+      <Input
+        value={display}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        placeholder="0,00"
+        className={inputCls}
+      />
+      {helpText && <p className="text-xs text-zinc-500">{helpText}</p>}
+    </div>
+  )
 }
 
 export default function NuevoTramitePage() {
@@ -65,61 +178,105 @@ export default function NuevoTramitePage() {
   const [escribanos, setEscribanos] = useState<Profile[]>([])
   const [smvm, setSmvm] = useState<number>(308200)
 
+  // Tipo de trámite (dos niveles)
+  const [categoria, setCategoria] = useState('')
+  const [subtipo, setSubtipo] = useState('')
+  const subtiposActuales = CATEGORIAS_TRAMITE.find(c => c.label === categoria)?.subtipos ?? []
+
+  // Moneda
+  const [moneda, setMoneda] = useState('ARS')
+  const [criptoNombre, setCriptoNombre] = useState('')
+
   const [form, setForm] = useState({
-    // Identificación
-    tipo: '' as string,
     tipo_acto: '' as TipoActo | '',
     cliente_id: searchParams.get('cliente_id') ?? '',
     escribano_id: '',
     descripcion: '',
     numero_referencia: '',
     notas_internas: '',
-    // Escritura
     numero_escritura: '',
     folio_protocolo: '',
     registro_notarial: '',
     fecha_escritura: '',
-    // Montos
     monto: '',
     monto_efectivo: '',
     monto_moneda_extranjera: '',
-    moneda_extranjera: '',
     tipo_cambio: '',
     forma_pago: '' as FormaPago | '',
     origen_fondos: '',
+    estado_inicial: 'iniciado',
   })
 
   useEffect(() => {
     async function load() {
+      // Obtener el usuario actual para filtrar por escribanía
+      const { data: { user } } = await supabase.auth.getUser()
+      let escribaniaId: string | null = null
+
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('escribania_id')
+          .eq('id', user.id)
+          .single()
+        escribaniaId = (profile as { escribania_id?: string } | null)?.escribania_id ?? null
+      }
+
+      let escQuery = supabase
+        .from('profiles')
+        .select('id, nombre, apellido, rol, email, activo, created_at')
+        .in('rol', ['escribano', 'protocolista', 'escribano_titular', 'escribano_adscripto', 'escribano_subrogante', 'escribano_interino', 'oficial_cumplimiento'])
+        .eq('activo', true)
+        .order('apellido')
+
+      // Filtrar por escribanía si disponible
+      if (escribaniaId) {
+        escQuery = escQuery.eq('escribania_id', escribaniaId)
+      }
+
       const [cls, escs, smvmRows] = await Promise.all([
         supabase.from('clientes')
           .select('id, nombre, apellido, dni, cuil, es_pep, es_sujeto_obligado, nivel_riesgo')
           .order('apellido'),
-        supabase.from('profiles')
-          .select('id, nombre, apellido, rol, email, activo, created_at')
-          .in('rol', ['escribano', 'protocolista', 'escribano_titular', 'oficial_cumplimiento'])
-          .order('apellido'),
+        escQuery,
         supabase.from('smvm_historico')
           .select('vigencia_desde, valor')
           .order('vigencia_desde', { ascending: false })
           .limit(1),
       ])
+
       if (cls.data) setClientes(cls.data as ClienteRow[])
-      if (escs.data) setEscribanos(escs.data as Profile[])
+
+      const listaEscribanos = (escs.data ?? []) as Profile[]
+      setEscribanos(listaEscribanos)
+
+      // Auto-seleccionar si hay exactamente uno
+      if (listaEscribanos.length === 1) {
+        setForm(p => ({ ...p, escribano_id: listaEscribanos[0].id }))
+      }
+
       if (smvmRows.data && smvmRows.data.length > 0) {
         setSmvm(Number((smvmRows.data[0] as SMVMRow).valor))
       }
     }
     load()
-  }, [supabase])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm(p => ({ ...p, [key]: value }))
   }
 
-  // Cálculo en vivo del estado UIF (preview, el real lo calcula el trigger en DB)
-  const monto = Number(form.monto) || 0
-  const efectivo = Number(form.monto_efectivo) || 0
+  // Auto-save: combina form + selecciones derivadas en un único objeto serializable
+  type DraftShape = { form: typeof form; categoria: string; subtipo: string; moneda: string; criptoNombre: string }
+  const draftState: DraftShape = { form, categoria, subtipo, moneda, criptoNombre }
+  const { hasDraft, restoreDraft, clearDraft, draftSavedAt } = useFormDraft<DraftShape>(
+    'nuevo-tramite', draftState,
+    s => { setForm(s.form); setCategoria(s.categoria); setSubtipo(s.subtipo); setMoneda(s.moneda); setCriptoNombre(s.criptoNombre) },
+  )
+
+  // Cálculo en vivo UIF
+  const monto = parseMonto(form.monto)
+  const efectivo = parseMonto(form.monto_efectivo)
   const umbralEfectivo = smvm * 750
   const umbralCompraventa = smvm * 700
 
@@ -130,14 +287,30 @@ export default function NuevoTramitePage() {
 
   const clienteSeleccionado = clientes.find(c => c.id === form.cliente_id)
 
+  // El tipo final que se guarda en DB es el subtipo elegido
+  const tipoFinal = subtipo || categoria
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.cliente_id) { toast.error('Tenés que seleccionar un cliente.'); return }
-    if (!form.tipo) { toast.error('Indicá el tipo de trámite.'); return }
+    if (!tipoFinal) { toast.error('Indicá el tipo de operación.'); return }
     setSaving(true)
 
+    // Calcular monto en ARS si la moneda es extranjera
+    let montoARS = parseMonto(form.monto)
+    const montoExt = parseMonto(form.monto_moneda_extranjera)
+    const tc = parseMonto(form.tipo_cambio)
+    if (moneda !== 'ARS' && montoExt > 0 && tc > 0) {
+      montoARS = montoExt * tc
+    }
+
+    // Determinar moneda_extranjera y nombre
+    let monedaExtNombre = ''
+    if (moneda === 'CRYPTO') monedaExtNombre = criptoNombre || 'Cripto'
+    else if (moneda !== 'ARS') monedaExtNombre = moneda
+
     const payload = {
-      tipo: form.tipo,
+      tipo: tipoFinal,
       tipo_acto: form.tipo_acto || null,
       cliente_id: form.cliente_id,
       escribano_id: form.escribano_id || null,
@@ -148,14 +321,14 @@ export default function NuevoTramitePage() {
       folio_protocolo: form.folio_protocolo || null,
       registro_notarial: form.registro_notarial || null,
       fecha_escritura: form.fecha_escritura || null,
-      monto: form.monto ? Number(form.monto) : null,
-      monto_efectivo: form.monto_efectivo ? Number(form.monto_efectivo) : 0,
-      monto_moneda_extranjera: form.monto_moneda_extranjera ? Number(form.monto_moneda_extranjera) : null,
-      moneda_extranjera: form.moneda_extranjera || null,
-      tipo_cambio: form.tipo_cambio ? Number(form.tipo_cambio) : null,
+      monto: montoARS || null,
+      monto_efectivo: efectivo || 0,
+      monto_moneda_extranjera: moneda !== 'ARS' ? (montoExt || null) : null,
+      moneda_extranjera: monedaExtNombre || null,
+      tipo_cambio: tc || null,
       forma_pago: form.forma_pago || null,
       origen_fondos: form.origen_fondos || null,
-      estado: 'iniciado',
+      estado: form.estado_inicial,
       cumplimiento_dd: 'pendiente',
     }
 
@@ -167,59 +340,31 @@ export default function NuevoTramitePage() {
 
     if (error || !tramite) {
       console.error(error)
-      toast.error('Error al crear el trámite.')
+      toast.error('Error al crear la operación.')
       setSaving(false)
       return
     }
 
-    // Hito inicial
     await supabase.from('tramite_hitos').insert({
       tramite_id: tramite.id,
-      descripcion: 'Trámite iniciado',
+      descripcion: `Operación creada en estado: ${ESTADOS_OPERACION.find(e => e.v === form.estado_inicial)?.label ?? form.estado_inicial}`,
     })
 
-    // Crear alertas UIF según condiciones
     type AlertaInsert = { tramite_id: string; tipo?: string; tipo_alerta?: string; descripcion: string }
     const alertas: AlertaInsert[] = []
-    const t = tramite as { id: string; dispara_uif: boolean; monto_efectivo?: number; monto?: number }
+    const t = tramite as { id: string; dispara_uif: boolean }
     if (t.dispara_uif) {
-      if (disparaPorEfectivo) {
-        alertas.push({
-          tramite_id: t.id, tipo: 'monto', tipo_alerta: 'monto_excedido',
-          descripcion: `Pago en efectivo $${efectivo.toLocaleString('es-AR')} supera 750 SMVM (${umbralEfectivo.toLocaleString('es-AR')})`,
-        })
-      }
-      if (disparaPorCompraventa) {
-        alertas.push({
-          tramite_id: t.id, tipo: 'monto', tipo_alerta: 'monto_excedido',
-          descripcion: `Compraventa $${monto.toLocaleString('es-AR')} supera 700 SMVM (sujeción UIF)`,
-        })
-      }
-      if (disparaPorTipo) {
-        alertas.push({
-          tramite_id: t.id, tipo: 'otro', tipo_alerta: 'monto_excedido',
-          descripcion: `Acto "${LABEL_TIPO_ACTO[form.tipo_acto as TipoActo]}" requiere UIF sin mínimo`,
-        })
-      }
+      if (disparaPorEfectivo) alertas.push({ tramite_id: t.id, tipo: 'monto', tipo_alerta: 'monto_excedido', descripcion: `Pago en efectivo $${efectivo.toLocaleString('es-AR')} supera 750 SMVM` })
+      if (disparaPorCompraventa) alertas.push({ tramite_id: t.id, tipo: 'monto', tipo_alerta: 'monto_excedido', descripcion: `Compraventa $${monto.toLocaleString('es-AR')} supera 700 SMVM` })
+      if (disparaPorTipo) alertas.push({ tramite_id: t.id, tipo: 'otro', tipo_alerta: 'monto_excedido', descripcion: `Acto "${LABEL_TIPO_ACTO[form.tipo_acto as TipoActo]}" requiere UIF sin mínimo` })
     }
-    if (clienteSeleccionado?.es_pep) {
-      alertas.push({
-        tramite_id: t.id, tipo: 'pep', tipo_alerta: 'pep_detectado',
-        descripcion: 'Cliente PEP — debida diligencia reforzada',
-      })
-    }
-    if (clienteSeleccionado?.es_sujeto_obligado) {
-      alertas.push({
-        tramite_id: t.id, tipo: 'sujeto_obligado', tipo_alerta: 'sujeto_obligado',
-        descripcion: 'Cliente es Sujeto Obligado UIF',
-      })
-    }
-    if (alertas.length > 0) {
-      await supabase.from('alertas_uif').insert(alertas)
-    }
+    if (clienteSeleccionado?.es_pep) alertas.push({ tramite_id: t.id, tipo: 'pep', tipo_alerta: 'pep_detectado', descripcion: 'Cliente PEP — debida diligencia reforzada' })
+    if (clienteSeleccionado?.es_sujeto_obligado) alertas.push({ tramite_id: t.id, tipo: 'sujeto_obligado', tipo_alerta: 'sujeto_obligado', descripcion: 'Cliente es Sujeto Obligado UIF' })
+    if (alertas.length > 0) await supabase.from('alertas_uif').insert(alertas)
 
     setSaving(false)
-    toast.success(t.dispara_uif ? 'Trámite creado · Dispara UIF' : 'Trámite creado.')
+    clearDraft()
+    toast.success(t.dispara_uif ? 'Operación creada · Dispara UIF' : 'Operación creada.')
     router.push(`/crm/tramites/${tramite.id}`)
   }
 
@@ -228,45 +373,78 @@ export default function NuevoTramitePage() {
       <div className="mb-6">
         <Link href="/crm/tramites">
           <Button variant="ghost" size="sm" className="gap-1.5 text-zinc-400 -ml-2 mb-4">
-            <ArrowLeft size={14} />Trámites
+            <ArrowLeft size={14} />Operaciones
           </Button>
         </Link>
-        <h1 className="text-2xl font-semibold text-white mb-1">Nuevo trámite</h1>
+        <h1 className="text-2xl font-semibold text-white mb-1">Nueva operación</h1>
         <p className="text-zinc-500 text-sm">
-          El sistema calcula automáticamente si el trámite dispara obligación UIF según el tipo de acto y los montos.
+          El sistema calcula automáticamente si la operación dispara obligación UIF según el tipo de acto y los montos.
         </p>
       </div>
+
+      <DraftBanner
+        hasDraft={hasDraft}
+        draftSavedAt={draftSavedAt}
+        onRestore={restoreDraft}
+        onDiscard={clearDraft}
+      />
 
       <form onSubmit={handleSubmit} className="space-y-5 max-w-3xl">
         {/* IDENTIFICACIÓN */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
             <CardTitle className="text-sm text-zinc-300 flex items-center gap-2">
-              <FileText size={14} className="text-lime-400" />Identificación del trámite
+              <FileText size={14} className="text-lime-400" />Identificación de la operación
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+
+            {/* Dos desplegables de tipo de trámite */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-zinc-300">Tipo de trámite <span className="text-lime-400">*</span></Label>
-                <Input value={form.tipo} onChange={e => set('tipo', e.target.value)}
-                  placeholder="Ej: Escritura compraventa, Poder general..." className={inputCls} />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-zinc-300">Tipo de acto UIF</Label>
-                <Select value={form.tipo_acto} onValueChange={v => set('tipo_acto', v as TipoActo)}>
+                <Label className="text-zinc-300">Categoría <span className="text-lime-400">*</span></Label>
+                <Select value={categoria} onValueChange={v => { setCategoria(v); setSubtipo('') }}>
                   <SelectTrigger className={selectTriggerCls}>
-                    <SelectValue placeholder="Seleccioná (define obligación UIF)" />
+                    <SelectValue placeholder="Seleccioná categoría" />
                   </SelectTrigger>
                   <SelectContent className={selectContentCls}>
-                    {TIPOS_ACTO_LIST.map(t => (
-                      <SelectItem key={t} value={t} className={selectItemCls}>{LABEL_TIPO_ACTO[t]}</SelectItem>
+                    {CATEGORIAS_TRAMITE.map(c => (
+                      <SelectItem key={c.label} value={c.label} className={selectItemCls}>{c.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-zinc-300">Tipo de operación <span className="text-lime-400">*</span></Label>
+                <Select value={subtipo} onValueChange={setSubtipo} disabled={!categoria}>
+                  <SelectTrigger className={selectTriggerCls}>
+                    <SelectValue placeholder={categoria ? 'Seleccioná tipo' : '— elegí categoría primero —'} />
+                  </SelectTrigger>
+                  <SelectContent className={selectContentCls}>
+                    {subtiposActuales.map(s => (
+                      <SelectItem key={s} value={s} className={selectItemCls}>{s}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
+            {/* Tipo de acto UIF */}
+            <div className="space-y-1.5">
+              <Label className="text-zinc-300">Tipo de acto UIF</Label>
+              <Select value={form.tipo_acto} onValueChange={v => set('tipo_acto', v as TipoActo)}>
+                <SelectTrigger className={selectTriggerCls}>
+                  <SelectValue placeholder="Seleccioná (define obligación UIF)" />
+                </SelectTrigger>
+                <SelectContent className={selectContentCls}>
+                  {TIPOS_ACTO_LIST.map(t => (
+                    <SelectItem key={t} value={t} className={selectItemCls}>{LABEL_TIPO_ACTO[t]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Cliente y Escribano */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-zinc-300">Cliente <span className="text-lime-400">*</span></Label>
@@ -297,7 +475,9 @@ export default function NuevoTramitePage() {
               <div className="space-y-1.5">
                 <Label className="text-zinc-300">Escribano/a asignado</Label>
                 <Select value={form.escribano_id} onValueChange={v => set('escribano_id', v)}>
-                  <SelectTrigger className={selectTriggerCls}><SelectValue placeholder="Sin asignar" /></SelectTrigger>
+                  <SelectTrigger className={selectTriggerCls}>
+                    <SelectValue placeholder={escribanos.length === 0 ? 'Sin escribanos en esta escribanía' : 'Sin asignar'} />
+                  </SelectTrigger>
                   <SelectContent className={selectContentCls}>
                     {escribanos.map(e => (
                       <SelectItem key={e.id} value={e.id} className={selectItemCls}>
@@ -306,15 +486,16 @@ export default function NuevoTramitePage() {
                     ))}
                   </SelectContent>
                 </Select>
+                {escribanos.length === 1 && (
+                  <p className="text-xs text-lime-400 mt-1">Auto-seleccionado (único escribano)</p>
+                )}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className="text-zinc-300">Número de referencia interno</Label>
-                <Input value={form.numero_referencia} onChange={e => set('numero_referencia', e.target.value)}
-                  placeholder="Ej: 2024-001" className={inputCls} />
-              </div>
+            <div className="space-y-1.5">
+              <Label className="text-zinc-300">Número de referencia interno</Label>
+              <Input value={form.numero_referencia} onChange={e => set('numero_referencia', e.target.value)}
+                placeholder="Ej: 2024-001" className={inputCls} />
             </div>
 
             <div className="space-y-1.5">
@@ -323,7 +504,7 @@ export default function NuevoTramitePage() {
                 <MicButton value={form.descripcion} onChange={v => set('descripcion', v)} />
               </div>
               <Textarea value={form.descripcion} onChange={e => set('descripcion', e.target.value)}
-                placeholder="Descripción breve del trámite..." rows={2}
+                placeholder="Descripción breve de la operación..." rows={2}
                 className={inputCls + ' resize-none'} />
             </div>
           </CardContent>
@@ -359,38 +540,81 @@ export default function NuevoTramitePage() {
           </CardContent>
         </Card>
 
-        {/* PAGOS Y MONTOS */}
+        {/* MONTOS Y PAGOS */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
             <CardTitle className="text-sm text-zinc-300 flex items-center gap-2">
               <Coins size={14} className="text-lime-400" />Montos y forma de pago
             </CardTitle>
             <p className="text-xs text-zinc-500">
-              SMVM vigente: ${smvm.toLocaleString('es-AR')} · Umbral 750 SMVM (efectivo): ${umbralEfectivo.toLocaleString('es-AR')}
+              SMVM vigente: ${smvm.toLocaleString('es-AR')} · Umbral 750 SMVM (efectivo): ${(smvm * 750).toLocaleString('es-AR')}
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className="text-zinc-300">Monto total operación (ARS)</Label>
-                <Input type="number" value={form.monto} onChange={e => set('monto', e.target.value)}
-                  placeholder="0" className={inputCls} />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-zinc-300">
-                  Importe en efectivo (ARS)
-                  {efectivo > 0 && efectivo >= umbralEfectivo && (
-                    <span className="ml-2 text-xs text-red-400 font-medium">⚠ supera 750 SMVM</span>
-                  )}
-                </Label>
-                <Input type="number" value={form.monto_efectivo} onChange={e => set('monto_efectivo', e.target.value)}
-                  placeholder="0" className={inputCls} />
-              </div>
+
+            {/* Selector de moneda */}
+            <div className="space-y-1.5">
+              <Label className="text-zinc-300">Moneda de la operación</Label>
+              <Select value={moneda} onValueChange={setMoneda}>
+                <SelectTrigger className={selectTriggerCls}><SelectValue /></SelectTrigger>
+                <SelectContent className={selectContentCls}>
+                  {MONEDAS.map(m => (
+                    <SelectItem key={m.v} value={m.v} className={selectItemCls}>{m.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Si crypto, especificar cuál */}
+            {moneda === 'CRYPTO' && (
               <div className="space-y-1.5">
-                <Label className="text-zinc-300">Forma de pago general</Label>
+                <Label className="text-zinc-300">Tipo de criptomoneda</Label>
+                <Input value={criptoNombre} onChange={e => setCriptoNombre(e.target.value)}
+                  placeholder="Ej: Bitcoin, Ethereum, USDT..." className={inputCls} />
+              </div>
+            )}
+
+            {moneda === 'ARS' ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <MontoInput
+                  label="Monto total operación (ARS)"
+                  value={form.monto}
+                  onChange={v => set('monto', v)}
+                />
+                <MontoInput
+                  label={`Importe en efectivo (ARS)${efectivo > 0 && efectivo >= smvm * 750 ? ' ⚠ supera 750 SMVM' : ''}`}
+                  value={form.monto_efectivo}
+                  onChange={v => set('monto_efectivo', v)}
+                />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <MontoInput
+                  label={`Monto en ${moneda === 'CRYPTO' ? (criptoNombre || 'Cripto') : moneda}`}
+                  value={form.monto_moneda_extranjera}
+                  onChange={v => set('monto_moneda_extranjera', v)}
+                />
+                <MontoInput
+                  label="Tipo de cambio (1 unidad = ARS)"
+                  value={form.tipo_cambio}
+                  onChange={v => set('tipo_cambio', v)}
+                />
+                <div className="space-y-1.5">
+                  <Label className="text-zinc-300">Equivalente en ARS</Label>
+                  <Input
+                    readOnly
+                    value={parseMonto(form.monto_moneda_extranjera) > 0 && parseMonto(form.tipo_cambio) > 0
+                      ? formatMonto(parseMonto(form.monto_moneda_extranjera) * parseMonto(form.tipo_cambio))
+                      : '—'}
+                    className={inputCls + ' opacity-60 cursor-not-allowed'}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-zinc-300">Forma de pago</Label>
                 <Select value={form.forma_pago} onValueChange={v => set('forma_pago', v as FormaPago)}>
                   <SelectTrigger className={selectTriggerCls}><SelectValue placeholder="—" /></SelectTrigger>
                   <SelectContent className={selectContentCls}>
@@ -400,25 +624,7 @@ export default function NuevoTramitePage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-zinc-300">Moneda extranjera</Label>
-                <Input value={form.moneda_extranjera} onChange={e => set('moneda_extranjera', e.target.value)}
-                  placeholder="USD, EUR..." className={inputCls} />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-zinc-300">Tipo de cambio</Label>
-                <Input type="number" step="0.01" value={form.tipo_cambio} onChange={e => set('tipo_cambio', e.target.value)}
-                  placeholder="1000.00" className={inputCls} />
-              </div>
             </div>
-
-            {form.moneda_extranjera && (
-              <div className="space-y-1.5">
-                <Label className="text-zinc-300">Monto en moneda extranjera</Label>
-                <Input type="number" value={form.monto_moneda_extranjera}
-                  onChange={e => set('monto_moneda_extranjera', e.target.value)} className={inputCls} />
-              </div>
-            )}
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
@@ -429,7 +635,7 @@ export default function NuevoTramitePage() {
                 placeholder="Ej: venta de inmueble anterior, ahorros, herencia, préstamo bancario..." rows={2}
                 className={inputCls + ' resize-none'} />
               <p className="text-xs text-zinc-500">
-                Res. UIF 78/2025: la documentación de respaldo se carga después en la ficha del trámite.
+                Res. UIF 78/2025: la documentación de respaldo se carga en la ficha de la operación.
               </p>
             </div>
           </CardContent>
@@ -444,27 +650,13 @@ export default function NuevoTramitePage() {
                 : <CheckCircle2 size={20} className="text-green-400 shrink-0 mt-0.5" />}
               <div>
                 <p className={`text-sm font-semibold ${disparaUIF ? 'text-red-300' : 'text-green-300'}`}>
-                  {disparaUIF ? 'Este trámite dispara obligación UIF' : 'Este trámite no dispara obligación UIF'}
+                  {disparaUIF ? 'Esta operación dispara obligación UIF' : 'Esta operación no dispara obligación UIF'}
                 </p>
                 <ul className="mt-2 space-y-1 text-xs">
-                  {disparaPorTipo && (
-                    <li className="text-red-400/80">
-                      • {LABEL_TIPO_ACTO[form.tipo_acto as TipoActo]}: requiere UIF sin mínimo
-                    </li>
-                  )}
-                  {disparaPorEfectivo && (
-                    <li className="text-red-400/80">
-                      • Efectivo ${efectivo.toLocaleString('es-AR')} ≥ 750 SMVM (${umbralEfectivo.toLocaleString('es-AR')})
-                    </li>
-                  )}
-                  {disparaPorCompraventa && !disparaPorEfectivo && (
-                    <li className="text-red-400/80">
-                      • Compraventa total ${monto.toLocaleString('es-AR')} ≥ 700 SMVM (${umbralCompraventa.toLocaleString('es-AR')})
-                    </li>
-                  )}
-                  {!disparaUIF && form.tipo_acto && (
-                    <li className="text-green-400/80">• El sistema validará al guardar.</li>
-                  )}
+                  {disparaPorTipo && <li className="text-red-400/80">• {LABEL_TIPO_ACTO[form.tipo_acto as TipoActo]}: requiere UIF sin mínimo</li>}
+                  {disparaPorEfectivo && <li className="text-red-400/80">• Efectivo ${efectivo.toLocaleString('es-AR')} ≥ 750 SMVM (${(smvm * 750).toLocaleString('es-AR')})</li>}
+                  {disparaPorCompraventa && !disparaPorEfectivo && <li className="text-red-400/80">• Compraventa total ${monto.toLocaleString('es-AR')} ≥ 700 SMVM</li>}
+                  {!disparaUIF && form.tipo_acto && <li className="text-green-400/80">• El sistema validará al guardar.</li>}
                 </ul>
               </div>
             </CardContent>
@@ -479,20 +671,47 @@ export default function NuevoTramitePage() {
           </CardHeader>
           <CardContent>
             <Textarea value={form.notas_internas} onChange={e => set('notas_internas', e.target.value)}
-              placeholder="Notas visibles solo para el staff... (también podés dictar)"
+              placeholder="Notas visibles solo para el staff..."
               rows={2}
               className={inputCls + ' resize-none'} />
           </CardContent>
         </Card>
 
-        <div className="flex gap-3">
+        {/* ESTADO INICIAL */}
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardHeader>
+            <CardTitle className="text-sm text-zinc-300">Estado inicial de la operación</CardTitle>
+            <p className="text-xs text-zinc-500">Podés crearla directamente en el estado que corresponda (ej: si ya fue enviada al registro).</p>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {ESTADOS_OPERACION.map(e => (
+                <button
+                  key={e.v}
+                  type="button"
+                  onClick={() => set('estado_inicial', e.v)}
+                  className={`px-3 py-1.5 rounded-md text-sm border transition-all ${
+                    form.estado_inicial === e.v
+                      ? 'border-lime-400 bg-lime-400/10 text-lime-400'
+                      : 'border-zinc-700 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200'
+                  }`}
+                >
+                  {e.label}
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex gap-3 items-center">
           <Button type="submit" disabled={saving}
             className="bg-lime-400 text-black hover:bg-lime-300 font-semibold gap-2">
-            {saving && <Loader2 size={14} className="animate-spin" />}Crear trámite
+            {saving && <Loader2 size={14} className="animate-spin" />}Crear operación
           </Button>
           <Link href="/crm/tramites">
             <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">Cancelar</Button>
           </Link>
+          <DraftSavedIndicator savedAt={draftSavedAt} />
         </div>
       </form>
     </div>

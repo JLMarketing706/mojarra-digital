@@ -413,7 +413,7 @@ export default async function FichaClientePage({
             </h2>
             <Link href={`/crm/tramites/nuevo?cliente_id=${id}`}>
               <Button size="sm" className="bg-lime-400 text-black hover:bg-lime-300 font-medium gap-1.5 h-7 text-xs">
-                <FileText size={12} />Nuevo trámite
+                <FileText size={12} />Nueva operación
               </Button>
             </Link>
           </div>

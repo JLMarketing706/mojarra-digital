@@ -15,7 +15,7 @@ import { Loader2, Upload, FileText } from 'lucide-react'
 import { estadoTramiteLabel } from '@/lib/utils'
 import type { Profile } from '@/types'
 
-const ESTADOS = ['iniciado', 'en_proceso', 'en_registro', 'listo', 'entregado']
+const ESTADOS = ['iniciado', 'en_proceso', 'en_registro', 'observado', 'listo', 'entregado']
 
 interface Props {
   tramiteId: string
@@ -33,14 +33,29 @@ export function TramiteAcciones({ tramiteId, estadoActual, profiles }: Props) {
   const [subiendo, setSubiendo] = useState(false)
   const [guardandoEstado, setGuardandoEstado] = useState(false)
   const [visibleCliente, setVisibleCliente] = useState(false)
+  const [fechaLimiteObs, setFechaLimiteObs] = useState('')
+  const [obsTexto, setObsTexto] = useState('')
 
   async function actualizarEstado() {
     if (nuevoEstado === estadoActual) return
+    if (nuevoEstado === 'observado' && !fechaLimiteObs) {
+      toast.error('Cargá la fecha límite del registro antes de confirmar.')
+      return
+    }
     setGuardandoEstado(true)
+
+    const updates: Record<string, unknown> = {
+      estado: nuevoEstado,
+      updated_at: new Date().toISOString(),
+    }
+    if (nuevoEstado === 'observado') {
+      updates.fecha_limite_observacion = fechaLimiteObs
+      if (obsTexto) updates.observacion_registro = obsTexto
+    }
 
     const { error } = await supabase
       .from('tramites')
-      .update({ estado: nuevoEstado, updated_at: new Date().toISOString() })
+      .update(updates)
       .eq('id', tramiteId)
 
     if (!error) {
@@ -146,6 +161,34 @@ export function TramiteAcciones({ tramiteId, estadoActual, profiles }: Props) {
               ))}
             </SelectContent>
           </Select>
+
+          {/* Si pasa a "Observado" → fecha límite + observación obligatoria */}
+          {nuevoEstado === 'observado' && nuevoEstado !== estadoActual && (
+            <div className="space-y-2 p-3 rounded-lg border border-orange-500/30 bg-orange-500/5">
+              <div>
+                <Label className="text-xs text-orange-300">Fecha límite del registro <span className="text-orange-400">*</span></Label>
+                <Input
+                  type="date"
+                  value={fechaLimiteObs}
+                  min={new Date().toISOString().split('T')[0]}
+                  onChange={e => setFechaLimiteObs(e.target.value)}
+                  className="bg-zinc-800 border-zinc-700 text-white text-sm h-8 mt-1"
+                />
+                <p className="text-xs text-zinc-500 mt-1">Aviso 15 días antes del vencimiento.</p>
+              </div>
+              <div>
+                <Label className="text-xs text-orange-300">Observación recibida (opcional)</Label>
+                <Textarea
+                  value={obsTexto}
+                  onChange={e => setObsTexto(e.target.value)}
+                  rows={2}
+                  placeholder="Falta firma del cónyuge..."
+                  className="bg-zinc-800 border-zinc-700 text-white text-sm resize-none mt-1"
+                />
+              </div>
+            </div>
+          )}
+
           <Button
             onClick={actualizarEstado}
             disabled={nuevoEstado === estadoActual || guardandoEstado}

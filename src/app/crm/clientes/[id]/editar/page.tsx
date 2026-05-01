@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,18 +12,13 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import {
-  Loader2, ArrowLeft, Upload, Scan, User, Building2,
+  Loader2, ArrowLeft, User, Building2,
   ShieldAlert, FileText, MapPin, Briefcase, Heart,
 } from 'lucide-react'
 import Link from 'next/link'
-import type { DatosDocumento } from '@/lib/claude/ocr'
-import { MicButton } from '@/components/crm/mic-button'
 import type { TipoPersona, TipoDocumento, Sexo, EstadoCivil, TipoPEP } from '@/types'
-import { useFormDraft } from '@/lib/use-form-draft'
-import { DraftBanner, DraftSavedIndicator } from '@/components/crm/draft-banner'
 
 const ESTADOS_CIVILES: { v: EstadoCivil; label: string }[] = [
   { v: 'soltero', label: 'Soltero/a' },
@@ -41,18 +36,12 @@ const PROVINCIAS_AR = [
 ]
 
 const NACIONALIDADES_COMUNES = [
-  { v: 'AR', label: 'Argentina' },
-  { v: 'UY', label: 'Uruguaya' },
-  { v: 'CL', label: 'Chilena' },
-  { v: 'BR', label: 'Brasileña' },
-  { v: 'BO', label: 'Boliviana' },
-  { v: 'PY', label: 'Paraguaya' },
-  { v: 'PE', label: 'Peruana' },
-  { v: 'CO', label: 'Colombiana' },
-  { v: 'VE', label: 'Venezolana' },
-  { v: 'ES', label: 'Española' },
-  { v: 'IT', label: 'Italiana' },
-  { v: 'OTRO', label: 'Otra' },
+  { v: 'AR', label: 'Argentina' }, { v: 'UY', label: 'Uruguaya' },
+  { v: 'CL', label: 'Chilena' }, { v: 'BR', label: 'Brasileña' },
+  { v: 'BO', label: 'Boliviana' }, { v: 'PY', label: 'Paraguaya' },
+  { v: 'PE', label: 'Peruana' }, { v: 'CO', label: 'Colombiana' },
+  { v: 'VE', label: 'Venezolana' }, { v: 'ES', label: 'Española' },
+  { v: 'IT', label: 'Italiana' }, { v: 'OTRO', label: 'Otra' },
 ]
 
 const TIPOS_JURIDICA = ['SA', 'SRL', 'SAS', 'SCS', 'SCA', 'Asoc.Civil', 'Fundación', 'Cooperativa', 'Mutual', 'Fideicomiso', 'Otra']
@@ -84,43 +73,101 @@ interface FormData {
   notas: string
 }
 
-const EMPTY: FormData = {
-  tipo_persona: 'humana',
-  nombre: '', apellido: '', tipo_documento: '', dni: '', cuil: '',
-  sexo: '', fecha_nacimiento: '', lugar_nacimiento: '', nacionalidad: 'AR',
-  estado_civil: '',
-  nombre_padre: '', nombre_madre: '',
-  conyuge_nombre: '', conyuge_dni: '', conyuge_es_pep: false,
-  dom_calle: '', dom_numero: '', dom_piso: '',
-  dom_localidad: '', dom_provincia: '', dom_codigo_postal: '', dom_pais: 'AR',
-  email: '', telefono: '',
-  profesion: '', empleador: '', ingreso_mensual: '', patrimonio_aprox: '',
-  es_pep: false, tipo_pep: '', cargo_pep: '', jurisdiccion_pep: '',
-  periodo_pep_desde: '', periodo_pep_hasta: '',
-  es_sujeto_obligado: false, uif_inscripcion_numero: '', uif_inscripcion_fecha: '',
-  notas: '',
-}
-
 const inputCls = 'bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-lime-400'
 const selectTriggerCls = 'bg-zinc-800 border-zinc-700 text-white focus:ring-lime-400'
 const selectContentCls = 'bg-zinc-900 border-zinc-700'
 const selectItemCls = 'text-zinc-200 focus:bg-zinc-800'
 
-export default function NuevoClientePage() {
+export default function EditarClientePage() {
   const router = useRouter()
+  const params = useParams()
+  const id = params.id as string
   const supabase = createClient()
-  const [form, setForm] = useState<FormData>(EMPTY)
+
+  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [procesandoOCR, setProcesandoOCR] = useState(false)
-  const [camposOCR, setCamposOCR] = useState<string[]>([])
+  const [form, setForm] = useState<FormData>({
+    tipo_persona: 'humana', nombre: '', apellido: '', tipo_documento: '', dni: '', cuil: '',
+    sexo: '', fecha_nacimiento: '', lugar_nacimiento: '', nacionalidad: 'AR', estado_civil: '',
+    nombre_padre: '', nombre_madre: '',
+    conyuge_nombre: '', conyuge_dni: '', conyuge_es_pep: false,
+    dom_calle: '', dom_numero: '', dom_piso: '', dom_localidad: '', dom_provincia: '',
+    dom_codigo_postal: '', dom_pais: 'AR', email: '', telefono: '',
+    profesion: '', empleador: '', ingreso_mensual: '', patrimonio_aprox: '',
+    es_pep: false, tipo_pep: '', cargo_pep: '', jurisdiccion_pep: '',
+    periodo_pep_desde: '', periodo_pep_hasta: '',
+    es_sujeto_obligado: false, uif_inscripcion_numero: '', uif_inscripcion_fecha: '',
+    notas: '',
+  })
+
+  useEffect(() => {
+    async function load() {
+      const { data, error } = await supabase.from('clientes').select('*').eq('id', id).single()
+      if (error || !data) { toast.error('Cliente no encontrado.'); return }
+      const c = data as Record<string, unknown>
+
+      // Padres: ahora desde columnas dedicadas; fallback al legacy embebido en notas
+      let notas = (c.notas as string) ?? ''
+      let nombre_padre = (c.nombre_padre as string) ?? ''
+      let nombre_madre = (c.nombre_madre as string) ?? ''
+      if (!nombre_padre && !nombre_madre) {
+        const padresMatch = notas.match(/\[Padres: Padre: ([^,]*), Madre: ([^\]]*)\]/)
+        if (padresMatch) {
+          nombre_padre = padresMatch[1].trim()
+          nombre_madre = padresMatch[2].trim()
+          notas = notas.replace(padresMatch[0], '').trim()
+        }
+      }
+
+      setForm({
+        tipo_persona: (c.tipo_persona as TipoPersona) ?? 'humana',
+        nombre: (c.nombre as string) ?? '',
+        apellido: (c.apellido as string) ?? '',
+        tipo_documento: (c.tipo_documento as TipoDocumento) ?? '',
+        dni: (c.dni as string) ?? '',
+        cuil: (c.cuil as string) ?? '',
+        sexo: (c.sexo as Sexo) ?? '',
+        fecha_nacimiento: (c.fecha_nacimiento as string) ?? '',
+        lugar_nacimiento: (c.lugar_nacimiento as string) ?? '',
+        nacionalidad: (c.nacionalidad as string) ?? 'AR',
+        estado_civil: (c.estado_civil as string) ?? '',
+        nombre_padre,
+        nombre_madre,
+        conyuge_nombre: (c.conyuge_nombre as string) ?? '',
+        conyuge_dni: (c.conyuge_dni as string) ?? '',
+        conyuge_es_pep: (c.conyuge_es_pep as boolean) ?? false,
+        dom_calle: (c.dom_calle as string) ?? '',
+        dom_numero: (c.dom_numero as string) ?? '',
+        dom_piso: (c.dom_piso as string) ?? '',
+        dom_localidad: (c.dom_localidad as string) ?? '',
+        dom_provincia: (c.dom_provincia as string) ?? '',
+        dom_codigo_postal: (c.dom_codigo_postal as string) ?? '',
+        dom_pais: (c.dom_pais as string) ?? 'AR',
+        email: (c.email as string) ?? '',
+        telefono: (c.telefono as string) ?? '',
+        profesion: (c.profesion as string) ?? '',
+        empleador: (c.empleador as string) ?? '',
+        ingreso_mensual: c.ingreso_mensual ? String(c.ingreso_mensual) : '',
+        patrimonio_aprox: c.patrimonio_aprox ? String(c.patrimonio_aprox) : '',
+        es_pep: (c.es_pep as boolean) ?? false,
+        tipo_pep: (c.tipo_pep as TipoPEP) ?? '',
+        cargo_pep: (c.cargo_pep as string) ?? '',
+        jurisdiccion_pep: (c.jurisdiccion_pep as string) ?? '',
+        periodo_pep_desde: (c.periodo_pep_desde as string) ?? '',
+        periodo_pep_hasta: (c.periodo_pep_hasta as string) ?? '',
+        es_sujeto_obligado: (c.es_sujeto_obligado as boolean) ?? false,
+        uif_inscripcion_numero: (c.uif_inscripcion_numero as string) ?? '',
+        uif_inscripcion_fecha: (c.uif_inscripcion_fecha as string) ?? '',
+        notas,
+      })
+      setLoading(false)
+    }
+    load()
+  }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function set<K extends keyof FormData>(key: K, value: FormData[K]) {
     setForm(p => ({ ...p, [key]: value }))
   }
-
-  const { hasDraft, restoreDraft, clearDraft, draftSavedAt } = useFormDraft<FormData>(
-    'nuevo-cliente', form, setForm,
-  )
 
   const esJuridica = form.tipo_persona !== 'humana'
   const requiereConyuge = !esJuridica && (form.estado_civil === 'casado' || form.estado_civil === 'union_convivencial')
@@ -131,61 +178,12 @@ export default function NuevoClientePage() {
     ? Math.floor((Date.now() - new Date(form.fecha_nacimiento).getTime()) / (365.25 * 24 * 3600 * 1000))
     : null
 
-  const [archivoFrente, setArchivoFrente] = useState<File | null>(null)
-  const [archivoDorso, setArchivoDorso] = useState<File | null>(null)
-
-  async function ejecutarOCR() {
-    if (!archivoFrente) { toast.error('Subí al menos la foto del frente.'); return }
-    setProcesandoOCR(true)
-    try {
-      const fd = new FormData()
-      fd.append('frente', archivoFrente)
-      if (archivoDorso) fd.append('dorso', archivoDorso)
-      const res = await fetch('/api/ocr', { method: 'POST', body: fd })
-      const json = (await res.json()) as { datos?: DatosDocumento; error?: string }
-      if (!res.ok || !json.datos) { toast.error(json.error ?? 'Error en OCR.'); return }
-      const d = json.datos
-      const completados: string[] = []
-      const parseFecha = (v?: string): string | null => {
-        if (!v) return null
-        const m = v.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/)
-        if (!m) return null
-        const [, dd, mm, yyyy] = m
-        const year = yyyy.length === 2 ? `20${yyyy}` : yyyy
-        return `${year}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`
-      }
-      setForm(prev => {
-        const next = { ...prev }
-        if (d.nombre) { next.nombre = d.nombre; completados.push('nombre') }
-        if (d.apellido) { next.apellido = d.apellido; completados.push('apellido') }
-        if (d.dni) { next.dni = d.dni; completados.push('dni'); next.tipo_documento = 'DNI' }
-        if (d.cuil) { next.cuil = d.cuil; completados.push('cuil') }
-        if (d.sexo && ['F', 'M', 'X'].includes(d.sexo)) { next.sexo = d.sexo; completados.push('sexo') }
-        const fecha = parseFecha(d.fecha_nacimiento)
-        if (fecha) { next.fecha_nacimiento = fecha; completados.push('fecha_nacimiento') }
-        if (d.nacionalidad) {
-          const v = d.nacionalidad.trim()
-          const match = NACIONALIDADES_COMUNES.find(
-            n => n.v.toUpperCase() === v.toUpperCase() || n.label.toLowerCase() === v.toLowerCase()
-          )
-          if (match) { next.nacionalidad = match.v; completados.push('nacionalidad') }
-        }
-        if (d.domicilio) { next.dom_calle = d.domicilio; completados.push('dom_calle') }
-        return next
-      })
-      setCamposOCR(completados)
-      toast.success(`${completados.length} campos completados con IA.`)
-    } catch {
-      toast.error('Error al procesar el documento.')
-    } finally {
-      setProcesandoOCR(false)
-    }
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.nombre || !form.apellido) { toast.error('Nombre y apellido son obligatorios.'); return }
-    if (form.es_pep && !form.tipo_pep) { toast.error('Si es PEP, indicá el tipo.'); return }
+    if (!form.nombre || !form.apellido) {
+      toast.error('Nombre y apellido son obligatorios.')
+      return
+    }
     setSaving(true)
 
     const notasFinal = form.notas || ''
@@ -210,7 +208,7 @@ export default function NuevoClientePage() {
       dom_codigo_postal: form.dom_codigo_postal || null,
       dom_pais: form.dom_pais || 'AR',
       email: form.email || null, telefono: form.telefono || null,
-      profesion: form.profesion || null, empleador: esJuridica ? null : (form.empleador || null),
+      profesion: form.profesion || null, empleador: form.empleador || null,
       ingreso_mensual: form.ingreso_mensual ? Number(form.ingreso_mensual) : null,
       patrimonio_aprox: form.patrimonio_aprox ? Number(form.patrimonio_aprox) : null,
       es_pep: form.es_pep,
@@ -227,84 +225,37 @@ export default function NuevoClientePage() {
       notas: notasFinal || null,
     }
 
-    const { data, error } = await supabase.from('clientes').insert(payload).select().single()
-
-    if (error) {
-      setSaving(false)
-      console.error(error)
-      toast.error('Error al guardar el cliente.')
-      return
-    }
-
-    const archivosDNI: Array<{ file: File; subcategoria: string }> = []
-    if (archivoFrente) archivosDNI.push({ file: archivoFrente, subcategoria: 'dni_frente' })
-    if (archivoDorso) archivosDNI.push({ file: archivoDorso, subcategoria: 'dni_dorso' })
-
-    if (archivosDNI.length > 0) {
-      for (const { file, subcategoria } of archivosDNI) {
-        const ext = file.name.split('.').pop() ?? 'jpg'
-        const path = `clientes/${data.id}/${Date.now()}-${subcategoria}.${ext}`
-        const { data: up, error: upErr } = await supabase.storage
-          .from('documentos-privados')
-          .upload(path, file)
-        if (upErr || !up) continue
-        await supabase.from('documentos').insert({
-          cliente_id: data.id,
-          nombre: file.name,
-          tipo: file.type === 'application/pdf' ? 'pdf' : 'imagen',
-          url: '',
-          storage_path: up.path,
-          mime_type: file.type,
-          tamano_bytes: file.size,
-          categoria: 'identificacion',
-          subcategoria,
-          visible_cliente: false,
-        })
-      }
-    }
+    const { error } = await supabase.from('clientes').update(payload).eq('id', id)
 
     setSaving(false)
-    clearDraft()
-    const niv = (data as { nivel_riesgo?: string }).nivel_riesgo
-    if (niv === 'alto') {
-      toast.warning('Cliente creado · Riesgo ALTO. Adjuntá la documentación de respaldo.')
-    } else {
-      toast.success(`Cliente creado · Riesgo ${niv ?? 'bajo'}.`)
+    if (error) {
+      toast.error('Error al guardar los cambios.')
+      return
     }
-
-    const requiereDocs = ['casado', 'divorciado', 'viudo', 'union_convivencial'].includes(form.estado_civil)
-    router.push(`/crm/clientes/${data.id}${requiereDocs ? '#legajo' : ''}`)
+    toast.success('Cambios guardados.')
+    router.push(`/crm/clientes/${id}`)
   }
 
-  const ocrBadge = (campo: string) =>
-    camposOCR.includes(campo) && (
-      <Badge className="bg-lime-400/10 text-lime-400 border-0 text-xs px-1.5 py-0 ml-2">
-        <Scan size={10} className="mr-1" />IA
-      </Badge>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-48">
+        <Loader2 size={24} className="animate-spin text-lime-400" />
+      </div>
     )
+  }
 
   return (
     <div className="max-w-5xl mx-auto">
       <div className="mb-6">
-        <Link href="/crm/clientes">
+        <Link href={`/crm/clientes/${id}`}>
           <Button variant="ghost" size="sm" className="gap-1.5 text-zinc-400 -ml-2 mb-4">
-            <ArrowLeft size={14} />Clientes
+            <ArrowLeft size={14} />Volver a la ficha
           </Button>
         </Link>
-        <h1 className="text-2xl font-semibold text-white mb-1">Nuevo cliente</h1>
-        <p className="text-zinc-500 text-sm">
-          Los datos marcados con <span className="text-lime-400 font-medium">*</span> son obligatorios según Res. UIF 242/2023.
-        </p>
+        <h1 className="text-2xl font-semibold text-white mb-1">Editar cliente</h1>
       </div>
 
-      <DraftBanner
-        hasDraft={hasDraft}
-        draftSavedAt={draftSavedAt}
-        onRestore={restoreDraft}
-        onDiscard={clearDraft}
-      />
-
-      {/* Selector tipo de persona */}
+      {/* Tipo de persona */}
       <Card className="bg-zinc-900 border-zinc-800 mb-6">
         <CardContent className="p-4">
           <Label className="text-zinc-300 text-sm mb-3 block">Tipo de cliente</Label>
@@ -329,43 +280,6 @@ export default function NuevoClientePage() {
         </CardContent>
       </Card>
 
-      {/* OCR — solo para personas humanas */}
-      {form.tipo_persona === 'humana' && (
-        <Card className="bg-zinc-900 border-zinc-800 mb-6">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2 mb-2">
-              <Scan size={14} className="text-lime-400" />
-              <p className="text-zinc-200 text-xs font-medium">Escanear DNI con IA</p>
-              <span className="text-zinc-500 text-xs">— frente {archivoDorso ? '+ dorso' : '(+ dorso opcional)'}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="flex-1 cursor-pointer">
-                <div className={`px-2.5 py-1.5 rounded text-xs text-center truncate transition-colors ${
-                  archivoFrente ? 'bg-lime-400/10 border border-lime-400/40 text-lime-300' : 'bg-zinc-800 border border-zinc-700 text-zinc-400 hover:border-zinc-600'
-                }`}>
-                  {archivoFrente ? `✓ ${archivoFrente.name}` : 'Frente *'}
-                </div>
-                <input type="file" accept="image/*,application/pdf" className="hidden"
-                  disabled={procesandoOCR} onChange={e => setArchivoFrente(e.target.files?.[0] ?? null)} />
-              </label>
-              <label className="flex-1 cursor-pointer">
-                <div className={`px-2.5 py-1.5 rounded text-xs text-center truncate transition-colors ${
-                  archivoDorso ? 'bg-lime-400/10 border border-lime-400/40 text-lime-300' : 'bg-zinc-800 border border-zinc-700 text-zinc-400 hover:border-zinc-600'
-                }`}>
-                  {archivoDorso ? `✓ ${archivoDorso.name}` : 'Dorso'}
-                </div>
-                <input type="file" accept="image/*,application/pdf" className="hidden"
-                  disabled={procesandoOCR} onChange={e => setArchivoDorso(e.target.files?.[0] ?? null)} />
-              </label>
-              <Button type="button" onClick={ejecutarOCR} disabled={!archivoFrente || procesandoOCR}
-                className="bg-lime-400 text-black hover:bg-lime-300 disabled:opacity-100 disabled:bg-lime-400/40 disabled:text-black/60 font-semibold h-8 px-3 text-xs gap-1 shrink-0">
-                {procesandoOCR ? <Loader2 size={12} className="animate-spin" /> : <><Scan size={12} />Escanear</>}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* IDENTIFICACIÓN */}
         <Card className="bg-zinc-900 border-zinc-800">
@@ -378,21 +292,18 @@ export default function NuevoClientePage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-zinc-300 flex items-center">
-                  {esJuridica ? 'Denominación o razón social' : 'Nombre'} <span className="text-lime-400 ml-1">*</span>
-                  {!esJuridica && ocrBadge('nombre')}
+                <Label className="text-zinc-300">
+                  {esJuridica ? 'Denominación o razón social' : 'Nombre'} <span className="text-lime-400">*</span>
                 </Label>
-                <Input value={form.nombre} onChange={e => set('nombre', e.target.value)} required className={inputCls}
-                  placeholder={esJuridica ? 'Ej: ACME S.A.' : ''} />
+                <Input value={form.nombre} onChange={e => set('nombre', e.target.value)} required className={inputCls} />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-zinc-300 flex items-center">
-                  {esJuridica ? 'Tipo (SA, SRL, SAS…)' : 'Apellido'} <span className="text-lime-400 ml-1">*</span>
-                  {!esJuridica && ocrBadge('apellido')}
+                <Label className="text-zinc-300">
+                  {esJuridica ? 'Tipo (SA, SRL, SAS…)' : 'Apellido'} <span className="text-lime-400">*</span>
                 </Label>
                 {esJuridica ? (
                   <Select value={form.apellido} onValueChange={v => set('apellido', v)}>
-                    <SelectTrigger className={selectTriggerCls}><SelectValue placeholder="Seleccioná tipo" /></SelectTrigger>
+                    <SelectTrigger className={selectTriggerCls}><SelectValue placeholder="Seleccioná" /></SelectTrigger>
                     <SelectContent className={selectContentCls}>
                       {TIPOS_JURIDICA.map(t => <SelectItem key={t} value={t} className={selectItemCls}>{t}</SelectItem>)}
                     </SelectContent>
@@ -404,26 +315,17 @@ export default function NuevoClientePage() {
             </div>
 
             {esJuridica ? (
-              // Campos para persona jurídica
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-zinc-300 uppercase text-xs">CUIT</Label>
-                    <Input value={form.cuil} onChange={e => set('cuil', e.target.value)} placeholder="30-12345678-9" className={inputCls} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-zinc-300">Fecha de inscripción</Label>
-                    <Input type="date" value={form.fecha_nacimiento} onChange={e => set('fecha_nacimiento', e.target.value)} className={inputCls} />
-                  </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-zinc-300 uppercase text-xs">CUIT</Label>
+                  <Input value={form.cuil} onChange={e => set('cuil', e.target.value)} placeholder="30-12345678-9" className={inputCls} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-zinc-300">Inscripto en</Label>
-                  <Input value={form.nacionalidad} onChange={e => set('nacionalidad', e.target.value)}
-                    placeholder="Ej: Inspección General de Justicia (IGJ), Registro Público de Comercio..." className={inputCls} />
+                  <Label className="text-zinc-300">Fecha de inscripción</Label>
+                  <Input type="date" value={form.fecha_nacimiento} onChange={e => set('fecha_nacimiento', e.target.value)} className={inputCls} />
                 </div>
-              </>
+              </div>
             ) : (
-              // Campos para persona humana
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-1.5">
@@ -438,17 +340,17 @@ export default function NuevoClientePage() {
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-zinc-300 uppercase text-xs flex items-center">N° documento{ocrBadge('dni')}</Label>
+                    <Label className="text-zinc-300 uppercase text-xs">N° documento</Label>
                     <Input value={form.dni} onChange={e => set('dni', e.target.value)} placeholder="12345678" className={inputCls} />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-zinc-300 uppercase text-xs flex items-center">CUIT/CUIL{ocrBadge('cuil')}</Label>
+                    <Label className="text-zinc-300 uppercase text-xs">CUIT/CUIL</Label>
                     <Input value={form.cuil} onChange={e => set('cuil', e.target.value)} placeholder="20-12345678-9" className={inputCls} />
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-1.5">
-                    <Label className="text-zinc-300 flex items-center">Sexo{ocrBadge('sexo')}</Label>
+                    <Label className="text-zinc-300">Sexo</Label>
                     <Select value={form.sexo} onValueChange={v => set('sexo', v as Sexo)}>
                       <SelectTrigger className={selectTriggerCls}><SelectValue placeholder="—" /></SelectTrigger>
                       <SelectContent className={selectContentCls}>
@@ -459,14 +361,14 @@ export default function NuevoClientePage() {
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-zinc-300 flex items-center">Fecha de nacimiento{ocrBadge('fecha_nacimiento')}</Label>
+                    <Label className="text-zinc-300">Fecha de nacimiento</Label>
                     <Input type="date" value={form.fecha_nacimiento} onChange={e => set('fecha_nacimiento', e.target.value)} className={inputCls} />
                     {edad !== null && (
                       <p className="text-xs text-lime-400 mt-1">Edad: {edad} años</p>
                     )}
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-zinc-300 flex items-center">Nacionalidad{ocrBadge('nacionalidad')}</Label>
+                    <Label className="text-zinc-300">Nacionalidad</Label>
                     <Select value={form.nacionalidad} onValueChange={v => set('nacionalidad', v)}>
                       <SelectTrigger className={selectTriggerCls}><SelectValue /></SelectTrigger>
                       <SelectContent className={selectContentCls}>
@@ -501,7 +403,7 @@ export default function NuevoClientePage() {
                   </div>
                 </div>
 
-                {/* Nombres de padres — solo cuando es soltero */}
+                {/* Nombres de padres cuando es soltero */}
                 {esSoltero && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 rounded-lg bg-zinc-800/40 border border-zinc-700/50">
                     <div className="space-y-1.5">
@@ -516,24 +418,6 @@ export default function NuevoClientePage() {
                     </div>
                   </div>
                 )}
-
-                {form.estado_civil && form.estado_civil !== 'soltero' && (
-                  <div className="p-3 rounded-lg bg-lime-400/5 border border-lime-400/20 flex gap-2 items-start">
-                    <Upload size={14} className="text-lime-400 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-lime-300 text-xs font-medium">
-                        Vas a poder adjuntar la documentación de respaldo después de guardar
-                      </p>
-                      <p className="text-zinc-400 text-xs mt-0.5">
-                        {form.estado_civil === 'casado' && 'Acta de matrimonio.'}
-                        {form.estado_civil === 'divorciado' && 'Sentencia de divorcio firme.'}
-                        {form.estado_civil === 'viudo' && 'Acta de defunción del cónyuge.'}
-                        {form.estado_civil === 'union_convivencial' && 'Declaración de unión convivencial.'}
-                        {' '}En la ficha del cliente vas a tener la zona de carga.
-                      </p>
-                    </div>
-                  </div>
-                )}
               </>
             )}
 
@@ -545,14 +429,13 @@ export default function NuevoClientePage() {
           </CardContent>
         </Card>
 
-        {/* CÓNYUGE (si casado o unión convivencial) */}
+        {/* CÓNYUGE */}
         {requiereConyuge && (
           <Card className="bg-zinc-900 border-zinc-800">
             <CardHeader>
               <CardTitle className="text-sm text-zinc-300 flex items-center gap-2">
                 <Heart size={14} className="text-lime-400" />Cónyuge / Conviviente
               </CardTitle>
-              <p className="text-xs text-zinc-500">Necesario para evaluar PEP por parentesco (Res. UIF 192/2024).</p>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -586,7 +469,7 @@ export default function NuevoClientePage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-12 gap-4">
               <div className="col-span-12 sm:col-span-7 space-y-1.5">
-                <Label className="text-zinc-300 flex items-center">Calle{!esJuridica && ocrBadge('dom_calle')}</Label>
+                <Label className="text-zinc-300">Calle</Label>
                 <Input value={form.dom_calle} onChange={e => set('dom_calle', e.target.value)} className={inputCls} />
               </div>
               <div className="col-span-6 sm:col-span-3 space-y-1.5">
@@ -626,32 +509,28 @@ export default function NuevoClientePage() {
             <CardTitle className="text-sm text-zinc-300 flex items-center gap-2">
               <Briefcase size={14} className="text-lime-400" />Perfil económico
             </CardTitle>
-            <p className="text-xs text-zinc-500">Datos para calcular el perfil patrimonial (art. 16 Res. 242/2023).</p>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-zinc-300">{esJuridica ? 'Actividad / objeto social' : 'Profesión / actividad principal'}</Label>
-                <Input value={form.profesion} onChange={e => set('profesion', e.target.value)}
-                  placeholder={esJuridica ? 'Compraventa de inmuebles...' : 'Médico, abogado, comerciante...'} className={inputCls} />
+                <Label className="text-zinc-300">{esJuridica ? 'Actividad / objeto social' : 'Profesión / actividad'}</Label>
+                <Input value={form.profesion} onChange={e => set('profesion', e.target.value)} className={inputCls} />
               </div>
               {!esJuridica && (
                 <div className="space-y-1.5">
-                  <Label className="text-zinc-300">Empleador (si aplica)</Label>
+                  <Label className="text-zinc-300">Empleador</Label>
                   <Input value={form.empleador} onChange={e => set('empleador', e.target.value)} className={inputCls} />
                 </div>
               )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-zinc-300">{esJuridica ? 'Facturación anual aprox. (ARS)' : 'Ingreso mensual aproximado (ARS)'}</Label>
-                <Input type="number" value={form.ingreso_mensual} onChange={e => set('ingreso_mensual', e.target.value)}
-                  placeholder="500000" className={inputCls} />
+                <Label className="text-zinc-300">{esJuridica ? 'Facturación anual (ARS)' : 'Ingreso mensual (ARS)'}</Label>
+                <Input type="number" value={form.ingreso_mensual} onChange={e => set('ingreso_mensual', e.target.value)} className={inputCls} />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-zinc-300">Patrimonio aproximado (ARS)</Label>
-                <Input type="number" value={form.patrimonio_aprox} onChange={e => set('patrimonio_aprox', e.target.value)}
-                  placeholder="50000000" className={inputCls} />
+                <Label className="text-zinc-300">Patrimonio aprox. (ARS)</Label>
+                <Input type="number" value={form.patrimonio_aprox} onChange={e => set('patrimonio_aprox', e.target.value)} className={inputCls} />
               </div>
             </div>
           </CardContent>
@@ -663,7 +542,6 @@ export default function NuevoClientePage() {
             <CardTitle className="text-sm text-zinc-300 flex items-center gap-2">
               <ShieldAlert size={14} className="text-lime-400" />Clasificación UIF
             </CardTitle>
-            <p className="text-xs text-zinc-500">El sistema calcula automáticamente el nivel de riesgo al guardar.</p>
           </CardHeader>
           <CardContent className="space-y-4">
             <label className="flex items-start gap-3 cursor-pointer p-3 rounded-lg hover:bg-zinc-800/40">
@@ -672,7 +550,7 @@ export default function NuevoClientePage() {
                 className="mt-0.5 border-zinc-600 data-[state=checked]:bg-yellow-500 data-[state=checked]:border-yellow-500" />
               <div>
                 <p className="text-zinc-200 text-sm font-medium">Persona Expuesta Políticamente (PEP)</p>
-                <p className="text-zinc-500 text-xs">Funcionarios públicos, sus familiares o allegados (Res. UIF 35/2023, 192/2024).</p>
+                <p className="text-zinc-500 text-xs">Funcionarios públicos, sus familiares o allegados.</p>
               </div>
             </label>
 
@@ -692,22 +570,20 @@ export default function NuevoClientePage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-zinc-300 text-xs">Cargo o vínculo</Label>
-                    <Input value={form.cargo_pep} onChange={e => set('cargo_pep', e.target.value)}
-                      placeholder="Diputado nacional / Hijo de gobernador..." className={inputCls} />
+                    <Input value={form.cargo_pep} onChange={e => set('cargo_pep', e.target.value)} className={inputCls} />
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-1.5">
                     <Label className="text-zinc-300 text-xs">Jurisdicción</Label>
-                    <Input value={form.jurisdiccion_pep} onChange={e => set('jurisdiccion_pep', e.target.value)}
-                      placeholder="Nacional / CABA / ..." className={inputCls} />
+                    <Input value={form.jurisdiccion_pep} onChange={e => set('jurisdiccion_pep', e.target.value)} className={inputCls} />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-zinc-300 text-xs">Período desde</Label>
                     <Input type="date" value={form.periodo_pep_desde} onChange={e => set('periodo_pep_desde', e.target.value)} className={inputCls} />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-zinc-300 text-xs">Período hasta (vacío = vigente)</Label>
+                    <Label className="text-zinc-300 text-xs">Período hasta</Label>
                     <Input type="date" value={form.periodo_pep_hasta} onChange={e => set('periodo_pep_hasta', e.target.value)} className={inputCls} />
                   </div>
                 </div>
@@ -720,21 +596,19 @@ export default function NuevoClientePage() {
                 className="mt-0.5 border-zinc-600 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500" />
               <div>
                 <p className="text-zinc-200 text-sm font-medium">Sujeto Obligado UIF</p>
-                <p className="text-zinc-500 text-xs">Bancos, escribanos, contadores, inmobiliarias, casinos, etc. (Ley 25.246).</p>
+                <p className="text-zinc-500 text-xs">Bancos, escribanos, contadores, etc.</p>
               </div>
             </label>
 
             {form.es_sujeto_obligado && (
               <div className="ml-7 grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-lg bg-orange-500/5 border border-orange-500/20">
                 <div className="space-y-1.5">
-                  <Label className="text-zinc-300 text-xs">Número de inscripción UIF</Label>
-                  <Input value={form.uif_inscripcion_numero}
-                    onChange={e => set('uif_inscripcion_numero', e.target.value)} className={inputCls} />
+                  <Label className="text-zinc-300 text-xs">N° inscripción UIF</Label>
+                  <Input value={form.uif_inscripcion_numero} onChange={e => set('uif_inscripcion_numero', e.target.value)} className={inputCls} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-zinc-300 text-xs">Fecha de inscripción</Label>
-                  <Input type="date" value={form.uif_inscripcion_fecha}
-                    onChange={e => set('uif_inscripcion_fecha', e.target.value)} className={inputCls} />
+                  <Input type="date" value={form.uif_inscripcion_fecha} onChange={e => set('uif_inscripcion_fecha', e.target.value)} className={inputCls} />
                 </div>
               </div>
             )}
@@ -743,27 +617,23 @@ export default function NuevoClientePage() {
 
         {/* NOTAS */}
         <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader>
             <CardTitle className="text-sm text-zinc-300">Notas internas</CardTitle>
-            <MicButton value={form.notas} onChange={v => set('notas', v)} />
           </CardHeader>
           <CardContent>
             <Textarea value={form.notas} onChange={e => set('notas', e.target.value)}
-              placeholder="Observaciones internas... (también podés dictarlas con el micrófono)"
-              rows={3}
-              className={inputCls + ' resize-none'} />
+              rows={3} className={inputCls + ' resize-none'} />
           </CardContent>
         </Card>
 
-        <div className="flex gap-3 items-center">
+        <div className="flex gap-3">
           <Button type="submit" disabled={saving}
             className="bg-lime-400 text-black hover:bg-lime-300 font-semibold gap-2">
-            {saving && <Loader2 size={14} className="animate-spin" />}Guardar cliente
+            {saving && <Loader2 size={14} className="animate-spin" />}Guardar cambios
           </Button>
-          <Link href="/crm/clientes">
+          <Link href={`/crm/clientes/${id}`}>
             <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">Cancelar</Button>
           </Link>
-          <DraftSavedIndicator savedAt={draftSavedAt} />
         </div>
       </form>
     </div>

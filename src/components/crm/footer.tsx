@@ -1,5 +1,7 @@
 import { Feather, ShieldCheck } from 'lucide-react'
 
+const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? '1.0'
+
 export function CRMFooter() {
   const year = new Date().getFullYear()
   return (
@@ -12,6 +14,7 @@ export function CRMFooter() {
           <span className="text-zinc-400">Mojarra Digital</span>
           <span className="text-zinc-600">·</span>
           <span>© {year}</span>
+          <span className="text-zinc-700">v{APP_VERSION}</span>
         </div>
 
         <div className="flex items-center gap-4">

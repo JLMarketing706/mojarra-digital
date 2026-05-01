@@ -3,10 +3,8 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { toast } from 'sonner'
 import {
-  Copy, Check, Loader2, Sparkles, AlertTriangle, Info, Lightbulb,
+  Copy, Check, Loader2, Sparkles, AlertTriangle, Info, Lightbulb, XCircle,
 } from 'lucide-react'
 import type { ObservacionMinuta } from '@/lib/claude/minutas'
 
@@ -86,11 +84,11 @@ export function AsistenteMinuta({ tramite, inmueble }: Props) {
   const [copiados, setCopiados] = useState<Set<number>>(new Set())
   const [revisando, setRevisando] = useState(false)
   const [observaciones, setObservaciones] = useState<ObservacionMinuta[] | null>(null)
+  const [errorIA, setErrorIA] = useState<string | null>(null)
 
   async function copiar(idx: number, texto: string) {
     await navigator.clipboard.writeText(texto)
     setCopiados(prev => new Set(prev).add(idx))
-    toast.success('Copiado al portapapeles.')
     setTimeout(() => {
       setCopiados(prev => { const s = new Set(prev); s.delete(idx); return s })
     }, 2000)
@@ -99,6 +97,7 @@ export function AsistenteMinuta({ tramite, inmueble }: Props) {
   async function revisarConIA() {
     setRevisando(true)
     setObservaciones(null)
+    setErrorIA(null)
     try {
       const res = await fetch('/api/minutas', {
         method: 'POST',
@@ -106,13 +105,13 @@ export function AsistenteMinuta({ tramite, inmueble }: Props) {
         body: JSON.stringify({ tramiteId: tramite.id }),
       })
       const json = await res.json() as { observaciones?: ObservacionMinuta[]; error?: string }
-      if (!res.ok) { toast.error(json.error ?? 'Error al analizar.'); return }
-      setObservaciones(json.observaciones ?? [])
-      if (json.observaciones?.length === 0) {
-        toast.success('¡Sin observaciones! Los datos están completos y consistentes.')
+      if (!res.ok) {
+        setErrorIA(json.error ?? 'Error al analizar el trámite.')
+        return
       }
+      setObservaciones(json.observaciones ?? [])
     } catch {
-      toast.error('Error al conectar con la IA.')
+      setErrorIA('No se pudo conectar con el servicio de IA. Intentá de nuevo.')
     } finally {
       setRevisando(false)
     }
@@ -138,6 +137,14 @@ export function AsistenteMinuta({ tramite, inmueble }: Props) {
           {revisando ? 'Analizando con IA...' : 'Revisar datos con IA'}
         </Button>
       </div>
+
+      {/* Error IA */}
+      {errorIA && (
+        <div className="flex items-start gap-3 p-3 rounded-lg border border-red-500/30 bg-red-500/5">
+          <XCircle size={15} className="text-red-400 shrink-0 mt-0.5" />
+          <p className="text-red-300 text-sm">{errorIA}</p>
+        </div>
+      )}
 
       {/* Observaciones de la IA */}
       {observaciones !== null && (

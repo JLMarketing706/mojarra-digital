@@ -23,7 +23,7 @@ import {
 import { Button } from '@/components/ui/button'
 
 const navItems = [
-  { href: '/crm/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/crm/dashboard', label: 'Panel de control', icon: LayoutDashboard },
   { href: '/crm/clientes', label: 'Clientes', icon: Users },
   { href: '/crm/tramites', label: 'Trámites', icon: FileText },
   { href: '/crm/indice', label: 'Índice Notarial', icon: BookOpen },
