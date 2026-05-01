@@ -187,7 +187,7 @@ export default function ImprimirDDJJPage() {
       </div>
 
       {/* Documento imprimible */}
-      <div className="bg-white text-black p-10 rounded-lg shadow-xl print:shadow-none print:p-0 print:rounded-none">
+      <div className="print-document bg-white text-black p-10 rounded-lg shadow-xl print:shadow-none print:p-0 print:rounded-none">
         {escribania && (
           <p className="text-xs text-gray-700 mb-2 uppercase tracking-wider text-center">{escribania}</p>
         )}
@@ -227,8 +227,22 @@ export default function ImprimirDDJJPage() {
 
       <style jsx global>{`
         @media print {
-          body { background: white !important; }
           @page { margin: 1.5cm; }
+          html, body {
+            background: white !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          /* Ocultar TODO menos el documento imprimible */
+          body * { visibility: hidden; }
+          .print-document, .print-document * { visibility: visible; }
+          .print-document {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            box-shadow: none !important;
+          }
         }
       `}</style>
     </div>
