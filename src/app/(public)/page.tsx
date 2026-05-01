@@ -245,9 +245,10 @@ export default function HomePage() {
             </h1>
 
             <p className="text-zinc-300 text-lg lg:text-xl leading-relaxed mb-10 max-w-2xl">
-              Trámites, clientes, índice notarial, agenda, UIF e inteligencia artificial.
-              Todo en una sola plataforma diseñada para cómo trabaja{' '}
-              <span className="text-white font-medium">realmente</span> una escribanía.
+              Operaciones, clientes, índice notarial, agenda, UIF e inteligencia artificial.
+              Todo en una sola plataforma, diseñada para{' '}
+              <span className="text-white font-medium">elevar la productividad y precisión</span>{' '}
+              en el entorno de la escribanía.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 mb-10">
