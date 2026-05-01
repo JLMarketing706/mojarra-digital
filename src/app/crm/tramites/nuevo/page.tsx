@@ -132,40 +132,99 @@ interface ClienteRow {
 }
 interface SMVMRow { vigencia_desde: string; valor: number }
 
-// ─── Input de monto con formato es-AR ────────────────────
+// ─── Input de monto estilo calculadora ───────────────────
+// Default 0,00. Cada dígito que se tipea acumula desde la derecha:
+// "5"     → "0,05"
+// "55"    → "0,55"
+// "555"   → "5,55"
+// "5555"  → "55,55"
+// "55555" → "555,55"
+// "555555"→ "5.555,55"
+// Backspace borra dígito por dígito.
 function MontoInput({
   label, value, onChange, helpText,
 }: { label: string; value: string; onChange: (v: string) => void; helpText?: string }) {
-  const [display, setDisplay] = useState(value ? formatMonto(value) : '')
+  // Estado interno = solo dígitos, ej "5555" representa 55,55
+  // Sincroniza con value externo (importante para restaurar drafts)
+  const [digits, setDigits] = useState(() => valueToDigits(value))
 
-  function handleBlur() {
-    const num = parseMonto(display)
-    if (!isNaN(num) && num > 0) {
-      const formatted = formatMonto(num)
-      setDisplay(formatted)
-      onChange(String(num))
-    } else if (display === '') {
-      onChange('')
+  useEffect(() => {
+    // Si cambia value desde afuera (ej: restoreDraft) y difiere, actualizar
+    const externo = valueToDigits(value)
+    if (externo !== digits) setDigits(externo)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value])
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    e.preventDefault()
+    if (e.key >= '0' && e.key <= '9') {
+      // Limitar a 15 dígitos (hasta billones con 2 decimales)
+      if (digits.length >= 15) return
+      const nuevos = (digits + e.key).replace(/^0+/, '') // quitar ceros a izquierda
+      actualizar(nuevos)
+    } else if (e.key === 'Backspace' || e.key === 'Delete') {
+      actualizar(digits.slice(0, -1))
+    } else if (e.key === 'Escape') {
+      actualizar('')
     }
+    // Permitir Tab para navegar
+    if (e.key === 'Tab') return
   }
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setDisplay(e.target.value)
+  function handlePaste(e: React.ClipboardEvent<HTMLInputElement>) {
+    e.preventDefault()
+    const txt = e.clipboardData.getData('text')
+    // Extraer solo dígitos (permite que peguen "1.234,56" etc)
+    const soloDigitos = txt.replace(/\D/g, '')
+    if (!soloDigitos) return
+    const num = parseInt(soloDigitos, 10)
+    if (!isNaN(num)) actualizar(String(num))
+  }
+
+  function actualizar(nuevosDigits: string) {
+    setDigits(nuevosDigits)
+    if (!nuevosDigits) { onChange(''); return }
+    // dígitos como entero → dividir por 100 para tener centavos
+    const numero = parseInt(nuevosDigits, 10) / 100
+    onChange(String(numero))
   }
 
   return (
     <div className="space-y-1.5">
       <Label className="text-zinc-300">{label}</Label>
       <Input
-        value={display}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        placeholder="0,00"
-        className={inputCls}
+        value={digitsToDisplay(digits)}
+        onKeyDown={handleKeyDown}
+        onPaste={handlePaste}
+        onChange={() => { /* manejado por keydown */ }}
+        inputMode="decimal"
+        className={inputCls + ' text-right font-mono tabular-nums'}
       />
       {helpText && <p className="text-xs text-zinc-500">{helpText}</p>}
     </div>
   )
+}
+
+/** Convierte el value externo (ej "1234.56") a dígitos internos ("123456") */
+function valueToDigits(value: string): string {
+  if (!value) return ''
+  const num = parseFloat(value)
+  if (isNaN(num) || num <= 0) return ''
+  // Multiplicar por 100 y redondear para evitar errores de punto flotante
+  const cents = Math.round(num * 100)
+  return String(cents)
+}
+
+/** Convierte dígitos internos a display formateado es-AR */
+function digitsToDisplay(digits: string): string {
+  if (!digits) return '0,00'
+  const padded = digits.padStart(3, '0') // mínimo 3 dígitos para tener "0,XX"
+  const enteros = padded.slice(0, -2)
+  const decimales = padded.slice(-2)
+  // Formatear los enteros con puntos de miles
+  const enterosFmt = enteros.replace(/^0+/, '') || '0'
+  const conPuntos = enterosFmt.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  return `${conPuntos},${decimales}`
 }
 
 export default function NuevoTramitePage() {
