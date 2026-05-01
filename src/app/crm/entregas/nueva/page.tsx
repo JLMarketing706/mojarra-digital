@@ -10,10 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
-import { Loader2, ArrowLeft, FileDown, Upload, CheckCircle2 } from 'lucide-react'
+import { Loader2, ArrowLeft, FileDown, Upload, CheckCircle2, Search, X } from 'lucide-react'
 import Link from 'next/link'
 
 interface TramiteSimple { id: string; tipo: string; numero_referencia: string | null }
+interface ClienteSimple { id: string; nombre: string; apellido: string; dni: string | null; cuil: string | null }
 
 export default function NuevaEntregaPage() {
   const router = useRouter()
@@ -21,6 +22,10 @@ export default function NuevaEntregaPage() {
   const supabase = createClient()
   const [saving, setSaving] = useState(false)
   const [tramites, setTramites] = useState<TramiteSimple[]>([])
+  const [clientes, setClientes] = useState<ClienteSimple[]>([])
+  const [busqueda, setBusqueda] = useState('')
+  const [mostrarResultados, setMostrarResultados] = useState(false)
+  const [clienteSeleccionado, setClienteSeleccionado] = useState<ClienteSimple | null>(null)
   const [form, setForm] = useState({
     tramite_id: searchParams.get('tramite_id') ?? '',
     receptor_nombre: '',
@@ -39,7 +44,40 @@ export default function NuevaEntregaPage() {
       .neq('estado', 'entregado')
       .order('updated_at', { ascending: false })
       .then(({ data }) => { if (data) setTramites(data) })
+    supabase
+      .from('clientes')
+      .select('id, nombre, apellido, dni, cuil')
+      .order('apellido')
+      .limit(1000)
+      .then(({ data }) => { if (data) setClientes(data as ClienteSimple[]) })
   }, [])
+
+  // Filtrar clientes por búsqueda (nombre, apellido, DNI, CUIT)
+  const resultados = busqueda.trim().length === 0 ? [] : clientes.filter(c => {
+    const q = busqueda.toLowerCase()
+    return (
+      c.nombre.toLowerCase().includes(q) ||
+      c.apellido.toLowerCase().includes(q) ||
+      (c.dni ?? '').includes(busqueda) ||
+      (c.cuil ?? '').includes(busqueda)
+    )
+  }).slice(0, 8)
+
+  function seleccionarCliente(c: ClienteSimple) {
+    setClienteSeleccionado(c)
+    setForm(p => ({
+      ...p,
+      receptor_nombre: `${c.apellido}, ${c.nombre}`,
+      receptor_dni: c.dni ?? c.cuil ?? '',
+    }))
+    setBusqueda('')
+    setMostrarResultados(false)
+  }
+
+  function limpiarCliente() {
+    setClienteSeleccionado(null)
+    setForm(p => ({ ...p, receptor_nombre: '', receptor_dni: '' }))
+  }
 
   function set(k: string, v: string) { setForm(p => ({ ...p, [k]: v })) }
 
@@ -206,19 +244,64 @@ export default function NuevaEntregaPage() {
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className="text-zinc-300">Nombre del receptor *</Label>
-                <Input value={form.receptor_nombre} onChange={e => set('receptor_nombre', e.target.value)}
-                  placeholder="Juan García" required
-                  className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-lime-400" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-zinc-300">DNI del receptor *</Label>
-                <Input value={form.receptor_dni} onChange={e => set('receptor_dni', e.target.value)}
-                  placeholder="12345678" required
-                  className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-lime-400" />
-              </div>
+            <div className="space-y-1.5">
+              <Label className="text-zinc-300">Receptor (cliente) <span className="text-lime-400">*</span></Label>
+
+              {clienteSeleccionado ? (
+                <div className="flex items-center gap-3 p-3 rounded-md border border-lime-400/30 bg-lime-400/5">
+                  <CheckCircle2 size={16} className="text-lime-400 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-zinc-200 text-sm font-medium truncate">
+                      {clienteSeleccionado.apellido}, {clienteSeleccionado.nombre}
+                    </p>
+                    <p className="text-zinc-500 text-xs">
+                      {clienteSeleccionado.dni ? `DNI ${clienteSeleccionado.dni}` : ''}
+                      {clienteSeleccionado.dni && clienteSeleccionado.cuil ? ' · ' : ''}
+                      {clienteSeleccionado.cuil ? `CUIT ${clienteSeleccionado.cuil}` : ''}
+                    </p>
+                  </div>
+                  <Button type="button" variant="ghost" size="sm" onClick={limpiarCliente}
+                    className="text-zinc-400 hover:text-white h-7 w-7 p-0 shrink-0">
+                    <X size={14} />
+                  </Button>
+                </div>
+              ) : (
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+                  <Input
+                    value={busqueda}
+                    onChange={e => { setBusqueda(e.target.value); setMostrarResultados(true) }}
+                    onFocus={() => setMostrarResultados(true)}
+                    onBlur={() => setTimeout(() => setMostrarResultados(false), 150)}
+                    placeholder="Buscar cliente por nombre, apellido, DNI o CUIT..."
+                    className="pl-9 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-lime-400"
+                  />
+                  {mostrarResultados && resultados.length > 0 && (
+                    <div className="absolute z-20 mt-1 w-full bg-zinc-900 border border-zinc-700 rounded-md shadow-lg max-h-64 overflow-y-auto">
+                      {resultados.map(c => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onMouseDown={() => seleccionarCliente(c)}
+                          className="w-full text-left px-3 py-2 hover:bg-zinc-800 transition-colors border-b border-zinc-800 last:border-0"
+                        >
+                          <p className="text-zinc-200 text-sm">{c.apellido}, {c.nombre}</p>
+                          <p className="text-zinc-500 text-xs">
+                            {c.dni ? `DNI ${c.dni}` : ''}
+                            {c.dni && c.cuil ? ' · ' : ''}
+                            {c.cuil ? `CUIT ${c.cuil}` : ''}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {mostrarResultados && busqueda.trim().length > 0 && resultados.length === 0 && (
+                    <div className="absolute z-20 mt-1 w-full bg-zinc-900 border border-zinc-700 rounded-md p-3 text-zinc-500 text-xs">
+                      Sin resultados para "{busqueda}".
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="space-y-1.5">
