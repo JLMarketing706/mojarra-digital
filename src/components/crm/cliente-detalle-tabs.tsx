@@ -78,18 +78,35 @@ export function ClienteDetalleTabs({ cliente: c, tramites, documentos }: Props) 
 
   return (
     <Tabs defaultValue="datos" className="w-full">
-      <TabsList className="bg-zinc-900 border border-zinc-800 p-1 h-auto">
-        <TabsTrigger value="datos" className="data-[state=active]:bg-zinc-800 data-[state=active]:text-lime-400 text-sm gap-2">
-          <User size={14} />Datos personales
+      {/* Pestañas estilo Chrome: todas visibles, mismo ancho, activa destacada */}
+      <TabsList className="w-full grid grid-cols-4 bg-transparent p-0 h-auto rounded-none border-b border-zinc-800 gap-0">
+        <TabsTrigger
+          value="datos"
+          className="rounded-none rounded-t-lg border border-b-0 border-transparent data-[state=active]:border-zinc-800 data-[state=active]:bg-zinc-900 data-[state=active]:text-lime-400 data-[state=active]:shadow-[0_2px_0_0_#0a0a0a] data-[state=inactive]:text-zinc-500 data-[state=inactive]:bg-zinc-950/40 data-[state=inactive]:hover:text-zinc-300 data-[state=inactive]:hover:bg-zinc-900/50 text-sm gap-2 py-2.5 px-3 transition-colors -mb-px"
+        >
+          <User size={14} />
+          <span className="truncate">Datos personales</span>
         </TabsTrigger>
-        <TabsTrigger value="uif" className="data-[state=active]:bg-zinc-800 data-[state=active]:text-lime-400 text-sm gap-2">
-          <ShieldAlert size={14} />Cumplimiento UIF
+        <TabsTrigger
+          value="uif"
+          className="rounded-none rounded-t-lg border border-b-0 border-transparent data-[state=active]:border-zinc-800 data-[state=active]:bg-zinc-900 data-[state=active]:text-lime-400 data-[state=active]:shadow-[0_2px_0_0_#0a0a0a] data-[state=inactive]:text-zinc-500 data-[state=inactive]:bg-zinc-950/40 data-[state=inactive]:hover:text-zinc-300 data-[state=inactive]:hover:bg-zinc-900/50 text-sm gap-2 py-2.5 px-3 transition-colors -mb-px"
+        >
+          <ShieldAlert size={14} />
+          <span className="truncate">Cumplimiento UIF</span>
         </TabsTrigger>
-        <TabsTrigger value="tramites" className="data-[state=active]:bg-zinc-800 data-[state=active]:text-lime-400 text-sm gap-2">
-          <ShoppingCart size={14} />Operaciones ({tramites.length})
+        <TabsTrigger
+          value="tramites"
+          className="rounded-none rounded-t-lg border border-b-0 border-transparent data-[state=active]:border-zinc-800 data-[state=active]:bg-zinc-900 data-[state=active]:text-lime-400 data-[state=active]:shadow-[0_2px_0_0_#0a0a0a] data-[state=inactive]:text-zinc-500 data-[state=inactive]:bg-zinc-950/40 data-[state=inactive]:hover:text-zinc-300 data-[state=inactive]:hover:bg-zinc-900/50 text-sm gap-2 py-2.5 px-3 transition-colors -mb-px"
+        >
+          <ShoppingCart size={14} />
+          <span className="truncate">Operaciones ({tramites.length})</span>
         </TabsTrigger>
-        <TabsTrigger value="legajo" className="data-[state=active]:bg-zinc-800 data-[state=active]:text-lime-400 text-sm gap-2">
-          <FileText size={14} />Legajo
+        <TabsTrigger
+          value="legajo"
+          className="rounded-none rounded-t-lg border border-b-0 border-transparent data-[state=active]:border-zinc-800 data-[state=active]:bg-zinc-900 data-[state=active]:text-lime-400 data-[state=active]:shadow-[0_2px_0_0_#0a0a0a] data-[state=inactive]:text-zinc-500 data-[state=inactive]:bg-zinc-950/40 data-[state=inactive]:hover:text-zinc-300 data-[state=inactive]:hover:bg-zinc-900/50 text-sm gap-2 py-2.5 px-3 transition-colors -mb-px"
+        >
+          <FileText size={14} />
+          <span className="truncate">Legajo</span>
         </TabsTrigger>
       </TabsList>
 
