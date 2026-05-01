@@ -29,6 +29,8 @@ export function useFormDraft<T extends object>(
   const [userId, setUserId] = useState<string | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const mounted = useRef(false)
+  /** snapshot del estado al montar — solo guardamos si el state actual difiere de éste */
+  const baseline = useRef<string>('')
 
   // Buscar borrador al montar (primero servidor, después localStorage)
   useEffect(() => {
@@ -68,6 +70,8 @@ export function useFormDraft<T extends object>(
           }
         } catch { /* ignorar */ }
       }
+      // Snapshot del estado vacío inicial — solo guardamos si el user lo modifica
+      baseline.current = JSON.stringify(state)
       mounted.current = true
     }
     load()
@@ -75,9 +79,12 @@ export function useFormDraft<T extends object>(
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key])
 
-  // Guardar con debounce en cada cambio
+  // Guardar con debounce en cada cambio (solo si difiere del baseline inicial)
   useEffect(() => {
     if (!enabled || !mounted.current) return
+    const json = JSON.stringify(state)
+    // Skip si el user todavía no modificó nada (evita pisar el draft con vacío al montar)
+    if (json === baseline.current) return
     if (timer.current) clearTimeout(timer.current)
     timer.current = setTimeout(async () => {
       const now = Date.now()
@@ -94,6 +101,7 @@ export function useFormDraft<T extends object>(
           updated_at: new Date(now).toISOString(),
         })
       }
+      baseline.current = json
       setDraftSavedAt(now)
     }, debounceMs)
     return () => { if (timer.current) clearTimeout(timer.current) }
@@ -110,7 +118,10 @@ export function useFormDraft<T extends object>(
         .eq('form_key', key)
         .maybeSingle()
       if (data?.data) {
-        setState(data.data as T)
+        const restored = data.data as T
+        setState(restored)
+        // Marcar el restored como nuevo baseline para evitar re-guardar inmediato
+        baseline.current = JSON.stringify(restored)
         setHasDraft(false)
         return true
       }
@@ -121,6 +132,7 @@ export function useFormDraft<T extends object>(
       if (raw) {
         const parsed = JSON.parse(raw) as { data: T }
         setState(parsed.data)
+        baseline.current = JSON.stringify(parsed.data)
         setHasDraft(false)
         return true
       }
@@ -135,6 +147,8 @@ export function useFormDraft<T extends object>(
         .delete()
         .eq('user_id', userId).eq('form_key', key)
     }
+    // Resetear baseline al estado actual para no re-guardar inmediatamente
+    baseline.current = JSON.stringify(state)
     setHasDraft(false)
     setDraftSavedAt(null)
   }
