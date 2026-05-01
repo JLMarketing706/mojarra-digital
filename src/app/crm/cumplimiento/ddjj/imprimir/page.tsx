@@ -143,7 +143,7 @@ export default function ImprimirDDJJPage() {
   const tpl = TEMPLATES[tipo]
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-4xl mx-auto">
       {/* Toolbar (no imprime) */}
       <div className="print:hidden mb-6">
         <Link href="/crm/dashboard">
@@ -186,65 +186,164 @@ export default function ImprimirDDJJPage() {
         </div>
       </div>
 
-      {/* Documento imprimible */}
-      <div className="print-document bg-white text-black p-10 rounded-lg shadow-xl print:shadow-none print:p-0 print:rounded-none">
-        {escribania && (
-          <p className="text-xs text-gray-700 mb-2 uppercase tracking-wider text-center">{escribania}</p>
-        )}
-        <h2 className="text-base font-bold uppercase text-center mb-6 border-b border-gray-300 pb-3">
-          {tpl.titulo}
-        </h2>
+      {/* Documento imprimible — A4 */}
+      <div className="print-document bg-white text-black mx-auto shadow-2xl print:shadow-none">
+        {/* Banda superior verde notarial */}
+        <div className="print-band" />
 
-        <div className="text-sm text-gray-800 mb-8 leading-relaxed">
-          <p className="mb-1"><strong>Apellido y Nombre:</strong> ____________________________________________</p>
-          <p className="mb-1"><strong>Tipo y N° de documento:</strong> _________________________________________</p>
-          <p className="mb-1"><strong>CUIT / CUIL:</strong> ___________________________________________________</p>
-          <p className="mb-1"><strong>Domicilio:</strong> _____________________________________________________</p>
-          <p className="mb-1"><strong>Carácter en que comparece:</strong> ☐ Por sí  ☐ Por apoderado de _________________________</p>
-        </div>
+        <div className="print-content">
+          {/* Encabezado */}
+          <header className="flex items-start justify-between border-b-2 border-gray-800 pb-3 mb-6">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-semibold">
+                Declaración Jurada
+              </p>
+              <p className="text-[10px] text-gray-500 mt-0.5">
+                Resolución UIF · Ley 25.246 y mod.
+              </p>
+            </div>
+            <div className="text-right">
+              {escribania ? (
+                <>
+                  <p className="text-sm font-bold uppercase tracking-wide text-gray-900">
+                    {escribania}
+                  </p>
+                  <p className="text-[10px] text-gray-500 mt-0.5">Registro Notarial</p>
+                </>
+              ) : (
+                <p className="text-[10px] text-gray-400 italic">
+                  [Espacio para encabezado de la escribanía]
+                </p>
+              )}
+            </div>
+          </header>
 
-        <div className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap mb-10">
-          {tpl.cuerpo}
-        </div>
-
-        <div className="grid grid-cols-2 gap-6 mt-16 text-sm text-gray-800">
-          <div>
-            <p className="border-t border-gray-400 pt-2">Firma del/la declarante</p>
-            <p className="text-xs text-gray-600 mt-1">Aclaración: ______________________</p>
+          {/* Título del documento */}
+          <div className="mb-8 text-center">
+            <h1 className="text-[15px] font-bold uppercase tracking-wider text-gray-900 leading-snug">
+              {tpl.titulo}
+            </h1>
+            <div className="mt-2 mx-auto w-16 h-0.5 bg-gray-800" />
           </div>
-          <div>
-            <p className="border-t border-gray-400 pt-2">Lugar y fecha</p>
-            <p className="text-xs text-gray-600 mt-1">_______________________________</p>
-          </div>
-        </div>
 
-        <div className="grid grid-cols-1 mt-12 text-sm text-gray-800">
-          <div>
-            <p className="border-t border-gray-400 pt-2 text-center">Sello y firma del/la Escribano/a interviniente</p>
-          </div>
+          {/* Datos del declarante */}
+          <section className="mb-8">
+            <h2 className="text-[11px] font-bold uppercase tracking-wider text-gray-700 border-b border-gray-300 pb-1 mb-3">
+              Datos del declarante
+            </h2>
+            <div className="space-y-2.5 text-[12px] text-gray-900">
+              <FormField label="Apellido y nombre" />
+              <div className="grid grid-cols-2 gap-x-6">
+                <FormField label="Tipo y N° documento" />
+                <FormField label="CUIT / CUIL" />
+              </div>
+              <FormField label="Domicilio" />
+              <div className="text-[12px] flex items-center gap-2 pt-1">
+                <span className="font-semibold">Carácter:</span>
+                <span className="ml-1">☐ Por sí</span>
+                <span className="ml-3">☐ Por apoderado de</span>
+                <span className="flex-1 border-b border-gray-400" />
+              </div>
+            </div>
+          </section>
+
+          {/* Cuerpo / declaración */}
+          <section className="mb-10">
+            <h2 className="text-[11px] font-bold uppercase tracking-wider text-gray-700 border-b border-gray-300 pb-1 mb-3">
+              Declaración
+            </h2>
+            <div className="text-[12px] text-gray-900 leading-relaxed whitespace-pre-wrap">
+              {tpl.cuerpo}
+            </div>
+          </section>
+
+          {/* Firmas */}
+          <section className="mt-16 grid grid-cols-2 gap-12 text-[11px] text-gray-800">
+            <div className="text-center">
+              <div className="border-t border-gray-700 pt-1.5 mt-12">
+                <p className="font-semibold uppercase tracking-wide">Firma del/la declarante</p>
+                <p className="text-[10px] text-gray-600 mt-1">Aclaración y N° de documento</p>
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="border-t border-gray-700 pt-1.5 mt-12">
+                <p className="font-semibold uppercase tracking-wide">Lugar y fecha</p>
+                <p className="text-[10px] text-gray-600 mt-1">Ciudad — día / mes / año</p>
+              </div>
+            </div>
+          </section>
+
+          {/* Sello escribano */}
+          <section className="mt-12 text-center text-[11px] text-gray-800">
+            <div className="border-t border-gray-700 mx-auto max-w-md pt-1.5">
+              <p className="font-semibold uppercase tracking-wide">
+                Sello y firma del/la Escribano/a interviniente
+              </p>
+              <p className="text-[10px] text-gray-600 mt-1">
+                Certifica la autenticidad de la firma en su presencia
+              </p>
+            </div>
+          </section>
+
+          {/* Pie de página */}
+          <footer className="mt-12 pt-3 border-t border-gray-300 flex items-center justify-between text-[9px] text-gray-500">
+            <span>Mojarra Digital · Sistema notarial</span>
+            <span className="uppercase tracking-wider">DDJJ — UIF</span>
+          </footer>
         </div>
       </div>
 
       <style jsx global>{`
+        /* Estilos del documento (vista previa Y impresión) */
+        .print-document {
+          width: 210mm;
+          min-height: 297mm;
+          font-family: 'Times New Roman', Georgia, serif;
+          color: #111;
+          position: relative;
+          overflow: hidden;
+        }
+        .print-band {
+          height: 8mm;
+          background: linear-gradient(90deg, #84cc16 0%, #65a30d 100%);
+        }
+        .print-content {
+          padding: 18mm 20mm 16mm 20mm;
+        }
+
         @media print {
-          @page { margin: 1.5cm; }
+          @page {
+            size: A4;
+            margin: 0;
+          }
           html, body {
             background: white !important;
             margin: 0 !important;
             padding: 0 !important;
           }
-          /* Ocultar TODO menos el documento imprimible */
           body * { visibility: hidden; }
           .print-document, .print-document * { visibility: visible; }
           .print-document {
             position: absolute !important;
             left: 0 !important;
             top: 0 !important;
-            width: 100% !important;
+            width: 210mm !important;
+            min-height: 297mm !important;
             box-shadow: none !important;
+            margin: 0 !important;
           }
         }
       `}</style>
+    </div>
+  )
+}
+
+/** Campo con label arriba y línea de relleno abajo, listo para escribir a mano */
+function FormField({ label }: { label: string }) {
+  return (
+    <div>
+      <p className="text-[10px] uppercase tracking-wide text-gray-500 font-semibold mb-0.5">{label}</p>
+      <div className="border-b border-gray-400 h-5" />
     </div>
   )
 }
