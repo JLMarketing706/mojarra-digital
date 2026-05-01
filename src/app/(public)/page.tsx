@@ -299,14 +299,14 @@ export default function HomePage() {
       <section id="producto" className="py-24 border-t border-zinc-800">
         <div className="max-w-7xl mx-auto px-6">
           <div className="max-w-2xl mb-16">
-            <span className="text-xs font-semibold text-lime-400 tracking-widest uppercase">El problema</span>
+            <span className="text-xs font-semibold text-lime-400 tracking-widest uppercase">El cambio</span>
             <h2 className="text-4xl lg:text-5xl font-bold text-white mt-3 mb-5 leading-tight">
-              Las escribanías pierden tiempo<br />
-              haciendo lo que no deberían.
+              Las escribanías que adoptaron Mojarra Digital<br />
+              ya están un paso adelante.
             </h2>
             <p className="text-zinc-400 text-lg leading-relaxed">
-              Hace décadas que los procesos no cambian. Mientras tanto, los clientes
-              cambiaron y exigen velocidad, transparencia y digitalización.
+              Mientras el resto sigue con planillas y procesos manuales, ellas digitalizan
+              trámites, ahorran horas y mejoran la experiencia de sus clientes.
             </p>
           </div>
 
