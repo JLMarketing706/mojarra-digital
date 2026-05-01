@@ -52,6 +52,14 @@ export default async function CRMDashboardPage() {
     .order('fecha_limite_observacion', { ascending: true })
     .limit(10)
 
+  // Clientes con legajo pendiente de completar
+  const { data: legajosPendientes } = await supabase
+    .from('clientes')
+    .select('id, nombre, apellido, dni, cuil, created_at')
+    .eq('legajo_incompleto', true)
+    .order('created_at', { ascending: false })
+    .limit(5)
+
   const stats = [
     { label: 'Clientes', value: totalClientes ?? 0, icon: Users, href: '/crm/clientes' },
     { label: 'Trámites activos', value: tramitesActivos ?? 0, icon: FileText, href: '/crm/tramites' },
@@ -131,6 +139,41 @@ export default async function CRMDashboardPage() {
                   </Link>
                 )
               })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Clientes con legajo incompleto */}
+      {legajosPendientes && legajosPendientes.length > 0 && (
+        <Card className="bg-yellow-500/5 border-yellow-500/30 mb-6">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm text-yellow-300 flex items-center gap-2">
+                <AlertTriangle size={14} />Clientes con legajo pendiente ({legajosPendientes.length})
+              </CardTitle>
+              <Link href="/crm/clientes?legajo=incompleto" className="text-xs text-yellow-400 hover:underline">
+                Ver todos
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {legajosPendientes.map(c => (
+                <Link key={c.id} href={`/crm/clientes/${c.id}/editar`}>
+                  <div className="flex items-center justify-between gap-3 py-2 border-b border-yellow-500/10 last:border-0 hover:bg-yellow-500/5 -mx-2 px-2 rounded transition-colors">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-zinc-200 truncate">{c.apellido}, {c.nombre}</p>
+                      <p className="text-xs text-zinc-500">
+                        {c.dni ? `DNI ${c.dni}` : c.cuil ? `CUIT ${c.cuil}` : 'sin documento'}
+                      </p>
+                    </div>
+                    <Badge className="text-xs bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 shrink-0">
+                      Completar
+                    </Badge>
+                  </div>
+                </Link>
+              ))}
             </div>
           </CardContent>
         </Card>

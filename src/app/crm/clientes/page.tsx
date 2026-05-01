@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ClientesSearch } from '@/components/crm/clientes-search'
-import { UserPlus, User, Building2, FileText } from 'lucide-react'
+import { UserPlus, User, Building2, FileText, AlertTriangle } from 'lucide-react'
 import { formatFecha } from '@/lib/utils'
 import type { Metadata } from 'next'
 import type { NivelRiesgo, TipoPersona } from '@/types'
@@ -25,9 +25,9 @@ export const metadata: Metadata = { title: 'Clientes' }
 export default async function ClientesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>
+  searchParams: Promise<{ q?: string; legajo?: string }>
 }) {
-  const { q } = await searchParams
+  const { q, legajo } = await searchParams
   const supabase = await createClient()
 
   let query = supabase
@@ -40,7 +40,17 @@ export default async function ClientesPage({
     query = query.or(`nombre.ilike.${term},apellido.ilike.${term},dni.ilike.${term},email.ilike.${term}`)
   }
 
-  const { data: clientes } = await query.limit(100)
+  if (legajo === 'incompleto') {
+    query = query.eq('legajo_incompleto', true)
+  }
+
+  const { data: clientes } = await query.limit(200)
+
+  // Conteo total de incompletos (para el chip del filtro)
+  const { count: incompletosCount } = await supabase
+    .from('clientes')
+    .select('*', { count: 'exact', head: true })
+    .eq('legajo_incompleto', true)
 
   return (
     <div>
@@ -58,6 +68,36 @@ export default async function ClientesPage({
       </div>
 
       <ClientesSearch defaultValue={q} />
+
+      {/* Filtros */}
+      <div className="flex gap-2 mt-3 flex-wrap">
+        <Link href={q ? `/crm/clientes?q=${encodeURIComponent(q)}` : '/crm/clientes'}>
+          <Button
+            variant="outline"
+            size="sm"
+            className={`h-7 text-xs ${
+              !legajo
+                ? 'bg-lime-400/10 border-lime-400/50 text-lime-400'
+                : 'border-zinc-700 text-zinc-400 hover:bg-zinc-800'
+            }`}
+          >
+            Todos
+          </Button>
+        </Link>
+        <Link href={`/crm/clientes?legajo=incompleto${q ? `&q=${encodeURIComponent(q)}` : ''}`}>
+          <Button
+            variant="outline"
+            size="sm"
+            className={`h-7 text-xs gap-1.5 ${
+              legajo === 'incompleto'
+                ? 'bg-yellow-500/10 border-yellow-500/50 text-yellow-300'
+                : 'border-zinc-700 text-zinc-400 hover:bg-zinc-800'
+            }`}
+          >
+            <AlertTriangle size={11} />Legajo incompleto ({incompletosCount ?? 0})
+          </Button>
+        </Link>
+      </div>
 
       <div className="mt-4 rounded-lg border border-zinc-800 overflow-hidden">
         <table className="w-full text-sm">
@@ -96,6 +136,11 @@ export default async function ClientesPage({
                         )}
                         {c.es_sujeto_obligado && (
                           <Badge className="bg-orange-500/20 text-orange-300 border-0 text-xs px-1.5">SO</Badge>
+                        )}
+                        {c.legajo_incompleto && (
+                          <Badge className="bg-yellow-500/15 text-yellow-300 border border-yellow-500/30 text-xs px-1.5 gap-0.5">
+                            <AlertTriangle size={9} />Legajo
+                          </Badge>
                         )}
                       </div>
                     </td>

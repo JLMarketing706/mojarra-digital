@@ -26,6 +26,8 @@ import { useFormDraft } from '@/lib/use-form-draft'
 import { DraftBanner, DraftSavedIndicator } from '@/components/crm/draft-banner'
 import { CompradoresVendedoresForm, type PartePrincipal } from '@/components/crm/compradores-vendedores-form'
 import { MontoInput as MontoInputShared } from '@/components/crm/monto-input'
+import { ClienteQuickCreate } from '@/components/crm/cliente-quick-create'
+import { UserPlus } from 'lucide-react'
 
 // ─── Clases de estilo ─────────────────────────────────────
 const inputCls = 'bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-lime-400'
@@ -158,6 +160,7 @@ export default function NuevoTramitePage() {
   const [clientes, setClientes] = useState<ClienteRow[]>([])
   const [escribanos, setEscribanos] = useState<Profile[]>([])
   const [smvm, setSmvm] = useState<number>(308200)
+  const [showQuickCreate, setShowQuickCreate] = useState(false)
 
   // Tipo de trámite (dos niveles)
   const [categoria, setCategoria] = useState('')
@@ -529,7 +532,14 @@ export default function NuevoTramitePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {!esCompraventa && (
                 <div className="space-y-1.5">
-                  <Label className="text-zinc-300">Cliente <span className="text-lime-400">*</span></Label>
+                  <div className="flex items-center justify-between gap-2">
+                    <Label className="text-zinc-300">Cliente <span className="text-lime-400">*</span></Label>
+                    <Button type="button" size="sm" variant="ghost"
+                      onClick={() => setShowQuickCreate(true)}
+                      className="h-6 px-2 text-xs text-lime-400 hover:bg-lime-400/10 gap-1">
+                      <UserPlus size={11} />Crear rápido
+                    </Button>
+                  </div>
                   <Select value={form.cliente_id} onValueChange={v => set('cliente_id', v)}>
                     <SelectTrigger className={selectTriggerCls}>
                       <SelectValue placeholder="Seleccioná cliente" />
@@ -595,13 +605,41 @@ export default function NuevoTramitePage() {
 
         {/* COMPRADORES / VENDEDORES (solo para compraventa) */}
         {esCompraventa && (
-          <CompradoresVendedoresForm
-            clientes={clientes.map(c => ({ id: c.id, nombre: c.nombre, apellido: c.apellido, dni: c.dni }))}
-            compradores={compradores}
-            vendedores={vendedores}
-            onChange={(c, v) => { setCompradores(c); setVendedores(v) }}
-          />
+          <div className="space-y-2">
+            <div className="flex justify-end">
+              <Button type="button" size="sm" variant="ghost"
+                onClick={() => setShowQuickCreate(true)}
+                className="text-lime-400 hover:bg-lime-400/10 gap-1.5">
+                <UserPlus size={13} />Crear cliente rápido
+              </Button>
+            </div>
+            <CompradoresVendedoresForm
+              clientes={clientes.map(c => ({ id: c.id, nombre: c.nombre, apellido: c.apellido, dni: c.dni }))}
+              compradores={compradores}
+              vendedores={vendedores}
+              onChange={(c, v) => { setCompradores(c); setVendedores(v) }}
+            />
+          </div>
         )}
+
+        {/* Modal de creación rápida — agrega el cliente nuevo a la lista local
+            y lo pre-selecciona si no es compraventa */}
+        <ClienteQuickCreate
+          open={showQuickCreate}
+          onClose={() => setShowQuickCreate(false)}
+          onCreated={(c) => {
+            const nuevo: ClienteRow = {
+              id: c.id, nombre: c.nombre, apellido: c.apellido,
+              dni: c.dni, cuil: c.cuil,
+              es_pep: false, es_sujeto_obligado: false, nivel_riesgo: null,
+            }
+            setClientes(prev => [nuevo, ...prev])
+            if (!esCompraventa) {
+              setForm(p => ({ ...p, cliente_id: c.id }))
+            }
+            setShowQuickCreate(false)
+          }}
+        />
 
         {/* DATOS DE ESCRITURA */}
         <Card className="bg-zinc-900 border-zinc-800">

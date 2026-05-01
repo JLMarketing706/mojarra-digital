@@ -224,6 +224,12 @@ export default function EditarClientePage() {
       nombre_padre: esSoltero ? (form.nombre_padre || null) : null,
       nombre_madre: esSoltero ? (form.nombre_madre || null) : null,
       notas: notasFinal || null,
+      // Si el cliente está completando datos clave (domicilio + estado civil/representación),
+      // desmarcamos automáticamente el flag de legajo incompleto.
+      legajo_incompleto: !(
+        form.dom_calle && form.dom_localidad &&
+        (esJuridica || form.estado_civil)
+      ),
     }
 
     const { error } = await supabase.from('clientes').update(payload).eq('id', id)

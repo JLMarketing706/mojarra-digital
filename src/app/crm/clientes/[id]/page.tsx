@@ -66,6 +66,11 @@ export default async function FichaClientePage({
               <Badge className={`uppercase border ${RIESGO_BADGE[riesgo]}`}>Riesgo {riesgo}</Badge>
               {c.es_pep && <Badge className="bg-yellow-500/20 text-yellow-300 border-0">PEP</Badge>}
               {c.es_sujeto_obligado && <Badge className="bg-orange-500/20 text-orange-300 border-0">Sujeto Obligado</Badge>}
+              {(c as Cliente & { legajo_incompleto?: boolean }).legajo_incompleto && (
+                <Badge className="bg-yellow-500/15 text-yellow-300 border border-yellow-500/30 gap-1">
+                  <AlertTriangle size={11} />Legajo incompleto
+                </Badge>
+              )}
             </div>
             <p className="text-zinc-400 text-sm">
               {c.tipo_documento ?? 'Documento'} {c.dni ?? '—'}
