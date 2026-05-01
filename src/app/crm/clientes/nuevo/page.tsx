@@ -24,6 +24,7 @@ import { MicButton } from '@/components/crm/mic-button'
 import type { TipoPersona, TipoDocumento, Sexo, EstadoCivil, TipoPEP } from '@/types'
 import { useFormDraft } from '@/lib/use-form-draft'
 import { DraftBanner, DraftSavedIndicator } from '@/components/crm/draft-banner'
+import { MontoInput } from '@/components/crm/monto-input'
 
 const ESTADOS_CIVILES: { v: EstadoCivil; label: string }[] = [
   { v: 'soltero', label: 'Soltero/a' },
@@ -643,16 +644,18 @@ export default function NuevoClientePage() {
               )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className="text-zinc-300">{esJuridica ? 'Facturación anual aprox. (ARS)' : 'Ingreso mensual aproximado (ARS)'}</Label>
-                <Input type="number" value={form.ingreso_mensual} onChange={e => set('ingreso_mensual', e.target.value)}
-                  placeholder="500000" className={inputCls} />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-zinc-300">Patrimonio aproximado (ARS)</Label>
-                <Input type="number" value={form.patrimonio_aprox} onChange={e => set('patrimonio_aprox', e.target.value)}
-                  placeholder="50000000" className={inputCls} />
-              </div>
+              <MontoInput
+                label={esJuridica ? 'Facturación anual aprox. (ARS)' : 'Ingreso mensual aproximado (ARS)'}
+                value={form.ingreso_mensual}
+                onChange={v => set('ingreso_mensual', v)}
+                className={inputCls}
+              />
+              <MontoInput
+                label="Patrimonio aproximado (ARS)"
+                value={form.patrimonio_aprox}
+                onChange={v => set('patrimonio_aprox', v)}
+                className={inputCls}
+              />
             </div>
           </CardContent>
         </Card>

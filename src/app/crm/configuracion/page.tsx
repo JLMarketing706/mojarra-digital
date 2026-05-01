@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
 import { Loader2, Save, Settings, Users, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
+import { MontoInput } from '@/components/crm/monto-input'
 
 interface ConfigEntry { clave: string; valor: string; descripcion: string | null }
 
@@ -134,19 +135,13 @@ export default function ConfiguracionPage() {
             <CardTitle className="text-sm text-zinc-300">Parámetros UIF</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <Label className="text-zinc-300 text-sm">SMVM vigente ($)</Label>
-              <Input
-                type="number"
-                value={config['salario_minimo'] ?? ''}
-                onChange={e => setConfig(p => ({ ...p, salario_minimo: e.target.value }))}
-                placeholder="234315"
-                className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-lime-400"
-              />
-              <p className="text-zinc-500 text-xs">
-                Umbral actual (700 SMVM): <span className="text-yellow-400 font-medium">{umbraleUIF}</span>
-              </p>
-            </div>
+            <MontoInput
+              label="SMVM vigente ($)"
+              value={config['salario_minimo'] ?? ''}
+              onChange={v => setConfig(p => ({ ...p, salario_minimo: v }))}
+              className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-lime-400"
+              helpText={`Umbral actual (700 SMVM): ${umbraleUIF}`}
+            />
             <Separator className="bg-zinc-800" />
             <div className="text-xs text-zinc-500 space-y-1">
               <p>· Trámites que superen este umbral generarán alerta UIF automática.</p>

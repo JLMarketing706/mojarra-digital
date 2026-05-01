@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import type { TipoPersona, TipoDocumento, Sexo, EstadoCivil, TipoPEP } from '@/types'
+import { MontoInput } from '@/components/crm/monto-input'
 
 const ESTADOS_CIVILES: { v: EstadoCivil; label: string }[] = [
   { v: 'soltero', label: 'Soltero/a' },
@@ -524,14 +525,18 @@ export default function EditarClientePage() {
               )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className="text-zinc-300">{esJuridica ? 'Facturación anual (ARS)' : 'Ingreso mensual (ARS)'}</Label>
-                <Input type="number" value={form.ingreso_mensual} onChange={e => set('ingreso_mensual', e.target.value)} className={inputCls} />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-zinc-300">Patrimonio aprox. (ARS)</Label>
-                <Input type="number" value={form.patrimonio_aprox} onChange={e => set('patrimonio_aprox', e.target.value)} className={inputCls} />
-              </div>
+              <MontoInput
+                label={esJuridica ? 'Facturación anual (ARS)' : 'Ingreso mensual (ARS)'}
+                value={form.ingreso_mensual}
+                onChange={v => set('ingreso_mensual', v)}
+                className={inputCls}
+              />
+              <MontoInput
+                label="Patrimonio aprox. (ARS)"
+                value={form.patrimonio_aprox}
+                onChange={v => set('patrimonio_aprox', v)}
+                className={inputCls}
+              />
             </div>
           </CardContent>
         </Card>

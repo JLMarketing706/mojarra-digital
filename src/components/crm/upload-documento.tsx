@@ -65,6 +65,13 @@ interface Props {
    * Si es true, requiere que el escribano marque el doc como verificado.
    */
   requiereVerificacion?: boolean
+
+  /**
+   * Si es true, no muestra nada cuando ya existen documentos cargados
+   * para esa combinación (categoría + cliente/tramite + campoValida).
+   * Útil para evitar duplicar la subida cuando el doc se cargó vía OCR.
+   */
+  ocultarSiHayDocs?: boolean
 }
 
 export function UploadDocumento({
@@ -77,6 +84,7 @@ export function UploadDocumento({
   helpText,
   variant = 'inline',
   requiereVerificacion = true,
+  ocultarSiHayDocs = false,
 }: Props) {
   const router = useRouter()
   const supabase = createClient()
@@ -190,6 +198,10 @@ export function UploadDocumento({
   }
 
   const subcatOpts = SUBCATEGORIAS_DOC[categoria] ?? []
+
+  // Si está configurado para ocultarse cuando ya hay docs, no renderizamos nada.
+  // Esperamos a que termine de cargar para no parpadear.
+  if (ocultarSiHayDocs && !loading && docs.length > 0) return null
 
   return (
     <div className={variant === 'card'
