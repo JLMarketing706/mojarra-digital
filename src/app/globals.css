@@ -42,11 +42,20 @@
   --font-mono: var(--font-geist-mono);
 }
 
-body {
+html, body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
+  /* Evita rubber-band del navegador (Safari/Chrome) que muestra el fondo blanco al overscroll */
+  overscroll-behavior: none;
+  height: 100%;
+}
+
+/* Cuando estamos dentro del CRM (layout con .dark), forzar bg oscuro al root
+   para que el bounce/overscroll del navegador no muestre blanco */
+html:has(.dark), body:has(.dark) {
+  background: #0a0a0a;
 }
 
 * {
