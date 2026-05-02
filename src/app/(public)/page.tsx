@@ -182,7 +182,7 @@ const planes = [
 const faq = [
   {
     q: '¿Cómo es el proceso para empezar a usar Mojarra Digital?',
-    a: 'Solicitás una demo de 30 minutos por video. Si te interesa, firmamos el contrato y en 48 horas tenés tu escribanía configurada con tus datos. Ofrecemos 30 días de prueba sin compromiso.',
+    a: 'Solicitás una demo de 30 minutos por video. Si te interesa, firmamos el contrato y en 48 horas tenés tu escribanía configurada con tus datos. Ofrecemos 7 días de prueba sin compromiso.',
   },
   {
     q: '¿Qué pasa con la información que ya tengo cargada en planillas?',
@@ -194,7 +194,7 @@ const faq = [
   },
   {
     q: '¿Puedo probar antes de pagar?',
-    a: 'Sí. Todos los planes incluyen 30 días de prueba completos sin tarjeta de crédito. Si no te convence, cancelás y listo, sin letra chica.',
+    a: 'Sí. Todos los planes incluyen 7 días de prueba completos sin tarjeta de crédito. Si no te convence, cancelás y listo, sin letra chica.',
   },
   {
     q: '¿Necesito instalar algo en mis computadoras?',
@@ -263,7 +263,7 @@ export default function HomePage() {
             <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-zinc-400">
               <div className="flex items-center gap-2">
                 <Check size={14} className="text-lime-400" />
-                <span>30 días gratis</span>
+                <span>7 días gratis</span>
               </div>
               <div className="flex items-center gap-2">
                 <Check size={14} className="text-lime-400" />
@@ -509,7 +509,7 @@ export default function HomePage() {
             </h2>
             <p className="text-zinc-400 text-lg">
               Sin letra chica. Sin sorpresas. Cancelás cuando quieras.
-              Todos los planes incluyen 30 días de prueba gratis.
+              Todos los planes incluyen 7 días de prueba gratis.
             </p>
           </div>
 
@@ -628,7 +628,7 @@ export default function HomePage() {
             </a>
           </div>
           <p className="mt-6 text-xs text-zinc-500">
-            30 días gratis · Sin tarjeta de crédito · Migración sin costo
+            7 días gratis · Sin tarjeta de crédito · Migración sin costo
           </p>
         </div>
       </section>

@@ -916,7 +916,7 @@ export interface Escribania {
 }
 
 export const LABEL_PLAN: Record<PlanEscribania, string> = {
-  trial: 'Trial (30 días)',
+  trial: 'Trial (7 días)',
   basico: 'Básico',
   profesional: 'Profesional',
   estudio: 'Estudio',

@@ -165,7 +165,7 @@ export default async function AdminDashboard() {
                 <th className="text-right px-4 py-3 text-zinc-400 font-medium text-xs">Usuarios</th>
                 <th className="text-right px-4 py-3 text-zinc-400 font-medium text-xs">Clientes</th>
                 <th className="text-right px-4 py-3 text-zinc-400 font-medium text-xs">Operaciones</th>
-                <th className="text-left px-4 py-3 text-zinc-400 font-medium text-xs">Trial hasta</th>
+                <th className="text-left px-4 py-3 text-zinc-400 font-medium text-xs">Trial</th>
                 <th className="text-left px-4 py-3 text-zinc-400 font-medium text-xs">Soporte</th>
               </tr>
             </thead>
@@ -196,8 +196,32 @@ export default async function AdminDashboard() {
                     </td>
                     <td className="px-4 py-3 text-right text-zinc-300">{e.cantidad_clientes}</td>
                     <td className="px-4 py-3 text-right text-zinc-300">{e.cantidad_tramites}</td>
-                    <td className="px-4 py-3 text-zinc-500 text-xs">
-                      {e.trial_until ? formatFecha(e.trial_until) : '—'}
+                    <td className="px-4 py-3 text-xs">
+                      {(() => {
+                        if (!e.trial_until) return <span className="text-zinc-600">—</span>
+                        const fin = new Date(e.trial_until + 'T00:00:00')
+                        const hoy = new Date()
+                        hoy.setHours(0, 0, 0, 0)
+                        const dias = Math.ceil((fin.getTime() - hoy.getTime()) / 86400000)
+                        if (dias < 0) {
+                          return (
+                            <div>
+                              <span className="text-red-400 font-medium">Vencido</span>
+                              <p className="text-zinc-600 mt-0.5">hace {Math.abs(dias)} {Math.abs(dias) === 1 ? 'día' : 'días'}</p>
+                            </div>
+                          )
+                        }
+                        if (dias === 0) {
+                          return <span className="text-red-400 font-medium">Vence hoy</span>
+                        }
+                        const color = dias <= 2 ? 'text-red-400' : dias <= 4 ? 'text-amber-400' : 'text-lime-400'
+                        return (
+                          <div>
+                            <span className={`${color} font-medium`}>{dias} {dias === 1 ? 'día' : 'días'}</span>
+                            <p className="text-zinc-600 mt-0.5">{formatFecha(e.trial_until)}</p>
+                          </div>
+                        )
+                      })()}
                     </td>
                     <td className="px-4 py-3">
                       {soporteActivo ? (
