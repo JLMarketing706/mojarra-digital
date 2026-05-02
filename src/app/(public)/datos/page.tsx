@@ -194,7 +194,7 @@ export default function CargaDatosPage() {
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link href="/">
-            <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
+            <Button variant="outline" className="border-zinc-700 bg-zinc-900 text-zinc-200 hover:bg-zinc-800 hover:text-white">
               Volver al inicio
             </Button>
           </Link>

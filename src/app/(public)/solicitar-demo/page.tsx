@@ -54,7 +54,7 @@ export default function SolicitarDemoPage() {
           o WhatsApp que dejaste, con un link para activar tu prueba gratis de 7 días.
         </p>
         <Link href="/">
-          <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
+          <Button className="bg-lime-400 text-black hover:bg-lime-300 font-semibold">
             <ArrowLeft size={14} className="mr-2" />Volver al inicio
           </Button>
         </Link>
