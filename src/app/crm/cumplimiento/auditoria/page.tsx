@@ -22,6 +22,12 @@ const ACCION_ICON: Record<string, React.ElementType> = {
   DELETE: Trash2,
 }
 
+const ACCION_LABEL: Record<string, string> = {
+  INSERT: 'Creación',
+  UPDATE: 'Modificación',
+  DELETE: 'Eliminación',
+}
+
 const TABLA_LABEL: Record<string, string> = {
   clientes: 'Cliente',
   clientes_juridicos: 'Cliente jurídico',
@@ -113,7 +119,7 @@ export default async function AuditoriaPage({
                         <td className="px-4 py-2.5">
                           <Badge className={`text-xs border ${ACCION_COLORS[l.accion] ?? 'bg-zinc-700 text-zinc-300'}`}>
                             <Icon size={10} className="mr-1" />
-                            {l.accion}
+                            {ACCION_LABEL[l.accion] ?? l.accion}
                           </Badge>
                         </td>
                         <td className="px-4 py-2.5 text-zinc-200 text-xs">
