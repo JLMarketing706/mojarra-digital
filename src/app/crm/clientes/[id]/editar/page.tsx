@@ -20,6 +20,7 @@ import {
 import Link from 'next/link'
 import type { TipoPersona, TipoDocumento, Sexo, EstadoCivil, TipoPEP } from '@/types'
 import { MontoInput } from '@/components/crm/monto-input'
+import { formatCuit } from '@/lib/utils'
 
 const ESTADOS_CIVILES: { v: EstadoCivil; label: string }[] = [
   { v: 'soltero', label: 'Soltero/a' },
@@ -126,7 +127,7 @@ export default function EditarClientePage() {
         apellido: (c.apellido as string) ?? '',
         tipo_documento: (c.tipo_documento as TipoDocumento) ?? '',
         dni: (c.dni as string) ?? '',
-        cuil: (c.cuil as string) ?? '',
+        cuil: formatCuit((c.cuil as string) ?? ''),
         sexo: (c.sexo as Sexo) ?? '',
         fecha_nacimiento: (c.fecha_nacimiento as string) ?? '',
         lugar_nacimiento: (c.lugar_nacimiento as string) ?? '',
@@ -325,7 +326,7 @@ export default function EditarClientePage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label className="text-zinc-300 uppercase text-xs">CUIT</Label>
-                  <Input value={form.cuil} onChange={e => set('cuil', e.target.value)} placeholder="30-12345678-9" className={inputCls} />
+                  <Input value={form.cuil} onChange={e => set('cuil', formatCuit(e.target.value))} placeholder="30-12345678-9" maxLength={13} inputMode="numeric" className={inputCls} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-zinc-300">Fecha de inscripción</Label>
@@ -352,7 +353,7 @@ export default function EditarClientePage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-zinc-300 uppercase text-xs">CUIT/CUIL</Label>
-                    <Input value={form.cuil} onChange={e => set('cuil', e.target.value)} placeholder="20-12345678-9" className={inputCls} />
+                    <Input value={form.cuil} onChange={e => set('cuil', formatCuit(e.target.value))} placeholder="20-12345678-9" maxLength={13} inputMode="numeric" className={inputCls} />
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

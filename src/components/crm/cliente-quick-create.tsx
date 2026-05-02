@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner'
 import { Loader2, X, UserPlus, AlertTriangle } from 'lucide-react'
 import type { TipoPersona } from '@/types'
+import { formatCuit } from '@/lib/utils'
 
 const TIPOS_PERSONA: { v: TipoPersona; label: string }[] = [
   { v: 'humana', label: 'Persona humana' },
@@ -168,8 +169,8 @@ export function ClienteQuickCreate({ open, onClose, onCreated }: Props) {
             )}
             <div className={esJuridica ? 'col-span-2' : ''}>
               <Label className="text-zinc-300 text-xs">CUIT / CUIL</Label>
-              <Input value={form.cuil} onChange={e => set('cuil', e.target.value)}
-                placeholder="20-12345678-9" inputMode="numeric"
+              <Input value={form.cuil} onChange={e => set('cuil', formatCuit(e.target.value))}
+                placeholder="20-12345678-9" inputMode="numeric" maxLength={13}
                 className="bg-zinc-800 border-zinc-700 text-white font-mono" />
             </div>
           </div>

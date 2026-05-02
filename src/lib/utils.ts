@@ -64,6 +64,14 @@ export function parseMonto(valor: string): number {
   return parseFloat(valor.replace(/\./g, '').replace(',', '.')) || 0
 }
 
+/** Formatea un CUIT/CUIL con guiones medios mientras se tipea: XX-XXXXXXXX-X */
+export function formatCuit(valor: string): string {
+  const soloDigitos = (valor ?? '').replace(/\D/g, '').slice(0, 11)
+  if (soloDigitos.length <= 2) return soloDigitos
+  if (soloDigitos.length <= 10) return `${soloDigitos.slice(0, 2)}-${soloDigitos.slice(2)}`
+  return `${soloDigitos.slice(0, 2)}-${soloDigitos.slice(2, 10)}-${soloDigitos.slice(10)}`
+}
+
 export function estadoUifLabel(estado: string | null | undefined): string {
   const labels: Record<string, string> = {
     no: 'No requiere informe',

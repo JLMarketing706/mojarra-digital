@@ -25,6 +25,7 @@ import type { TipoPersona, TipoDocumento, Sexo, EstadoCivil, TipoPEP } from '@/t
 import { useFormDraft } from '@/lib/use-form-draft'
 import { DraftBanner, DraftSavedIndicator } from '@/components/crm/draft-banner'
 import { MontoInput } from '@/components/crm/monto-input'
+import { formatCuit } from '@/lib/utils'
 
 const ESTADOS_CIVILES: { v: EstadoCivil; label: string }[] = [
   { v: 'soltero', label: 'Soltero/a' },
@@ -160,7 +161,7 @@ export default function NuevoClientePage() {
         if (d.nombre) { next.nombre = d.nombre; completados.push('nombre') }
         if (d.apellido) { next.apellido = d.apellido; completados.push('apellido') }
         if (d.dni) { next.dni = d.dni; completados.push('dni'); next.tipo_documento = 'DNI' }
-        if (d.cuil) { next.cuil = d.cuil; completados.push('cuil') }
+        if (d.cuil) { next.cuil = formatCuit(d.cuil); completados.push('cuil') }
         if (d.sexo && ['F', 'M', 'X'].includes(d.sexo)) { next.sexo = d.sexo; completados.push('sexo') }
         const fecha = parseFecha(d.fecha_nacimiento)
         if (fecha) { next.fecha_nacimiento = fecha; completados.push('fecha_nacimiento') }
@@ -410,7 +411,7 @@ export default function NuevoClientePage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label className="text-zinc-300 uppercase text-xs">CUIT</Label>
-                    <Input value={form.cuil} onChange={e => set('cuil', e.target.value)} placeholder="30-12345678-9" className={inputCls} />
+                    <Input value={form.cuil} onChange={e => set('cuil', formatCuit(e.target.value))} placeholder="30-12345678-9" maxLength={13} inputMode="numeric" className={inputCls} />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-zinc-300">Fecha de inscripción</Label>
@@ -444,7 +445,7 @@ export default function NuevoClientePage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-zinc-300 uppercase text-xs flex items-center">CUIT/CUIL{ocrBadge('cuil')}</Label>
-                    <Input value={form.cuil} onChange={e => set('cuil', e.target.value)} placeholder="20-12345678-9" className={inputCls} />
+                    <Input value={form.cuil} onChange={e => set('cuil', formatCuit(e.target.value))} placeholder="20-12345678-9" maxLength={13} inputMode="numeric" className={inputCls} />
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
