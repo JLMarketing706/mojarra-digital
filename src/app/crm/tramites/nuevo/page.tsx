@@ -161,6 +161,9 @@ export default function NuevoTramitePage() {
   const [escribanos, setEscribanos] = useState<Profile[]>([])
   const [smvm, setSmvm] = useState<number>(308200)
   const [showQuickCreate, setShowQuickCreate] = useState(false)
+  // Si el modal se abre desde un slot de comprador/vendedor/otro, guardamos
+  // un callback para asignar el cliente recién creado a ese slot puntual.
+  const [asignarSlotPendiente, setAsignarSlotPendiente] = useState<((id: string) => void) | null>(null)
 
   // Tipo de trámite (dos niveles)
   const [categoria, setCategoria] = useState('')
@@ -605,28 +608,24 @@ export default function NuevoTramitePage() {
 
         {/* COMPRADORES / VENDEDORES (solo para compraventa) */}
         {esCompraventa && (
-          <div className="space-y-2">
-            <div className="flex justify-end">
-              <Button type="button" size="sm" variant="ghost"
-                onClick={() => setShowQuickCreate(true)}
-                className="text-lime-400 hover:bg-lime-400/10 gap-1.5">
-                <UserPlus size={13} />Crear cliente rápido
-              </Button>
-            </div>
-            <CompradoresVendedoresForm
-              clientes={clientes.map(c => ({ id: c.id, nombre: c.nombre, apellido: c.apellido, dni: c.dni }))}
-              compradores={compradores}
-              vendedores={vendedores}
-              onChange={(c, v) => { setCompradores(c); setVendedores(v) }}
-            />
-          </div>
+          <CompradoresVendedoresForm
+            clientes={clientes.map(c => ({ id: c.id, nombre: c.nombre, apellido: c.apellido, dni: c.dni }))}
+            compradores={compradores}
+            vendedores={vendedores}
+            onChange={(c, v) => { setCompradores(c); setVendedores(v) }}
+            onCrearCliente={(asignar) => {
+              setAsignarSlotPendiente(() => asignar)
+              setShowQuickCreate(true)
+            }}
+          />
         )}
 
         {/* Modal de creación rápida — agrega el cliente nuevo a la lista local
-            y lo pre-selecciona si no es compraventa */}
+            y lo asigna al slot que abrió el modal (o al cliente principal si no
+            hay slot pendiente y la operación no es compraventa). */}
         <ClienteQuickCreate
           open={showQuickCreate}
-          onClose={() => setShowQuickCreate(false)}
+          onClose={() => { setShowQuickCreate(false); setAsignarSlotPendiente(null) }}
           onCreated={(c) => {
             const nuevo: ClienteRow = {
               id: c.id, nombre: c.nombre, apellido: c.apellido,
@@ -634,10 +633,13 @@ export default function NuevoTramitePage() {
               es_pep: false, es_sujeto_obligado: false, nivel_riesgo: null,
             }
             setClientes(prev => [nuevo, ...prev])
-            if (!esCompraventa) {
+            if (asignarSlotPendiente) {
+              asignarSlotPendiente(c.id)
+            } else if (!esCompraventa) {
               setForm(p => ({ ...p, cliente_id: c.id }))
             }
             setShowQuickCreate(false)
+            setAsignarSlotPendiente(null)
           }}
         />
 

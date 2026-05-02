@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Plus, Trash2, Users, ShoppingCart, Building, ChevronDown, ChevronRight } from 'lucide-react'
+import { Plus, Trash2, Users, ShoppingCart, Building, ChevronDown, ChevronRight, UserPlus } from 'lucide-react'
 
 // ─── Tipos ────────────────────────────────────────────────
 export type RolPartePrincipal = 'comprador' | 'vendedor'
@@ -48,6 +48,12 @@ interface Props {
   compradores: PartePrincipal[]
   vendedores: PartePrincipal[]
   onChange: (compradores: PartePrincipal[], vendedores: PartePrincipal[]) => void
+  /**
+   * Si se provee, muestra un botón "+ Crear" al lado de cada select de cliente.
+   * El parent abre el modal de quick-create y, una vez creado, debe llamar
+   * al callback con el id del nuevo cliente para que se asigne al slot.
+   */
+  onCrearCliente?: (asignarAlSlot: (clienteId: string) => void) => void
 }
 
 function uid() {
@@ -55,7 +61,7 @@ function uid() {
 }
 
 export function CompradoresVendedoresForm({
-  clientes, compradores, vendedores, onChange,
+  clientes, compradores, vendedores, onChange, onCrearCliente,
 }: Props) {
 
   function nuevaParte(): PartePrincipal {
@@ -159,6 +165,12 @@ export function CompradoresVendedoresForm({
                 onAgregarOtro={() => agregarOtro(lista, parte.id)}
                 onActualizarOtro={(otroId, cambios) => actualizarOtro(lista, parte.id, otroId, cambios)}
                 onEliminarOtro={(otroId) => eliminarOtro(lista, parte.id, otroId)}
+                onCrearClientePrincipal={onCrearCliente
+                  ? () => onCrearCliente((id) => actualizarPrincipal(lista, parte.id, { cliente_id: id }))
+                  : undefined}
+                onCrearClienteOtro={onCrearCliente
+                  ? (otroId) => onCrearCliente((id) => actualizarOtro(lista, parte.id, otroId, { cliente_id: id }))
+                  : undefined}
               />
             ))}
           </div>
@@ -191,6 +203,7 @@ export function CompradoresVendedoresForm({
 function PrincipalCard({
   indice, titulo, color, parte, clientes,
   onChange, onEliminar, onAgregarOtro, onActualizarOtro, onEliminarOtro,
+  onCrearClientePrincipal, onCrearClienteOtro,
 }: {
   indice: number
   titulo: string
@@ -202,6 +215,8 @@ function PrincipalCard({
   onAgregarOtro: () => void
   onActualizarOtro: (otroId: string, c: Partial<OtroParte>) => void
   onEliminarOtro: (otroId: string) => void
+  onCrearClientePrincipal?: () => void
+  onCrearClienteOtro?: (otroId: string) => void
 }) {
   const [expandidoOtros, setExpandidoOtros] = useState(parte.otros.length > 0)
 
@@ -212,18 +227,30 @@ function PrincipalCard({
           {titulo} {indice}
         </span>
         <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <Select value={parte.cliente_id} onValueChange={v => onChange({ cliente_id: v })}>
-            <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white text-sm h-9">
-              <SelectValue placeholder="Seleccioná cliente" />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-700 max-h-64">
-              {clientes.map(c => (
-                <SelectItem key={c.id} value={c.id} className="text-zinc-200 focus:bg-zinc-800 text-sm">
-                  {c.apellido}, {c.nombre}{c.dni ? ` · ${c.dni}` : ''}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex gap-1.5">
+            <Select value={parte.cliente_id} onValueChange={v => onChange({ cliente_id: v })}>
+              <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white text-sm h-9 flex-1">
+                <SelectValue placeholder="Seleccioná cliente" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-700 max-h-64">
+                {clientes.map(c => (
+                  <SelectItem key={c.id} value={c.id} className="text-zinc-200 focus:bg-zinc-800 text-sm">
+                    {c.apellido}, {c.nombre}{c.dni ? ` · ${c.dni}` : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {onCrearClientePrincipal && (
+              <Button
+                type="button" variant="outline" size="sm"
+                onClick={onCrearClientePrincipal}
+                title="Crear cliente rápido"
+                className="border-zinc-700 text-lime-400 hover:bg-lime-400/10 h-9 px-2 shrink-0"
+              >
+                <UserPlus size={13} />
+              </Button>
+            )}
+          </div>
           <Input
             value={parte.observacion}
             onChange={e => onChange({ observacion: e.target.value })}
@@ -269,18 +296,30 @@ function PrincipalCard({
                         ))}
                       </SelectContent>
                     </Select>
-                    <Select value={otro.cliente_id} onValueChange={v => onActualizarOtro(otro.id, { cliente_id: v })}>
-                      <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white text-xs h-8">
-                        <SelectValue placeholder="Cliente" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-zinc-900 border-zinc-700 max-h-64">
-                        {clientes.map(c => (
-                          <SelectItem key={c.id} value={c.id} className="text-zinc-200 focus:bg-zinc-800 text-xs">
-                            {c.apellido}, {c.nombre}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex gap-1">
+                      <Select value={otro.cliente_id} onValueChange={v => onActualizarOtro(otro.id, { cliente_id: v })}>
+                        <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white text-xs h-8 flex-1">
+                          <SelectValue placeholder="Cliente" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-zinc-900 border-zinc-700 max-h-64">
+                          {clientes.map(c => (
+                            <SelectItem key={c.id} value={c.id} className="text-zinc-200 focus:bg-zinc-800 text-xs">
+                              {c.apellido}, {c.nombre}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {onCrearClienteOtro && (
+                        <Button
+                          type="button" variant="outline" size="sm"
+                          onClick={() => onCrearClienteOtro(otro.id)}
+                          title="Crear cliente rápido"
+                          className="border-zinc-700 text-lime-400 hover:bg-lime-400/10 h-8 w-8 p-0 shrink-0"
+                        >
+                          <UserPlus size={11} />
+                        </Button>
+                      )}
+                    </div>
                     <Input
                       value={otro.observacion}
                       onChange={e => onActualizarOtro(otro.id, { observacion: e.target.value })}
