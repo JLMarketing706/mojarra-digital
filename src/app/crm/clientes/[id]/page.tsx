@@ -34,7 +34,7 @@ export default async function FichaClientePage({
   if (!cliente) notFound()
   const c = cliente as Cliente
 
-  const [{ data: tramites }, { data: documentos }] = await Promise.all([
+  const [{ data: tramites }, { data: documentos }, { data: principalesPartes }] = await Promise.all([
     supabase.from('tramites')
       .select('id, tipo, estado, numero_referencia, created_at, updated_at, dispara_uif, monto, tipo_acto')
       .eq('cliente_id', id)
@@ -43,7 +43,28 @@ export default async function FichaClientePage({
       .select('id, nombre, tipo, url, created_at')
       .eq('cliente_id', id)
       .order('created_at', { ascending: false }),
+    supabase.from('tramite_partes')
+      .select('id')
+      .eq('cliente_id', id),
   ])
+
+  // "Personas vinculadas" del cliente: apoderados, fiadores y otros que
+  // comparecieron junto a él en cualquiera de sus operaciones (excluye
+  // cónyuge / padre / madre que ya viven como campos del legajo).
+  const idsPrincipalesParte = (principalesPartes ?? []).map(p => p.id as string)
+  let comparecientes: Array<{
+    id: string; rol: string; nombre: string | null; dni: string | null;
+    observacion: string | null; tramite: { id: string; tipo: string } | null
+  }> = []
+  if (idsPrincipalesParte.length > 0) {
+    const { data: cmp } = await supabase
+      .from('tramite_partes')
+      .select('id, rol, nombre, dni, observacion, tramite:tramites(id, tipo)')
+      .in('parte_padre_id', idsPrincipalesParte)
+      .in('rol', ['apoderado', 'fiador', 'otro'])
+      .order('created_at', { ascending: false })
+    comparecientes = (cmp ?? []) as unknown as typeof comparecientes
+  }
 
   const riesgo = (c.nivel_riesgo ?? 'bajo') as NivelRiesgo
   const proximaVencida = c.proxima_actualizacion
@@ -103,6 +124,7 @@ export default async function FichaClientePage({
         cliente={c}
         tramites={tramites ?? []}
         documentos={documentos ?? []}
+        comparecientes={comparecientes}
       />
     </div>
   )

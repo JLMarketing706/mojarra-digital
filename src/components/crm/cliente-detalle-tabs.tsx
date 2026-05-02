@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import {
-  FileText, ShieldAlert, MapPin, Briefcase, Heart, Clock, User, ShoppingCart,
+  FileText, ShieldAlert, MapPin, Briefcase, Heart, Clock, User, ShoppingCart, UserCheck,
 } from 'lucide-react'
 import { estadoTramiteLabel, estadoTramiteColor, formatFecha } from '@/lib/utils'
 import type { Cliente, NivelRiesgo } from '@/types'
@@ -45,10 +45,26 @@ interface DocRow {
   created_at: string
 }
 
+interface ComparecienteRow {
+  id: string
+  rol: string
+  nombre: string | null
+  dni: string | null
+  observacion: string | null
+  tramite: { id: string; tipo: string } | null
+}
+
+const ROL_COMPARECIENTE_LABEL: Record<string, string> = {
+  apoderado: 'Apoderado',
+  fiador: 'Fiador / Garante',
+  otro: 'Otro',
+}
+
 interface Props {
   cliente: Cliente
   tramites: TramiteRow[]
   documentos: DocRow[]
+  comparecientes?: ComparecienteRow[]
 }
 
 function Field({ label, value, mono = false }: { label: string; value?: string | number | null; mono?: boolean }) {
@@ -72,7 +88,7 @@ function joinDomicilio(c: Cliente) {
   return parts.length ? parts.join(', ') : (c.domicilio || null)
 }
 
-export function ClienteDetalleTabs({ cliente: c, tramites, documentos }: Props) {
+export function ClienteDetalleTabs({ cliente: c, tramites, documentos, comparecientes = [] }: Props) {
   const riesgo = (c.nivel_riesgo ?? 'bajo') as NivelRiesgo
   const esJuridica = c.tipo_persona !== 'humana'
   const proximaVencida = c.proxima_actualizacion ? new Date(c.proxima_actualizacion) < new Date() : false
@@ -248,6 +264,48 @@ export function ClienteDetalleTabs({ cliente: c, tramites, documentos }: Props) 
                 <Field label="Empleador" value={c.empleador} />
                 <Field label="Ingreso mensual" value={c.ingreso_mensual ? `$ ${c.ingreso_mensual.toLocaleString('es-AR')}` : null} />
                 <Field label="Patrimonio" value={c.patrimonio_aprox ? `$ ${c.patrimonio_aprox.toLocaleString('es-AR')}` : null} />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {comparecientes.length > 0 && (
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm text-zinc-300 flex items-center gap-2">
+                <UserCheck size={14} className="text-lime-400" />
+                Personas vinculadas en operaciones ({comparecientes.length})
+              </CardTitle>
+              <p className="text-xs text-zinc-500">
+                Apoderados, fiadores y otros que comparecieron junto al cliente.
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {comparecientes.map(p => (
+                  <div key={p.id} className="flex items-center justify-between gap-3 p-2.5 rounded-md bg-zinc-800/40 border border-zinc-700">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge className="text-[10px] uppercase tracking-wide bg-lime-400/10 text-lime-300 border border-lime-400/30">
+                          {ROL_COMPARECIENTE_LABEL[p.rol] ?? p.rol}
+                        </Badge>
+                        <span className="text-zinc-200 text-sm font-medium truncate">
+                          {p.nombre ?? '—'}
+                        </span>
+                        {p.dni && <span className="text-zinc-500 text-xs">DNI {p.dni}</span>}
+                      </div>
+                      {p.observacion && (
+                        <p className="text-zinc-500 text-xs mt-0.5 truncate">{p.observacion}</p>
+                      )}
+                    </div>
+                    {p.tramite && (
+                      <Link href={`/crm/tramites/${p.tramite.id}`}
+                        className="text-xs text-lime-400 hover:underline shrink-0 truncate max-w-[200px]">
+                        {p.tramite.tipo}
+                      </Link>
+                    )}
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
