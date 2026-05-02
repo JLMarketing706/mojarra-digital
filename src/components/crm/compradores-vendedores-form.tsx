@@ -191,9 +191,9 @@ export function CompradoresVendedoresForm({
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
-        {renderSeccion('Compradores', <ShoppingCart size={14} />, 'text-blue-300', 'compradores', compradores)}
+        {renderSeccion('Compradores', <ShoppingCart size={14} />, 'text-lime-400', 'compradores', compradores)}
         <div className="border-t border-zinc-800" />
-        {renderSeccion('Vendedores', <Building size={14} />, 'text-orange-300', 'vendedores', vendedores)}
+        {renderSeccion('Vendedores', <Building size={14} />, 'text-zinc-300', 'vendedores', vendedores)}
       </CardContent>
     </Card>
   )

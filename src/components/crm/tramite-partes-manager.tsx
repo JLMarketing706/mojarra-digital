@@ -142,8 +142,8 @@ export function TramitePartesManager({ tramiteId }: Props) {
   }
 
   function colorRol(rol: string): string {
-    if (rol === 'comprador') return 'text-blue-300'
-    if (rol === 'vendedor') return 'text-orange-300'
+    if (rol === 'comprador') return 'text-lime-400'
+    if (rol === 'vendedor') return 'text-zinc-300'
     return 'text-zinc-300'
   }
 
