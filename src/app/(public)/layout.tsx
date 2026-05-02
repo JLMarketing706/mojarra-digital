@@ -17,10 +17,10 @@ function Navbar() {
   }, [])
 
   const links = [
-    { href: '#producto', label: 'Producto' },
-    { href: '#funciones', label: 'Funciones' },
-    { href: '#precios', label: 'Precios' },
-    { href: '#testimonios', label: 'Clientes' },
+    { href: '/#producto', label: 'Producto' },
+    { href: '/#funciones', label: 'Funciones' },
+    { href: '/#precios', label: 'Precios' },
+    { href: '/#testimonios', label: 'Clientes' },
   ]
 
   return (
