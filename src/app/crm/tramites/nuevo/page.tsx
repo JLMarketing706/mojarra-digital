@@ -429,19 +429,49 @@ export default function NuevoTramitePage() {
           }
         }
 
+        // Insertar "otros" como nombres sueltos (sin cliente_id) y sincronizar
+        // cónyuge / padre / madre al legajo del cliente principal correspondiente.
         const otrosPayload: Array<Record<string, unknown>> = []
+        const updatesPorCliente = new Map<string, Record<string, unknown>>()
+
         for (const c of [...compradores, ...vendedores].filter(p => p.cliente_id)) {
           const padreReal = idMap.get(c.id)
           if (!padreReal) continue
-          for (const o of c.otros.filter(o => o.cliente_id)) {
+          for (const o of c.otros.filter(o => o.nombre.trim())) {
             otrosPayload.push({
-              tramite_id: t.id, cliente_id: o.cliente_id, rol: o.rol,
+              tramite_id: t.id,
+              cliente_id: null,
+              rol: o.rol,
+              nombre: o.nombre.trim(),
+              dni: o.dni.trim() || null,
               observacion: o.observacion || null,
               parte_padre_id: padreReal,
               orden: orden++,
             })
+
+            // Sincronizar al legajo del principal según el rol
+            const updates = updatesPorCliente.get(c.cliente_id) ?? {}
+            if (o.rol === 'conyuge' || o.rol === 'conviviente') {
+              updates.conyuge_nombre = o.nombre.trim()
+              if (o.dni.trim()) updates.conyuge_dni = o.dni.trim()
+            } else if (o.rol === 'padre') {
+              updates.nombre_padre = o.nombre.trim()
+            } else if (o.rol === 'madre') {
+              updates.nombre_madre = o.nombre.trim()
+            }
+            if (Object.keys(updates).length > 0) {
+              updatesPorCliente.set(c.cliente_id, updates)
+            }
           }
         }
+
+        // Aplicar updates al legajo de cada cliente principal
+        for (const [clienteId, updates] of updatesPorCliente) {
+          if (Object.keys(updates).length > 0) {
+            await supabase.from('clientes').update(updates).eq('id', clienteId)
+          }
+        }
+
         if (otrosPayload.length > 0) {
           const { error: errOtros } = await supabase.from('tramite_partes').insert(otrosPayload)
           if (errOtros) console.error('Error insertando otros:', errOtros)
@@ -456,7 +486,7 @@ export default function NuevoTramitePage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       <div className="mb-6">
         <Link href="/crm/tramites">
           <Button variant="ghost" size="sm" className="gap-1.5 text-zinc-400 -ml-2 mb-4">
@@ -476,7 +506,7 @@ export default function NuevoTramitePage() {
         onDiscard={clearDraft}
       />
 
-      <form onSubmit={handleSubmit} className="space-y-5 max-w-3xl">
+      <form onSubmit={handleSubmit} className="space-y-5">
         {/* IDENTIFICACIÓN */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>

@@ -53,6 +53,8 @@ interface Parte {
   observacion: string | null
   parte_padre_id: string | null
   orden: number | null
+  nombre: string | null
+  dni: string | null
   cliente?: { nombre: string; apellido: string; dni: string | null } | null
 }
 
@@ -71,7 +73,7 @@ export function TramitePartesManager({ tramiteId }: Props) {
     async function load() {
       const [pRes, cRes] = await Promise.all([
         supabase.from('tramite_partes')
-          .select('id, cliente_id, rol, porcentaje, observacion, parte_padre_id, orden, cliente:clientes(nombre, apellido, dni)')
+          .select('id, cliente_id, rol, porcentaje, observacion, parte_padre_id, orden, nombre, dni, cliente:clientes(nombre, apellido, dni)')
           .eq('tramite_id', tramiteId)
           .order('orden', { ascending: true }),
         supabase.from('clientes').select('id, nombre, apellido, dni').order('apellido').limit(500),
@@ -116,7 +118,7 @@ export function TramitePartesManager({ tramiteId }: Props) {
         parte_padre_id: esRolOtro ? nuevo.parte_padre_id : null,
         orden: partes.length,
       })
-      .select('id, cliente_id, rol, porcentaje, observacion, parte_padre_id, orden, cliente:clientes(nombre, apellido, dni)')
+      .select('id, cliente_id, rol, porcentaje, observacion, parte_padre_id, orden, nombre, dni, cliente:clientes(nombre, apellido, dni)')
       .single()
     setAgregando(false)
     if (error) {
@@ -205,7 +207,8 @@ export function TramitePartesManager({ tramiteId }: Props) {
                             <ChevronRight size={11} className="text-zinc-600 shrink-0" />
                             <span className="text-zinc-400 uppercase tracking-wide font-medium">{ROL_LABELS[o.rol] ?? o.rol}:</span>
                             <span className="text-zinc-200 flex-1 truncate">
-                              {o.cliente ? `${o.cliente.apellido}, ${o.cliente.nombre}` : '—'}
+                              {o.nombre ?? (o.cliente ? `${o.cliente.apellido}, ${o.cliente.nombre}` : '—')}
+                              {o.dni ? ` · DNI ${o.dni}` : ''}
                               {o.observacion ? ` · ${o.observacion}` : ''}
                             </span>
                             <Button variant="ghost" size="sm" onClick={() => eliminar(o.id)}

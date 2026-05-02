@@ -24,8 +24,9 @@ const ROL_OTRO_LABELS: Record<RolOtro, string> = {
 
 export interface OtroParte {
   id: string                   // UUID temporal client-side
-  cliente_id: string
   rol: RolOtro
+  nombre: string               // Nombre completo (apellido y nombre)
+  dni: string                  // DNI / documento (opcional)
   observacion: string
 }
 
@@ -69,7 +70,7 @@ export function CompradoresVendedoresForm({
   }
 
   function nuevoOtro(): OtroParte {
-    return { id: uid(), cliente_id: '', rol: 'conyuge', observacion: '' }
+    return { id: uid(), rol: 'conyuge', nombre: '', dni: '', observacion: '' }
   }
 
   function actualizarPrincipal(
@@ -168,9 +169,6 @@ export function CompradoresVendedoresForm({
                 onCrearClientePrincipal={onCrearCliente
                   ? () => onCrearCliente((id) => actualizarPrincipal(lista, parte.id, { cliente_id: id }))
                   : undefined}
-                onCrearClienteOtro={onCrearCliente
-                  ? (otroId) => onCrearCliente((id) => actualizarOtro(lista, parte.id, otroId, { cliente_id: id }))
-                  : undefined}
               />
             ))}
           </div>
@@ -203,7 +201,7 @@ export function CompradoresVendedoresForm({
 function PrincipalCard({
   indice, titulo, color, parte, clientes,
   onChange, onEliminar, onAgregarOtro, onActualizarOtro, onEliminarOtro,
-  onCrearClientePrincipal, onCrearClienteOtro,
+  onCrearClientePrincipal,
 }: {
   indice: number
   titulo: string
@@ -216,7 +214,6 @@ function PrincipalCard({
   onActualizarOtro: (otroId: string, c: Partial<OtroParte>) => void
   onEliminarOtro: (otroId: string) => void
   onCrearClientePrincipal?: () => void
-  onCrearClienteOtro?: (otroId: string) => void
 }) {
   const [expandidoOtros, setExpandidoOtros] = useState(parte.otros.length > 0)
 
@@ -283,9 +280,9 @@ function PrincipalCard({
             {parte.otros.map((otro) => (
               <div key={otro.id} className="rounded-md bg-zinc-900/60 border border-zinc-700 p-2.5">
                 <div className="flex items-start gap-2">
-                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-12 gap-2">
                     <Select value={otro.rol} onValueChange={(v: RolOtro) => onActualizarOtro(otro.id, { rol: v })}>
-                      <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white text-xs h-8">
+                      <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white text-xs h-8 sm:col-span-3">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-zinc-900 border-zinc-700">
@@ -296,35 +293,24 @@ function PrincipalCard({
                         ))}
                       </SelectContent>
                     </Select>
-                    <div className="flex gap-1">
-                      <Select value={otro.cliente_id} onValueChange={v => onActualizarOtro(otro.id, { cliente_id: v })}>
-                        <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white text-xs h-8 flex-1">
-                          <SelectValue placeholder="Cliente" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-zinc-900 border-zinc-700 max-h-64">
-                          {clientes.map(c => (
-                            <SelectItem key={c.id} value={c.id} className="text-zinc-200 focus:bg-zinc-800 text-xs">
-                              {c.apellido}, {c.nombre}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {onCrearClienteOtro && (
-                        <Button
-                          type="button" variant="outline" size="sm"
-                          onClick={() => onCrearClienteOtro(otro.id)}
-                          title="Crear cliente rápido"
-                          className="border-zinc-700 text-lime-400 hover:bg-lime-400/10 h-8 w-8 p-0 shrink-0"
-                        >
-                          <UserPlus size={11} />
-                        </Button>
-                      )}
-                    </div>
+                    <Input
+                      value={otro.nombre}
+                      onChange={e => onActualizarOtro(otro.id, { nombre: e.target.value })}
+                      placeholder="Apellido y nombre"
+                      className="bg-zinc-800 border-zinc-700 text-white text-xs h-8 sm:col-span-4"
+                    />
+                    <Input
+                      value={otro.dni}
+                      onChange={e => onActualizarOtro(otro.id, { dni: e.target.value })}
+                      placeholder="DNI"
+                      inputMode="numeric"
+                      className="bg-zinc-800 border-zinc-700 text-white text-xs h-8 sm:col-span-2"
+                    />
                     <Input
                       value={otro.observacion}
                       onChange={e => onActualizarOtro(otro.id, { observacion: e.target.value })}
                       placeholder="Observación"
-                      className="bg-zinc-800 border-zinc-700 text-white text-xs h-8"
+                      className="bg-zinc-800 border-zinc-700 text-white text-xs h-8 sm:col-span-3"
                     />
                   </div>
                   <Button
