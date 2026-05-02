@@ -140,7 +140,7 @@ export default function SolicitarDemoPage() {
               </Label>
               <Textarea
                 id="comentario"
-                placeholder="Ej: el OCR de DNI, la integración UIF, la gestión de trámites..."
+                placeholder="Ej: el OCR de DNI, la integración UIF, la gestión de operaciones..."
                 rows={3}
                 value={form.comentario}
                 onChange={e => set('comentario', e.target.value)}

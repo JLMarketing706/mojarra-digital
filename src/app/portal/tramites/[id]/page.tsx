@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button'
 import type { Metadata } from 'next'
 
-export const metadata: Metadata = { title: 'Detalle del trámite' }
+export const metadata: Metadata = { title: 'Detalle de la operación' }
 
 const ESTADOS_ORDEN = ['iniciado', 'en_proceso', 'en_registro', 'listo', 'entregado']
 
@@ -34,7 +34,7 @@ export default async function DetalleTramitePage({
 
   if (!cliente) notFound()
 
-  // Obtener trámite (verificar que pertenece al cliente)
+  // Obtener operación (verificar que pertenece al cliente)
   const { data: tramite } = await supabase
     .from('tramites')
     .select('*, escribano:profiles(nombre, apellido)')
@@ -67,7 +67,7 @@ export default async function DetalleTramitePage({
         <Link href="/portal/dashboard">
           <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground -ml-2 mb-4">
             <ArrowLeft size={14} />
-            Mis trámites
+            Mis operaciones
           </Button>
         </Link>
 
@@ -89,7 +89,7 @@ export default async function DetalleTramitePage({
       {/* Línea de tiempo de estados */}
       <Card className="mb-6">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Estado del trámite</CardTitle>
+          <CardTitle className="text-base">Estado de la operación</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-0">

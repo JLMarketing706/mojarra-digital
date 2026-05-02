@@ -1,5 +1,5 @@
 /**
- * Determina qué documentos son obligatorios para un trámite/cliente
+ * Determina qué documentos son obligatorios para una operación/cliente
  * según normativa UIF (Res. 242/2023, 56/2024, 78/2025).
  */
 

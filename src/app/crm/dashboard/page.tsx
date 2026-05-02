@@ -62,7 +62,7 @@ export default async function CRMDashboardPage() {
 
   const stats = [
     { label: 'Clientes', value: totalClientes ?? 0, icon: Users, href: '/crm/clientes' },
-    { label: 'Trámites activos', value: tramitesActivos ?? 0, icon: FileText, href: '/crm/tramites' },
+    { label: 'Operaciones activas', value: tramitesActivos ?? 0, icon: FileText, href: '/crm/tramites' },
     { label: 'Alertas UIF', value: alertasUIF ?? 0, icon: AlertTriangle, href: '/crm/uif', alert: (alertasUIF ?? 0) > 0 },
     { label: 'Turnos hoy', value: turnosHoy?.length ?? 0, icon: CalendarDays, href: '/crm/agenda' },
   ]
@@ -221,17 +221,17 @@ export default async function CRMDashboardPage() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Trámites recientes */}
+        {/* Operaciones recientes */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm text-zinc-300">Trámites recientes</CardTitle>
+              <CardTitle className="text-sm text-zinc-300">Operaciones recientes</CardTitle>
               <Link href="/crm/tramites" className="text-xs text-lime-400 hover:underline">Ver todos</Link>
             </div>
           </CardHeader>
           <CardContent>
             {!tramitesRecientes || tramitesRecientes.length === 0 ? (
-              <p className="text-zinc-500 text-sm text-center py-4">Sin trámites recientes.</p>
+              <p className="text-zinc-500 text-sm text-center py-4">Sin operaciones recientes.</p>
             ) : (
               <div className="space-y-2">
                 {tramitesRecientes.map((t) => {

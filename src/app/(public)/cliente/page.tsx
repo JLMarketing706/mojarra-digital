@@ -8,14 +8,14 @@ import {
 
 export const metadata: Metadata = {
   title: 'Portal del Cliente — Mojarra Digital',
-  description: 'Seguí tu trámite notarial en tiempo real. Documentos, notificaciones y turnos desde donde estés.',
+  description: 'Seguí tu operación notarial en tiempo real. Documentos, notificaciones y turnos desde donde estés.',
 }
 
 const features = [
   {
     icon: Eye,
     titulo: 'Estado en tiempo real',
-    desc: 'Mirá en qué etapa está tu trámite las 24 horas. Sin llamar, sin esperar.',
+    desc: 'Mirá en qué etapa está tu operación las 24 horas. Sin llamar, sin esperar.',
   },
   {
     icon: Bell,
@@ -63,13 +63,13 @@ export default function ClientePage() {
               </div>
 
               <h1 className="text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05] mb-6">
-                Seguí tu trámite{' '}
+                Seguí tu operación{' '}
                 <span className="text-lime-400">en tiempo real</span>.
               </h1>
 
               <p className="text-zinc-300 text-lg leading-relaxed mb-10 max-w-lg">
                 Si tu escribanía usa Mojarra Digital, podés ver el estado de tu
-                escritura, poder o trámite cuando quieras, desde tu celular o
+                escritura, poder o operación cuando quieras, desde tu celular o
                 computadora.
               </p>
 
@@ -100,7 +100,7 @@ export default function ClientePage() {
                   <div className="flex items-center justify-between mb-5">
                     <div>
                       <p className="text-xs text-zinc-500">Hola, María</p>
-                      <p className="text-white font-semibold">Tus trámites</p>
+                      <p className="text-white font-semibold">Tus operaciones</p>
                     </div>
                     <div className="w-9 h-9 rounded-full bg-lime-400/10 border border-lime-400/20 flex items-center justify-center relative">
                       <Bell size={14} className="text-lime-400" />
@@ -156,7 +156,7 @@ export default function ClientePage() {
               Tu escribanía, en tu bolsillo.
             </h2>
             <p className="text-zinc-400 text-lg">
-              Todo lo que necesitás saber sobre tu trámite, sin tener que llamar
+              Todo lo que necesitás saber sobre tu operación, sin tener que llamar
               ni acercarte a la oficina.
             </p>
           </div>
@@ -185,9 +185,9 @@ export default function ClientePage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { num: '01', titulo: 'Recibí la invitación', desc: 'Tu escribanía te invita por email cuando carga tu trámite en el sistema.' },
+              { num: '01', titulo: 'Recibí la invitación', desc: 'Tu escribanía te invita por email cuando carga tu operación en el sistema.' },
               { num: '02', titulo: 'Creá tu cuenta', desc: 'Definís tu contraseña en 30 segundos. No necesitás descargar ninguna app.' },
-              { num: '03', titulo: 'Seguí tu trámite', desc: 'Accedé desde cualquier dispositivo y ve el avance en tiempo real.' },
+              { num: '03', titulo: 'Seguí tu operación', desc: 'Accedé desde cualquier dispositivo y ve el avance en tiempo real.' },
             ].map(({ num, titulo, desc }) => (
               <div key={num}>
                 <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-700 flex items-center justify-center mb-4">
@@ -206,10 +206,10 @@ export default function ClientePage() {
         <div className="max-w-3xl mx-auto px-6 text-center">
           <Clock size={32} className="text-lime-400 mx-auto mb-6" />
           <h2 className="text-3xl lg:text-4xl font-bold text-white mb-5 leading-tight">
-            ¿Tenés un trámite en curso?
+            ¿Tenés una operación en curso?
           </h2>
           <p className="text-zinc-400 mb-10 text-lg">
-            Ingresá con el email que te dio tu escribanía y empezá a seguir tu trámite ahora mismo.
+            Ingresá con el email que te dio tu escribanía y empezá a seguir tu operación ahora mismo.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/login">

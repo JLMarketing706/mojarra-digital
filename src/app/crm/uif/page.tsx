@@ -152,7 +152,7 @@ export default async function UIFPage({
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
         {[
-          { label: 'Trámites UIF totales', value: tramitesUif ?? 0, icon: ShieldAlert, color: 'text-lime-400' },
+          { label: 'Operaciones UIF totales', value: tramitesUif ?? 0, icon: ShieldAlert, color: 'text-lime-400' },
           { label: 'UIF este mes', value: tramitesUifMes ?? 0, icon: ShieldAlert, color: 'text-lime-400' },
           { label: 'Alertas pendientes', value: pendientes ?? 0, icon: AlertTriangle, color: 'text-yellow-400', estado: 'pendiente' },
           { label: 'Reportadas', value: reportados ?? 0, icon: CheckCircle2, color: 'text-blue-400', estado: 'reportado' },

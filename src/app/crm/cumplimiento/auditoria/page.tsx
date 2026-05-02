@@ -31,7 +31,7 @@ const ACCION_LABEL: Record<string, string> = {
 const TABLA_LABEL: Record<string, string> = {
   clientes: 'Cliente',
   clientes_juridicos: 'Cliente jurídico',
-  tramites: 'Trámite',
+  tramites: 'Operación',
   declaraciones_juradas: 'DDJJ',
   ros_reportes: 'ROS',
   beneficiarios_finales: 'Beneficiario final',

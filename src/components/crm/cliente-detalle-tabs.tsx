@@ -524,7 +524,7 @@ export function ClienteDetalleTabs({ cliente: c, tramites, documentos, compareci
               <UploadDocumento clienteId={c.id} categoria="poder" label="Poderes vigentes"
                 helpText="Si actúa como apoderado, adjuntá el poder y certificado de vigencia." />
               <UploadDocumento clienteId={c.id} categoria="origen_fondos" label="Origen de fondos (general)"
-                helpText="Documentación de respaldo no asociada a un trámite específico." />
+                helpText="Documentación de respaldo no asociada a una operación específico." />
               <UploadDocumento clienteId={c.id} categoria="otros" label="Otros"
                 helpText="Cualquier otra documentación del legajo." />
             </CardContent>

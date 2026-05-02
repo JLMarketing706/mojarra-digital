@@ -11,12 +11,12 @@ import {
 
 export const metadata: Metadata = {
   title: 'Mojarra Digital — Software de gestión para escribanías',
-  description: 'El sistema integral que digitaliza tu escribanía. Trámites, índice, agenda, UIF, IA y portal cliente. Diseñado para escribanías argentinas.',
+  description: 'El sistema integral que digitaliza tu escribanía. Operaciones, índice, agenda, UIF, IA y portal cliente. Diseñado para escribanías argentinas.',
 }
 
 const stats = [
   { valor: '+50', label: 'Escribanías activas' },
-  { valor: '+30k', label: 'Trámites gestionados' },
+  { valor: '+30k', label: 'Operaciones gestionadas' },
   { valor: '15h', label: 'Ahorro semanal por escribano' },
   { valor: '99.9%', label: 'Disponibilidad del sistema' },
 ]
@@ -24,7 +24,7 @@ const stats = [
 const dolores = [
   {
     titulo: 'Carpetas físicas y planillas Excel',
-    desc: 'Buscar un trámite es una pesadilla. Información dispersa entre papeles, mails y archivos personales.',
+    desc: 'Buscar una operación es una pesadilla. Información dispersa entre papeles, mails y archivos personales.',
   },
   {
     titulo: 'Clientes que llaman cada 3 días',
@@ -43,7 +43,7 @@ const dolores = [
 const funciones = [
   {
     icon: Layers,
-    titulo: 'Gestión de trámites',
+    titulo: 'Gestión de operaciones',
     desc: 'Cada expediente con su estado, hitos, documentos y notas internas. Visibilidad total para todo tu equipo.',
   },
   {
@@ -79,7 +79,7 @@ const funciones = [
   {
     icon: Bell,
     titulo: 'Portal del cliente',
-    desc: 'Tus clientes ven el estado de su trámite 24/7 desde el celular. Menos llamadas, más eficiencia.',
+    desc: 'Tus clientes ven el estado de su operación 24/7 desde el celular. Menos llamadas, más eficiencia.',
   },
   {
     icon: ShieldCheck,
@@ -99,7 +99,7 @@ const beneficios = [
     icon: TrendingUp,
     valor: '40% más',
     label: 'capacidad operativa',
-    desc: 'Tu equipo gestiona más trámites con la misma estructura. Crecé sin contratar más gente.',
+    desc: 'Tu equipo gestiona más operaciones con la misma estructura. Crecé sin contratar más gente.',
   },
   {
     icon: Lock,
@@ -111,7 +111,7 @@ const beneficios = [
 
 const testimonios = [
   {
-    texto: 'Pasamos de tres carpetas físicas por trámite a tener todo en una pantalla. El equipo recuperó horas que ahora dedicamos a captar nuevos clientes.',
+    texto: 'Pasamos de tres carpetas físicas por operación a tener todo en una pantalla. El equipo recuperó horas que ahora dedicamos a captar nuevos clientes.',
     autor: 'Esc. Patricia Romero',
     cargo: 'Escribanía Romero & Asoc. — CABA',
   },
@@ -134,7 +134,7 @@ const planes = [
     desc: 'Para escribanías chicas que están dando el primer paso al digital.',
     incluye: [
       'Hasta 2 usuarios',
-      'Trámites y clientes ilimitados',
+      'Operaciones y clientes ilimitados',
       'Índice notarial digital',
       'Portal del cliente',
       'Soporte por email',
@@ -186,7 +186,7 @@ const faq = [
   },
   {
     q: '¿Qué pasa con la información que ya tengo cargada en planillas?',
-    a: 'Te ayudamos a migrar todos tus clientes, trámites e índice histórico desde Excel, Word u otros sistemas. Sin costo extra en los planes Profesional y Estudio.',
+    a: 'Te ayudamos a migrar todos tus clientes, operaciones e índice histórico desde Excel, Word u otros sistemas. Sin costo extra en los planes Profesional y Estudio.',
   },
   {
     q: '¿La información de mis clientes está segura?',
@@ -307,7 +307,7 @@ export default function HomePage() {
             </h2>
             <p className="text-zinc-400 text-lg leading-relaxed">
               Mientras el resto sigue con planillas y procesos manuales, ellas digitalizan
-              trámites, ahorran horas y mejoran la experiencia de sus clientes.
+              operaciones, ahorran horas y mejoran la experiencia de sus clientes.
             </p>
           </div>
 
@@ -378,7 +378,7 @@ export default function HomePage() {
                   <BarChart3 size={14} className="text-lime-400" />
                   <span className="text-[10px] font-bold text-lime-400 tracking-wide">+38% ESTE MES</span>
                 </div>
-                <p className="text-white text-sm font-semibold">Trámites cerrados</p>
+                <p className="text-white text-sm font-semibold">Operaciones cerrados</p>
               </div>
               <div className="absolute -bottom-5 -right-5 bg-lime-400 rounded-xl p-4 shadow-2xl shadow-lime-400/30">
                 <p className="text-[10px] text-black/70 font-bold tracking-wide mb-1">PROMEDIO</p>

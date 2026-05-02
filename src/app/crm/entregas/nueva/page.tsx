@@ -50,7 +50,7 @@ export default function NuevaEntregaPage() {
   const [reciboSubido, setReciboSubido] = useState<string | null>(null)
   const [subiendoRecibo, setSubiendoRecibo] = useState(false)
 
-  // Cargar trámites pendientes con su cliente principal
+  // Cargar operaciones pendientes con su cliente principal
   useEffect(() => {
     supabase
       .from('tramites')

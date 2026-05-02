@@ -44,7 +44,7 @@ export default function ConsultaPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.tipo_tramite) {
-      toast.error('Seleccioná el tipo de trámite.')
+      toast.error('Seleccioná el tipo de operación.')
       return
     }
     setLoading(true)
@@ -86,7 +86,7 @@ export default function ConsultaPage() {
           </Link>
           <Link href="/registro">
             <Button className="bg-lime-400 text-black hover:bg-lime-300 font-semibold gap-2">
-              Crear cuenta para seguir mi trámite <ArrowRight size={14} />
+              Crear cuenta para seguir mi operación <ArrowRight size={14} />
             </Button>
           </Link>
         </div>
@@ -144,7 +144,7 @@ export default function ConsultaPage() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-zinc-300">Tipo de trámite *</Label>
+            <Label className="text-zinc-300">Tipo de operación *</Label>
             <Select onValueChange={v => set('tipo_tramite', v)}>
               <SelectTrigger className="bg-zinc-900 border-zinc-700 text-white focus:ring-lime-400">
                 <SelectValue placeholder="Seleccioná una opción" />
@@ -166,7 +166,7 @@ export default function ConsultaPage() {
           </Label>
           <Textarea
             id="descripcion"
-            placeholder="Contanos brevemente de qué se trata tu trámite, si tenés dudas o querés agregar más información..."
+            placeholder="Contanos brevemente de qué se trata tu operación, si tenés dudas o querés agregar más información..."
             rows={4}
             value={form.descripcion}
             onChange={e => set('descripcion', e.target.value)}
@@ -190,7 +190,7 @@ export default function ConsultaPage() {
         </div>
 
         <p className="text-xs text-zinc-600 pt-2">
-          Al enviar este formulario, aceptás que el equipo de la escribanía se ponga en contacto con vos para coordinar tu trámite.
+          Al enviar este formulario, aceptás que el equipo de la escribanía se ponga en contacto con vos para coordinar tu operación.
         </p>
       </form>
     </div>

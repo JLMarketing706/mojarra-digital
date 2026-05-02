@@ -80,7 +80,7 @@ export default async function DetalleEscrituraPage({
         {tramite && (
           <Card className="bg-zinc-900 border-zinc-800">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-zinc-300">Trámite asociado</CardTitle>
+              <CardTitle className="text-sm text-zinc-300">Operación asociado</CardTitle>
             </CardHeader>
             <CardContent>
               <Link href={`/crm/tramites/${tramite.id}`}

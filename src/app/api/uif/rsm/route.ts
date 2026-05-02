@@ -117,7 +117,7 @@ export async function GET(req: NextRequest) {
 
   if (error) {
     console.error('RSM query error:', error)
-    return NextResponse.json({ error: 'Error al consultar trámites' }, { status: 500 })
+    return NextResponse.json({ error: 'Error al consultar operaciones' }, { status: 500 })
   }
 
   const rows = (data ?? []) as unknown as TramiteRow[]
@@ -125,7 +125,7 @@ export async function GET(req: NextRequest) {
   // Headers del CSV (según Res. 70/2011 + 242/2023)
   const headers = [
     'N° escritura', 'Folio', 'Fecha escritura', 'Registro notarial',
-    'Tipo de trámite', 'Tipo de acto UIF',
+    'Tipo de operación', 'Tipo de acto UIF',
     'Cliente apellido', 'Cliente nombre', 'Tipo persona',
     'Tipo doc.', 'N° doc.', 'CUIT/CUIL',
     'Nivel riesgo', 'PEP', 'Sujeto obligado',

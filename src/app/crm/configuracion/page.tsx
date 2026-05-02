@@ -144,7 +144,7 @@ export default function ConfiguracionPage() {
             />
             <Separator className="bg-zinc-800" />
             <div className="text-xs text-zinc-500 space-y-1">
-              <p>· Trámites que superen este umbral generarán alerta UIF automática.</p>
+              <p>· Operaciones que superen este umbral generarán alerta UIF automática.</p>
               <p>· Actualizar cada vez que el Poder Ejecutivo modifique el SMVM.</p>
             </div>
           </CardContent>

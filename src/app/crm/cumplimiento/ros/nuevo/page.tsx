@@ -54,7 +54,7 @@ function NuevoROSContent() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!tramiteId) { toast.error('Tenés que seleccionar el trámite involucrado.'); return }
+    if (!tramiteId) { toast.error('Tenés que seleccionar la operación involucrado.'); return }
     if (!motivos.trim()) { toast.error('Indicá los motivos de inusualidad.'); return }
     setSaving(true)
 
@@ -114,9 +114,9 @@ function NuevoROSContent() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
-              <Label className="text-zinc-300">Trámite involucrado <span className="text-lime-400">*</span></Label>
+              <Label className="text-zinc-300">Operación involucrado <span className="text-lime-400">*</span></Label>
               <Select value={tramiteId} onValueChange={setTramiteId}>
-                <SelectTrigger className={selectTriggerCls}><SelectValue placeholder="Seleccioná el trámite" /></SelectTrigger>
+                <SelectTrigger className={selectTriggerCls}><SelectValue placeholder="Seleccioná la operación" /></SelectTrigger>
                 <SelectContent className="bg-zinc-900 border-zinc-700 max-h-72">
                   {tramites.map(t => (
                     <SelectItem key={t.id} value={t.id} className="text-zinc-200 focus:bg-zinc-800">

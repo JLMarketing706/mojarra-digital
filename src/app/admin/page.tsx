@@ -164,7 +164,7 @@ export default async function AdminDashboard() {
                 <th className="text-left px-4 py-3 text-zinc-400 font-medium text-xs">Estado</th>
                 <th className="text-right px-4 py-3 text-zinc-400 font-medium text-xs">Usuarios</th>
                 <th className="text-right px-4 py-3 text-zinc-400 font-medium text-xs">Clientes</th>
-                <th className="text-right px-4 py-3 text-zinc-400 font-medium text-xs">Trámites</th>
+                <th className="text-right px-4 py-3 text-zinc-400 font-medium text-xs">Operaciones</th>
                 <th className="text-left px-4 py-3 text-zinc-400 font-medium text-xs">Trial hasta</th>
                 <th className="text-left px-4 py-3 text-zinc-400 font-medium text-xs">Soporte</th>
               </tr>

@@ -41,7 +41,7 @@ export default async function NotificacionesPage() {
           <Bell size={36} className="text-muted-foreground mx-auto mb-4" />
           <p className="font-medium mb-1">Sin notificaciones</p>
           <p className="text-muted-foreground text-sm">
-            Cuando haya novedades en tus trámites, las vas a ver acá.
+            Cuando haya novedades en tus operaciones, las vas a ver acá.
           </p>
         </div>
       ) : (

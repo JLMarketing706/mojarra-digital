@@ -200,7 +200,7 @@ export default function CargaDatosPage() {
           </Link>
           <Link href="/registro">
             <Button className="bg-lime-400 text-black hover:bg-lime-300 font-semibold gap-2">
-              Crear cuenta para seguir mi trámite <ArrowRight size={14} />
+              Crear cuenta para seguir mi operación <ArrowRight size={14} />
             </Button>
           </Link>
         </div>

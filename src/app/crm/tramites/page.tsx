@@ -82,7 +82,7 @@ export default async function TramitesPage({
             {!tramites || tramites.length === 0 ? (
               <tr>
                 <td colSpan={8} className="px-4 py-10 text-center text-zinc-500">
-                  No se encontraron trámites.
+                  No se encontraron operaciones.
                 </td>
               </tr>
             ) : (

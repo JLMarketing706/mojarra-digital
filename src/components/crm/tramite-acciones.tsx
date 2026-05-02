@@ -64,7 +64,7 @@ export function TramiteAcciones({ tramiteId, estadoActual, profiles }: Props) {
         descripcion: `Estado actualizado: ${estadoTramiteLabel(nuevoEstado)}`,
       })
 
-      // Notificar al cliente si el trámite tiene un cliente con portal
+      // Notificar al cliente si la operación tiene un cliente con portal
       const { data: tramite } = await supabase
         .from('tramites')
         .select('cliente:clientes(user_id)')
@@ -76,8 +76,8 @@ export function TramiteAcciones({ tramiteId, estadoActual, profiles }: Props) {
         await supabase.from('notificaciones').insert({
           destinatario_id: userId,
           tramite_id: tramiteId,
-          titulo: 'Actualización de tu trámite',
-          mensaje: `Tu trámite cambió de estado: ${estadoTramiteLabel(nuevoEstado)}`,
+          titulo: 'Actualización de tu operación',
+          mensaje: `Tu operación cambió de estado: ${estadoTramiteLabel(nuevoEstado)}`,
         })
       }
 

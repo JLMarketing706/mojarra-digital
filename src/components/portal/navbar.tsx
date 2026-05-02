@@ -19,7 +19,7 @@ import type { Profile } from '@/types'
 import { useRealtimeNotificaciones } from '@/hooks/use-realtime-notificaciones'
 
 const navLinks = [
-  { href: '/portal/dashboard', label: 'Mis trámites', icon: LayoutDashboard },
+  { href: '/portal/dashboard', label: 'Mis operaciones', icon: LayoutDashboard },
   { href: '/portal/tramites', label: 'Documentos', icon: FileText },
 ]
 

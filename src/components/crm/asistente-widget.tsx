@@ -121,7 +121,7 @@ export function AsistenteWidget() {
                   <Bot size={32} className="text-lime-400 mx-auto mb-2" />
                   <p className="text-sm text-zinc-300 font-medium">¡Hola! Soy tu asistente.</p>
                   <p className="text-xs text-zinc-500 mt-1">
-                    Preguntame sobre normativa UIF, trámites notariales o cómo usar el sistema.
+                    Preguntame sobre normativa UIF, operaciones notariales o cómo usar el sistema.
                   </p>
                 </div>
                 <div className="space-y-1.5">

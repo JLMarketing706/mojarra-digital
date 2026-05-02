@@ -16,14 +16,14 @@ export async function revisarDatosMinuta(tramite: Tramite): Promise<ObservacionM
     model: 'claude-sonnet-4-6',
     max_tokens: 1024,
     system: `Sos un asistente notarial argentino experto en revisión de minutas y expedientes.
-Revisás los datos de un trámite notarial y detectás posibles errores, inconsistencias o datos faltantes antes de enviarlos al registro.
+Revisás los datos de una operación notarial y detectás posibles errores, inconsistencias o datos faltantes antes de enviarlos al registro.
 Verificá: completitud de datos del cliente, coherencia entre partes e inmueble, alertas UIF relevantes, fechas coherentes.
 Respondé con un array JSON de observaciones con el formato: [{campo, mensaje, tipo}] donde tipo es "error", "advertencia" o "sugerencia".
 Si no hay observaciones, devolvé un array vacío [].`,
     messages: [
       {
         role: 'user',
-        content: `Revisá los datos de este trámite notarial:\n\n${contexto}`,
+        content: `Revisá los datos de esta operación notarial:\n\n${contexto}`,
       },
     ],
   })

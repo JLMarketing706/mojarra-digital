@@ -166,12 +166,12 @@ export default async function ROSDetallePage({ params }: { params: Promise<{ id:
             </CardContent>
           </Card>
 
-          {/* Trámite */}
+          {/* Operación */}
           {r.tramite && (
             <Card className="bg-zinc-900 border-zinc-800">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm text-zinc-300 flex items-center gap-2">
-                  <FileText size={14} className="text-lime-400" />Trámite involucrado
+                  <FileText size={14} className="text-lime-400" />Operación involucrado
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">

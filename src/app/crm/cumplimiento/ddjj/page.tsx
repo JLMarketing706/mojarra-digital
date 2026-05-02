@@ -68,7 +68,7 @@ export default async function DDJJPage({
           <FileCheck2 size={20} className="text-lime-400" />Declaraciones Juradas
         </h1>
         <p className="text-zinc-500 text-sm">
-          Las DDJJ se generan desde la ficha del cliente o trámite. Acá podés ver el estado consolidado.
+          Las DDJJ se generan desde la ficha del cliente o operación. Acá podés ver el estado consolidado.
         </p>
       </div>
 
@@ -118,7 +118,7 @@ export default async function DDJJPage({
             Sin DDJJ {estado === 'pendientes' ? 'pendientes' : estado === 'firmadas' ? 'firmadas' : 'registradas'}.
           </p>
           <p className="text-zinc-500 text-xs mt-1">
-            Las declaraciones se emiten desde la ficha de cada cliente o trámite.
+            Las declaraciones se emiten desde la ficha de cada cliente o operación.
           </p>
         </div>
       ) : (

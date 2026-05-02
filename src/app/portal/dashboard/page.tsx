@@ -7,7 +7,7 @@ import { estadoTramiteLabel, estadoTramiteColor, formatFecha } from '@/lib/utils
 import { FileText, ChevronRight, Clock } from 'lucide-react'
 import type { Metadata } from 'next'
 
-export const metadata: Metadata = { title: 'Mis trámites' }
+export const metadata: Metadata = { title: 'Mis operaciones' }
 
 const PROGRESO: Record<string, number> = {
   iniciado: 10,
@@ -54,16 +54,16 @@ export default async function PortalDashboardPage() {
           Hola, {profile?.nombre ?? 'Cliente'} 👋
         </h1>
         <p className="text-muted-foreground text-sm">
-          Seguí el estado de todos tus trámites notariales.
+          Seguí el estado de todos tus operaciones notariales.
         </p>
       </div>
 
       {tramites.length === 0 ? (
         <div className="text-center py-20 border border-dashed border-border rounded-xl">
           <FileText size={36} className="text-muted-foreground mx-auto mb-4" />
-          <p className="font-medium mb-1">No tenés trámites activos</p>
+          <p className="font-medium mb-1">No tenés operaciones activos</p>
           <p className="text-muted-foreground text-sm mb-6">
-            Cuando la escribanía inicie un trámite tuyo, lo vas a ver acá.
+            Cuando la escribanía inicie una operación tuyo, lo vas a ver acá.
           </p>
           <Link
             href="/consulta"
@@ -74,7 +74,7 @@ export default async function PortalDashboardPage() {
         </div>
       ) : (
         <div className="space-y-8">
-          {/* Trámites activos */}
+          {/* Operaciones activas */}
           {activos.length > 0 && (
             <section>
               <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">
@@ -129,7 +129,7 @@ export default async function PortalDashboardPage() {
             </section>
           )}
 
-          {/* Trámites finalizados */}
+          {/* Operaciones finalizados */}
           {finalizados.length > 0 && (
             <section>
               <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">

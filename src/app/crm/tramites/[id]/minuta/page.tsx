@@ -39,7 +39,7 @@ export default async function AsistenteMinutaPage({
       <div className="mb-6">
         <Link href={`/crm/tramites/${id}`}>
           <Button variant="ghost" size="sm" className="gap-1.5 text-zinc-400 -ml-2 mb-4">
-            <ArrowLeft size={14} />Volver al trámite
+            <ArrowLeft size={14} />Volver a la operación
           </Button>
         </Link>
         <h1 className="text-2xl font-semibold text-white mb-1">Asistente de Minuta</h1>

@@ -106,7 +106,7 @@ export function AsistenteMinuta({ tramite, inmueble }: Props) {
       })
       const json = await res.json() as { observaciones?: ObservacionMinuta[]; error?: string }
       if (!res.ok) {
-        setErrorIA(json.error ?? 'Error al analizar el trámite.')
+        setErrorIA(json.error ?? 'Error al analizar la operación.')
         return
       }
       setObservaciones(json.observaciones ?? [])
@@ -177,7 +177,7 @@ export function AsistenteMinuta({ tramite, inmueble }: Props) {
         {bloques.length === 0 ? (
           <div className="col-span-2 text-center py-10 border border-dashed border-zinc-700 rounded-lg">
             <Info size={28} className="text-zinc-600 mx-auto mb-3" />
-            <p className="text-zinc-500 text-sm">No hay datos suficientes en el trámite para generar bloques.</p>
+            <p className="text-zinc-500 text-sm">No hay datos suficientes en la operación para generar bloques.</p>
           </div>
         ) : (
           bloques.map((bloque, idx) => (

@@ -25,12 +25,12 @@ export async function POST(request: NextRequest) {
       .eq('id', tramiteId)
       .single()
 
-    if (!tramite) return NextResponse.json({ error: 'Trámite no encontrado.' }, { status: 404 })
+    if (!tramite) return NextResponse.json({ error: 'Operación no encontrada.' }, { status: 404 })
 
     const observaciones = await revisarDatosMinuta(tramite as Tramite)
     return NextResponse.json({ observaciones })
   } catch (error) {
     console.error('Error en minutas:', error)
-    return NextResponse.json({ error: 'Error al analizar el trámite.' }, { status: 500 })
+    return NextResponse.json({ error: 'Error al analizar la operación.' }, { status: 500 })
   }
 }

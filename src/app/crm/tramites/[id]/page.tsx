@@ -13,7 +13,7 @@ import { DocsRequeridosAlert } from '@/components/crm/docs-requeridos-alert'
 import { TramitePartesManager } from '@/components/crm/tramite-partes-manager'
 import type { Metadata } from 'next'
 
-export const metadata: Metadata = { title: 'Detalle de trámite' }
+export const metadata: Metadata = { title: 'Detalle de operación' }
 
 export default async function DetalleTramiteCRMPage({
   params,
@@ -150,7 +150,7 @@ export default async function DetalleTramiteCRMPage({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Columna izquierda: Info + Acciones */}
         <div className="space-y-4">
-          {/* Info del trámite */}
+          {/* Info de la operación */}
           <Card className="bg-zinc-900 border-zinc-800">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-zinc-300">Información</CardTitle>

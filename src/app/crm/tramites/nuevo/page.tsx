@@ -35,7 +35,7 @@ const selectTriggerCls = 'bg-zinc-800 border-zinc-700 text-white focus:ring-lime
 const selectContentCls = 'bg-zinc-900 border-zinc-700'
 const selectItemCls = 'text-zinc-200 focus:bg-zinc-800'
 
-// ─── Tipos de trámite (dos niveles) ──────────────────────
+// ─── Tipos de operación (dos niveles) ──────────────────────
 const CATEGORIAS_TRAMITE: { label: string; subtipos: string[] }[] = [
   {
     label: 'Operaciones Inmobiliarias',
@@ -49,7 +49,7 @@ const CATEGORIAS_TRAMITE: { label: string; subtipos: string[] }[] = [
     ],
   },
   {
-    label: 'Trámites Personales y Familiares',
+    label: 'Operaciones Personales y Familiares',
     subtipos: [
       'Poder general',
       'Poder especial',
@@ -71,7 +71,7 @@ const CATEGORIAS_TRAMITE: { label: string; subtipos: string[] }[] = [
     ],
   },
   {
-    label: 'Trámites Comerciales',
+    label: 'Operaciones Comerciales',
     subtipos: [
       'Constitución de sociedad (SA)',
       'Constitución de sociedad (SRL)',
@@ -165,7 +165,7 @@ export default function NuevoTramitePage() {
   // un callback para asignar el cliente recién creado a ese slot puntual.
   const [asignarSlotPendiente, setAsignarSlotPendiente] = useState<((id: string) => void) | null>(null)
 
-  // Tipo de trámite (dos niveles)
+  // Tipo de operación (dos niveles)
   const [categoria, setCategoria] = useState('')
   const [subtipo, setSubtipo] = useState('')
   const subtiposActuales = CATEGORIAS_TRAMITE.find(c => c.label === categoria)?.subtipos ?? []
@@ -320,7 +320,7 @@ export default function NuevoTramitePage() {
     }
     setSaving(true)
 
-    // En compraventa, el cliente_id principal del trámite = primer comprador
+    // En compraventa, el cliente_id principal de la operación = primer comprador
     const clientePrincipalId = esCompraventa
       ? (compradores.find(c => c.cliente_id)?.cliente_id ?? form.cliente_id)
       : form.cliente_id
@@ -516,7 +516,7 @@ export default function NuevoTramitePage() {
           </CardHeader>
           <CardContent className="space-y-4">
 
-            {/* Dos desplegables de tipo de trámite */}
+            {/* Dos desplegables de tipo de operación */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-zinc-300">Categoría <span className="text-lime-400">*</span></Label>
@@ -740,7 +740,7 @@ export default function NuevoTramitePage() {
             {moneda === 'ARS' ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <MontoInput
-                  label="Monto total operación (ARS)"
+                  label="Monto tota la operación (ARS)"
                   value={form.monto}
                   onChange={v => set('monto', v)}
                 />

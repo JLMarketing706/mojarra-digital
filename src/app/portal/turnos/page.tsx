@@ -91,7 +91,7 @@ export default function SolicitarTurnoPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label>Tipo de trámite</Label>
+              <Label>Tipo de operación</Label>
               <Select value={form.tipo} onValueChange={v => set('tipo', v)}>
                 <SelectTrigger><SelectValue placeholder="Seleccioná (opcional)" /></SelectTrigger>
                 <SelectContent>
