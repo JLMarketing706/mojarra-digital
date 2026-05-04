@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Bell, LogOut, User } from 'lucide-react'
+import { Bell, LogOut, User, Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -19,9 +19,11 @@ import { useRealtimeNotificaciones } from '@/hooks/use-realtime-notificaciones'
 interface TopbarProps {
   profile: Profile | null
   userId: string
+  /** Toggle del drawer mobile (solo visible < md) */
+  onMobileMenuToggle?: () => void
 }
 
-export function CRMTopbar({ profile, userId }: TopbarProps) {
+export function CRMTopbar({ profile, userId, onMobileMenuToggle }: TopbarProps) {
   const router = useRouter()
   const supabase = createClient()
   const { sinLeer } = useRealtimeNotificaciones(userId)
@@ -36,7 +38,20 @@ export function CRMTopbar({ profile, userId }: TopbarProps) {
     : '?'
 
   return (
-    <header className="h-14 border-b border-zinc-800 bg-[#111111] flex items-center justify-end px-6 gap-3 shrink-0">
+    <header className="h-14 border-b border-zinc-800 bg-[#111111] flex items-center px-3 sm:px-6 gap-2 sm:gap-3 shrink-0">
+      {/* Hamburger — solo mobile */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="md:hidden text-zinc-400 hover:text-white -ml-1"
+        onClick={onMobileMenuToggle}
+        aria-label="Abrir menú"
+      >
+        <Menu size={20} />
+      </Button>
+
+      <div className="flex-1" />
+
       {/* Campana de notificaciones */}
       <Link href="/crm/notificaciones">
         <Button variant="ghost" size="icon" className="relative text-zinc-400 hover:text-white">

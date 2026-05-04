@@ -1,10 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { CRMSidebar } from '@/components/crm/sidebar'
-import { CRMTopbar } from '@/components/crm/topbar'
-import { CRMFooter } from '@/components/crm/footer'
-import { TrialBanner } from '@/components/crm/trial-banner'
-import { AsistenteWidget } from '@/components/crm/asistente-widget'
+import { CRMShell } from '@/components/crm/crm-shell'
 import { ROLES_STAFF, type Profile } from '@/types'
 
 export default async function CRMLayout({
@@ -52,22 +48,14 @@ export default async function CRMLayout({
   }
 
   return (
-    <div className="dark flex h-screen bg-[#0a0a0a] overflow-hidden">
-      <CRMSidebar esSuperAdmin={esSuperAdmin} />
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <CRMTopbar
-          profile={profile as Profile}
-          userId={user.id}
-        />
-        {estadoEscribania && (
-          <TrialBanner estado={estadoEscribania} trialUntil={trialUntil} />
-        )}
-        <main className="flex-1 overflow-y-auto crm-scroll">
-          <div className="p-6">{children}</div>
-          <CRMFooter />
-        </main>
-      </div>
-      <AsistenteWidget />
-    </div>
+    <CRMShell
+      profile={profile as Profile}
+      userId={user.id}
+      esSuperAdmin={esSuperAdmin}
+      estadoEscribania={estadoEscribania}
+      trialUntil={trialUntil}
+    >
+      {children}
+    </CRMShell>
   )
 }

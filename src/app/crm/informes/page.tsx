@@ -173,8 +173,8 @@ export default function InformesPage() {
           <p className="text-zinc-500">No hay pedidos de informes registrados.</p>
         </div>
       ) : (
-        <div className="rounded-lg border border-zinc-800 overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="rounded-lg border border-zinc-800 overflow-x-auto">
+          <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="border-b border-zinc-800 bg-zinc-900/50">
                 <th className="text-left px-4 py-3 text-zinc-400 font-medium">Tipo</th>

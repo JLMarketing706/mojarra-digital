@@ -20,6 +20,7 @@ import {
   ShieldAlert,
   Crown,
   ClipboardList,
+  X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -39,28 +40,58 @@ const navItems = [
 interface SidebarProps {
   className?: string
   esSuperAdmin?: boolean
+  /** Si true, el drawer mobile está abierto (solo afecta < md) */
+  mobileOpen?: boolean
+  /** Callback para cerrar el drawer en mobile */
+  onMobileClose?: () => void
 }
 
-export function CRMSidebar({ className, esSuperAdmin = false }: SidebarProps) {
+export function CRMSidebar({
+  className,
+  esSuperAdmin = false,
+  mobileOpen = false,
+  onMobileClose,
+}: SidebarProps) {
+  // Collapsed solo aplica en desktop (>= md). En mobile siempre se ve completo
+  // cuando el drawer está abierto.
   const [collapsed, setCollapsed] = useState(false)
   const pathname = usePathname()
 
   return (
     <aside
       className={cn(
-        'flex flex-col bg-[#111111] border-r border-zinc-800 transition-all duration-300 h-screen sticky top-0',
-        collapsed ? 'w-16' : 'w-60',
+        // Base
+        'flex flex-col bg-[#111111] border-r border-zinc-800 transition-transform duration-300 h-screen z-50',
+        // Mobile (< md): drawer fijo a la izquierda. Slide in/out con transform.
+        'fixed inset-y-0 left-0 w-60',
+        mobileOpen ? 'translate-x-0' : '-translate-x-full',
+        // Desktop (>= md): siempre visible, sticky, ancho según collapsed
+        'md:sticky md:top-0 md:translate-x-0 md:transition-[width]',
+        collapsed ? 'md:w-16' : 'md:w-60',
         className
       )}
     >
-      {/* Logo */}
+      {/* Logo + botón cerrar (solo mobile) */}
       <div className="flex items-center h-14 px-4 border-b border-zinc-800 shrink-0">
         <Feather className="text-lime-400 shrink-0" size={20} />
-        {!collapsed && (
-          <span className="ml-2 font-semibold text-white tracking-tight truncate">
-            Mojarra Digital
-          </span>
-        )}
+        <span
+          className={cn(
+            'ml-2 font-semibold text-white tracking-tight truncate',
+            // Desktop colapsado: ocultar el texto
+            collapsed && 'md:hidden'
+          )}
+        >
+          Mojarra Digital
+        </span>
+        {/* Botón cerrar — solo visible en mobile */}
+        <button
+          type="button"
+          onClick={onMobileClose}
+          className="md:hidden ml-auto text-zinc-400 hover:text-white p-1 -mr-1"
+          aria-label="Cerrar menú"
+        >
+          <X size={18} />
+        </button>
       </div>
 
       {/* Nav */}
@@ -80,7 +111,7 @@ export function CRMSidebar({ className, esSuperAdmin = false }: SidebarProps) {
                   )}
                 >
                   <Icon size={16} className="shrink-0" />
-                  {!collapsed && <span className="truncate">{label}</span>}
+                  <span className={cn('truncate', collapsed && 'md:hidden')}>{label}</span>
                 </Link>
               </li>
             )
@@ -100,7 +131,7 @@ export function CRMSidebar({ className, esSuperAdmin = false }: SidebarProps) {
             title="Panel de Super Admin"
           >
             <Crown size={16} className="shrink-0" />
-            {!collapsed && <span>Admin (SaaS)</span>}
+            <span className={cn(collapsed && 'md:hidden')}>Admin (SaaS)</span>
           </Link>
         )}
 
@@ -112,14 +143,14 @@ export function CRMSidebar({ className, esSuperAdmin = false }: SidebarProps) {
           )}
         >
           <Settings size={16} className="shrink-0" />
-          {!collapsed && <span>Configuración</span>}
+          <span className={cn(collapsed && 'md:hidden')}>Configuración</span>
         </Link>
 
-        {/* Toggle ancho del sidebar */}
+        {/* Toggle ancho del sidebar — solo en desktop */}
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-center px-2 text-zinc-500 hover:text-zinc-100 hover:bg-zinc-800"
+          className="hidden md:flex w-full justify-center px-2 text-zinc-500 hover:text-zinc-100 hover:bg-zinc-800"
           onClick={() => setCollapsed(!collapsed)}
           title={collapsed ? 'Expandir menú' : 'Achicar menú'}
         >
