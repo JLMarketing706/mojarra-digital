@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Plus, Trash2, Users, ShoppingCart, Building, ChevronDown, ChevronRight, UserPlus } from 'lucide-react'
+import { ClienteCombobox } from '@/components/crm/cliente-combobox'
 
 // ─── Tipos ────────────────────────────────────────────────
 export type RolPartePrincipal = 'comprador' | 'vendedor'
@@ -225,18 +226,13 @@ function PrincipalCard({
         </span>
         <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div className="flex gap-1.5">
-            <Select value={parte.cliente_id} onValueChange={v => onChange({ cliente_id: v })}>
-              <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white text-sm h-9 flex-1">
-                <SelectValue placeholder="Seleccioná cliente" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-700 max-h-64">
-                {clientes.map(c => (
-                  <SelectItem key={c.id} value={c.id} className="text-zinc-200 focus:bg-zinc-800 text-sm">
-                    {c.apellido}, {c.nombre}{c.dni ? ` · ${c.dni}` : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ClienteCombobox
+              value={parte.cliente_id}
+              onChange={v => onChange({ cliente_id: v })}
+              clientes={clientes}
+              triggerHeight="h-9"
+              className="flex-1"
+            />
             {onCrearClientePrincipal && (
               <Button
                 type="button" variant="outline" size="sm"

@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ClienteCombobox } from '@/components/crm/cliente-combobox'
 import { toast } from 'sonner'
 import { Loader2, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
@@ -89,18 +90,12 @@ export default function NuevoTurnoPage() {
 
             <div className="space-y-1.5">
               <Label className="text-zinc-300">Cliente</Label>
-              <Select value={form.cliente_id} onValueChange={v => set('cliente_id', v)}>
-                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white focus:ring-lime-400">
-                  <SelectValue placeholder="Sin asignar" />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-700 max-h-48">
-                  {clientes.map(c => (
-                    <SelectItem key={c.id} value={c.id} className="text-zinc-200 focus:bg-zinc-800">
-                      {c.apellido}, {c.nombre} {c.dni ? `· ${c.dni}` : ''}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <ClienteCombobox
+                value={form.cliente_id}
+                onChange={v => set('cliente_id', v)}
+                clientes={clientes}
+                placeholder="Sin asignar"
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">

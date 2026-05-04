@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { ClienteCombobox } from '@/components/crm/cliente-combobox'
 import { toast } from 'sonner'
 import {
   Loader2, ArrowLeft, Search, ShieldCheck, AlertTriangle,
@@ -131,15 +132,13 @@ export default function ScreeningPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-3">
-            <select value={clienteSel} onChange={e => setClienteSel(e.target.value)}
-              className="bg-zinc-800 border border-zinc-700 text-white rounded-md px-3 py-2 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-lime-400">
-              <option value="">Seleccioná un cliente</option>
-              {clientes.map(c => (
-                <option key={c.id} value={c.id}>
-                  {c.apellido}, {c.nombre} {c.dni ? `(${c.dni})` : ''}
-                </option>
-              ))}
-            </select>
+            <div className="flex-1">
+              <ClienteCombobox
+                value={clienteSel}
+                onChange={setClienteSel}
+                clientes={clientes}
+              />
+            </div>
             <Button onClick={correrScreening} disabled={!clienteSel || scanning}
               className="bg-lime-400 text-black hover:bg-lime-300 font-semibold gap-2">
               {scanning ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}

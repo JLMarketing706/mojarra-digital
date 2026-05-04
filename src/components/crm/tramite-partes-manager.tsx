@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ClienteCombobox } from '@/components/crm/cliente-combobox'
 import { toast } from 'sonner'
 import { Plus, Trash2, Users, Loader2, ShoppingCart, Building, ChevronRight } from 'lucide-react'
 
@@ -351,18 +352,12 @@ export function TramitePartesManager({ tramiteId }: Props) {
                   <>
                     <div>
                       <Label className="text-xs text-zinc-400">Cliente</Label>
-                      <Select value={nuevo.cliente_id} onValueChange={v => setNuevo(p => ({ ...p, cliente_id: v }))}>
-                        <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white text-sm h-9">
-                          <SelectValue placeholder="Seleccioná cliente" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-zinc-900 border-zinc-700 max-h-64">
-                          {clientes.map(c => (
-                            <SelectItem key={c.id} value={c.id} className="text-zinc-200 focus:bg-zinc-800 text-sm">
-                              {c.apellido}, {c.nombre}{c.dni ? ` · ${c.dni}` : ''}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <ClienteCombobox
+                        value={nuevo.cliente_id}
+                        onChange={v => setNuevo(p => ({ ...p, cliente_id: v }))}
+                        clientes={clientes}
+                        triggerHeight="h-9"
+                      />
                     </div>
                     <div className="sm:col-span-2">
                       <Label className="text-xs text-zinc-400">Observación (opcional)</Label>

@@ -28,6 +28,7 @@ import { CompradoresVendedoresForm, type PartePrincipal } from '@/components/crm
 import { MontoInput as MontoInputShared } from '@/components/crm/monto-input'
 import { ClienteQuickCreate } from '@/components/crm/cliente-quick-create'
 import { NegociosCausalesInput } from '@/components/crm/negocios-causales-input'
+import { ClienteCombobox } from '@/components/crm/cliente-combobox'
 import { TIPOS_ACTO, causalesDe, type TipoActoValue } from '@/lib/tipos-acto'
 import { UserPlus } from 'lucide-react'
 
@@ -535,18 +536,11 @@ export default function NuevoTramitePage() {
                       <UserPlus size={11} />Crear rápido
                     </Button>
                   </div>
-                  <Select value={form.cliente_id} onValueChange={v => set('cliente_id', v)}>
-                    <SelectTrigger className={selectTriggerCls}>
-                      <SelectValue placeholder="Seleccioná cliente" />
-                    </SelectTrigger>
-                    <SelectContent className={selectContentCls + ' max-h-64'}>
-                      {clientes.map(c => (
-                        <SelectItem key={c.id} value={c.id} className={selectItemCls}>
-                          {c.apellido}, {c.nombre} {c.dni ? `· ${c.dni}` : c.cuil ? `· ${c.cuil}` : ''}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <ClienteCombobox
+                    value={form.cliente_id}
+                    onChange={v => set('cliente_id', v)}
+                    clientes={clientes}
+                  />
                   {clienteSeleccionado && (
                     <div className="flex items-center gap-2 mt-1.5">
                       {clienteSeleccionado.nivel_riesgo && (
