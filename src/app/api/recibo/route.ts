@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
   const { data: entrega } = await supabase
     .from('entregas')
-    .select('*, tramite:tramites(tipo, numero_referencia, cliente:clientes(nombre, apellido, dni), indice:indice_notarial(numero_escritura, tipo_acto))')
+    .select('*, tramite:tramites(tipo, numero_referencia, cliente:clientes(nombre, apellido, dni))')
     .eq('id', entregaId)
     .single()
 

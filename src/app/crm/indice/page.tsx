@@ -1,13 +1,74 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { BookPlus } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 import { IndiceSearch } from '@/components/crm/indice-search'
 import { IndiceExportButton } from '@/components/crm/indice-export-button'
-import { formatFecha } from '@/lib/utils'
+import { formatFecha, estadoTramiteLabel, estadoTramiteColor } from '@/lib/utils'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Índice Notarial' }
+
+// El índice notarial se deriva de las operaciones (tramites). No se carga
+// manualmente. Excluimos las operaciones de Certificaciones/Actas y
+// Gestión Registral porque no van al protocolo.
+const EXCLUIDOS_INDICE = ['certificaciones', 'gestion_registral']
+
+interface ParteRow {
+  rol: string | null
+  nombre: string | null
+  cliente: { nombre: string; apellido: string } | null
+}
+
+interface TramiteIndice {
+  id: string
+  estado: string
+  numero_escritura: string | null
+  folio_protocolo: string | null
+  fecha_escritura: string | null
+  descripcion: string | null
+  tipo: string
+  negocios_causales: string[] | null
+  tipo_acto_notarial: string | null
+  cliente: { nombre: string; apellido: string } | null
+  escribano: { nombre: string; apellido: string } | null
+  tramite_partes: ParteRow[] | null
+  updated_at: string
+}
+
+function partesString(t: TramiteIndice): string {
+  // Si hay tramite_partes, las usamos (ej: compraventa con varios compradores y vendedores)
+  const partes = t.tramite_partes ?? []
+  if (partes.length > 0) {
+    const compradores = partes
+      .filter(p => p.rol === 'comprador')
+      .map(p => p.cliente ? `${p.cliente.apellido}, ${p.cliente.nombre}` : p.nombre)
+      .filter(Boolean)
+    const vendedores = partes
+      .filter(p => p.rol === 'vendedor')
+      .map(p => p.cliente ? `${p.cliente.apellido}, ${p.cliente.nombre}` : p.nombre)
+      .filter(Boolean)
+    const otros = partes
+      .filter(p => p.rol !== 'comprador' && p.rol !== 'vendedor')
+      .map(p => p.cliente ? `${p.cliente.apellido}, ${p.cliente.nombre}` : p.nombre)
+      .filter(Boolean)
+    const fragmentos: string[] = []
+    if (compradores.length > 0) fragmentos.push(`C: ${compradores.join(', ')}`)
+    if (vendedores.length > 0) fragmentos.push(`V: ${vendedores.join(', ')}`)
+    if (otros.length > 0) fragmentos.push(otros.join(', '))
+    if (fragmentos.length > 0) return fragmentos.join(' · ')
+  }
+  // Fallback: cliente principal
+  if (t.cliente) return `${t.cliente.apellido}, ${t.cliente.nombre}`
+  return '—'
+}
+
+function tipoActoString(t: TramiteIndice): string {
+  const causales = t.negocios_causales ?? []
+  if (causales.length === 0) return t.tipo || '—'
+  if (causales.length === 1) return causales[0]
+  return `${causales[0]} (+${causales.length - 1})`
+}
 
 export default async function IndiceNotarialPage({
   searchParams,
@@ -17,30 +78,43 @@ export default async function IndiceNotarialPage({
   const { q } = await searchParams
   const supabase = await createClient()
 
-  let query = supabase
-    .from('indice_notarial')
-    .select('*, escribano:profiles(nombre, apellido)')
-    .order('numero_escritura', { ascending: false })
+  // Traemos todos los tramites del índice (sin certificaciones ni gestión registral)
+  const { data: rows } = await supabase
+    .from('tramites')
+    .select(`
+      id, estado, numero_escritura, folio_protocolo, fecha_escritura,
+      descripcion, tipo, negocios_causales, tipo_acto_notarial, updated_at,
+      cliente:clientes(nombre, apellido),
+      escribano:profiles(nombre, apellido),
+      tramite_partes(rol, nombre, cliente:clientes(nombre, apellido))
+    `)
+    .order('updated_at', { ascending: false })
+    .limit(500)
 
+  const todos = (rows ?? []) as unknown as TramiteIndice[]
+
+  // Filtros: excluir categorías que no van al protocolo
+  let entradas = todos.filter(t => {
+    const cat = t.tipo_acto_notarial ?? ''
+    return !EXCLUIDOS_INDICE.includes(cat)
+  })
+
+  // Búsqueda en cliente / partes / tipo / nº escritura / inmueble (descripcion)
   if (q && q.trim().length > 0) {
-    const term = `%${q.trim()}%`
-    query = query.or(
-      `partes.ilike.${term},tipo_acto.ilike.${term},inmueble.ilike.${term},observaciones.ilike.${term}`
-    )
-    // Si es número, filtrar también por numero_escritura
-    const num = parseInt(q.trim())
-    if (!isNaN(num)) {
-      query = supabase
-        .from('indice_notarial')
-        .select('*, escribano:profiles(nombre, apellido)')
-        .or(`partes.ilike.${term},tipo_acto.ilike.${term},inmueble.ilike.${term},numero_escritura.eq.${num}`)
-        .order('numero_escritura', { ascending: false })
-    }
+    const term = q.trim().toLowerCase()
+    entradas = entradas.filter(t => {
+      const haystack = [
+        t.numero_escritura ?? '',
+        t.folio_protocolo ?? '',
+        tipoActoString(t),
+        partesString(t),
+        t.descripcion ?? '',
+      ].join(' ').toLowerCase()
+      return haystack.includes(term)
+    })
   }
 
-  const { data: entradas } = await query.limit(300)
-
-  // Obtener configuración de la escribanía para PDF
+  // Configuración de la escribanía para PDF
   const { data: config } = await supabase
     .from('configuracion')
     .select('clave, valor')
@@ -54,17 +128,12 @@ export default async function IndiceNotarialPage({
         <div>
           <h1 className="text-2xl font-semibold text-white mb-1">Índice Notarial</h1>
           <p className="text-zinc-400 text-sm">
-            {entradas?.length ?? 0} escrituras registradas
+            {entradas.length} {entradas.length === 1 ? 'operación' : 'operaciones'} en el índice ·{' '}
+            <span className="text-zinc-500">se deriva de las operaciones (excepto Certificaciones y Gestión Registral)</span>
           </p>
         </div>
         <div className="flex items-center gap-2">
           <IndiceExportButton config={configMap} />
-          <Link href="/crm/indice/nueva">
-            <Button className="bg-lime-400 text-black hover:bg-lime-300 font-medium gap-2">
-              <BookPlus size={16} />
-              Nueva escritura
-            </Button>
-          </Link>
         </div>
       </div>
 
@@ -80,38 +149,46 @@ export default async function IndiceNotarialPage({
               <th className="text-left px-4 py-3 text-zinc-400 font-medium">Partes</th>
               <th className="text-left px-4 py-3 text-zinc-400 font-medium hidden lg:table-cell">Inmueble</th>
               <th className="text-left px-4 py-3 text-zinc-400 font-medium hidden md:table-cell">Folio</th>
+              <th className="text-left px-4 py-3 text-zinc-400 font-medium">Estado</th>
               <th className="px-4 py-3 w-12" />
             </tr>
           </thead>
           <tbody>
-            {!entradas || entradas.length === 0 ? (
+            {entradas.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-zinc-500">
-                  {q ? `Sin resultados para "${q}".` : 'El índice está vacío. Agregá la primera escritura.'}
+                <td colSpan={8} className="px-4 py-12 text-center text-zinc-500">
+                  {q
+                    ? `Sin resultados para "${q}".`
+                    : 'No hay operaciones para mostrar. Cargá una operación nueva y aparecerá acá automáticamente.'}
                 </td>
               </tr>
             ) : (
-              entradas.map(e => (
-                <tr key={e.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors group">
+              entradas.map(t => (
+                <tr key={t.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors group">
                   <td className="px-4 py-3">
-                    <Link href={`/crm/indice/${e.id}`}
+                    <Link href={`/crm/tramites/${t.id}`}
                       className="text-lime-400 font-mono font-semibold hover:underline">
-                      {e.numero_escritura}
+                      {t.numero_escritura ?? <span className="text-zinc-600">—</span>}
                     </Link>
                   </td>
                   <td className="px-4 py-3 text-zinc-400 hidden sm:table-cell">
-                    {formatFecha(e.fecha)}
+                    {t.fecha_escritura ? formatFecha(t.fecha_escritura) : <span className="text-zinc-600">—</span>}
                   </td>
-                  <td className="px-4 py-3 text-zinc-200">{e.tipo_acto}</td>
-                  <td className="px-4 py-3 text-zinc-300 max-w-xs truncate">{e.partes}</td>
+                  <td className="px-4 py-3 text-zinc-200">{tipoActoString(t)}</td>
+                  <td className="px-4 py-3 text-zinc-300 max-w-xs truncate">{partesString(t)}</td>
                   <td className="px-4 py-3 text-zinc-400 hidden lg:table-cell max-w-xs truncate">
-                    {e.inmueble ?? '—'}
+                    {t.descripcion ?? '—'}
                   </td>
                   <td className="px-4 py-3 text-zinc-500 hidden md:table-cell font-mono text-xs">
-                    {e.folio ?? '—'}
+                    {t.folio_protocolo ?? '—'}
+                  </td>
+                  <td className="px-4 py-3">
+                    <Badge className={`text-xs ${estadoTramiteColor(t.estado)}`}>
+                      {estadoTramiteLabel(t.estado)}
+                    </Badge>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Link href={`/crm/indice/${e.id}`}>
+                    <Link href={`/crm/tramites/${t.id}`}>
                       <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white h-7 text-xs opacity-0 group-hover:opacity-100 transition-opacity">
                         Ver
                       </Button>
