@@ -61,6 +61,9 @@ export const TIPOS_ACTO: TipoActo[] = [
       'Autorización para conducir vehículo',
       'Certificación de unión convivencial',
       'Venia matrimonial',
+      'Acta de constatación',
+      'Acta de notificación',
+      'Protocolización de documentos',
     ],
   },
   {
@@ -84,9 +87,6 @@ export const TIPOS_ACTO: TipoActo[] = [
     causales: [
       'Certificación de firmas',
       'Certificación de fotocopias',
-      'Acta de constatación',
-      'Acta de notificación',
-      'Protocolización de documentos',
     ],
   },
 ]
