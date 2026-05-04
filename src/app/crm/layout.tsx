@@ -5,12 +5,7 @@ import { CRMTopbar } from '@/components/crm/topbar'
 import { CRMFooter } from '@/components/crm/footer'
 import { TrialBanner } from '@/components/crm/trial-banner'
 import { AsistenteWidget } from '@/components/crm/asistente-widget'
-import type { Profile } from '@/types'
-
-const ROLES_STAFF = [
-  'escribano_titular', 'oficial_cumplimiento', 'escribano_adscripto', 'empleado_admin',
-  'secretaria', 'protocolista', 'escribano',
-]
+import { ROLES_STAFF, type Profile } from '@/types'
 
 export default async function CRMLayout({
   children,
@@ -29,7 +24,9 @@ export default async function CRMLayout({
     .single()
 
   if (!profile || !ROLES_STAFF.includes(profile.rol)) {
-    redirect('/portal/dashboard')
+    // El portal del cliente final fue removido. Si alguien sin rol de staff
+    // intenta entrar al CRM, lo mandamos al login.
+    redirect('/login')
   }
 
   // ¿Es super admin?

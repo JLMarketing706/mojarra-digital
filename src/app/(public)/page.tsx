@@ -11,7 +11,7 @@ import {
 
 export const metadata: Metadata = {
   title: 'Mojarra Digital — Software de gestión para escribanías',
-  description: 'El sistema integral que digitaliza tu escribanía. Operaciones, índice, agenda, UIF, IA y portal cliente. Diseñado para escribanías argentinas.',
+  description: 'El sistema integral que digitaliza tu escribanía. Operaciones, índice, agenda, UIF e inteligencia artificial. Diseñado para escribanías argentinas.',
 }
 
 const stats = [
@@ -64,7 +64,7 @@ const funciones = [
   {
     icon: Calendar,
     titulo: 'Agenda integrada',
-    desc: 'Coordiná turnos con tus clientes desde su portal. Confirmaciones y recordatorios automáticos.',
+    desc: 'Coordiná turnos con tus clientes. Confirmaciones y recordatorios automáticos.',
   },
   {
     icon: Brain,

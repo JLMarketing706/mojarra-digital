@@ -26,25 +26,15 @@ export default function LoginPage() {
       password: form.password,
     })
 
-    if (error) {
+    if (error || !data.user) {
       toast.error('Credenciales incorrectas. Verificá tu email y contraseña.')
       setLoading(false)
       return
     }
 
-    // Obtener el rol para redirigir
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('rol')
-      .eq('id', data.user.id)
-      .single()
-
-    const rolesStaff = ['secretaria', 'protocolista', 'escribano']
-    if (profile && rolesStaff.includes(profile.rol)) {
-      router.push('/crm/dashboard')
-    } else {
-      router.push('/portal/dashboard')
-    }
+    // El portal del cliente final fue removido; todos los usuarios entran al CRM.
+    // Si el rol no es staff, /crm/layout.tsx los rebota al login.
+    router.push('/crm/dashboard')
     router.refresh()
   }
 
