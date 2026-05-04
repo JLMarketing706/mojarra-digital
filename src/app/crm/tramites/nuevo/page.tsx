@@ -27,6 +27,8 @@ import { DraftBanner, DraftSavedIndicator } from '@/components/crm/draft-banner'
 import { CompradoresVendedoresForm, type PartePrincipal } from '@/components/crm/compradores-vendedores-form'
 import { MontoInput as MontoInputShared } from '@/components/crm/monto-input'
 import { ClienteQuickCreate } from '@/components/crm/cliente-quick-create'
+import { NegociosCausalesInput } from '@/components/crm/negocios-causales-input'
+import { TIPOS_ACTO, causalesDe, type TipoActoValue } from '@/lib/tipos-acto'
 import { UserPlus } from 'lucide-react'
 
 // ─── Clases de estilo ─────────────────────────────────────
@@ -35,66 +37,7 @@ const selectTriggerCls = 'bg-zinc-800 border-zinc-700 text-white focus:ring-lime
 const selectContentCls = 'bg-zinc-900 border-zinc-700'
 const selectItemCls = 'text-zinc-200 focus:bg-zinc-800'
 
-// ─── Tipos de operación (dos niveles) ──────────────────────
-const CATEGORIAS_TRAMITE: { label: string; subtipos: string[] }[] = [
-  {
-    label: 'Operaciones Inmobiliarias',
-    subtipos: [
-      'Escritura de compraventa',
-      'Constitución de hipotecas',
-      'Donación de inmueble',
-      'Afectación a Vivienda (Bien de Familia)',
-      'Reglamento de Propiedad Horizontal',
-      'Estudio de títulos',
-    ],
-  },
-  {
-    label: 'Operaciones Personales y Familiares',
-    subtipos: [
-      'Poder general',
-      'Poder especial',
-      'Autorización de viaje para menor',
-      'Testamento',
-      'Autorización para conducir vehículo',
-      'Certificación de unión convivencial',
-      'Venia matrimonial',
-    ],
-  },
-  {
-    label: 'Certificaciones y Actas',
-    subtipos: [
-      'Certificación de firmas',
-      'Certificación de fotocopias',
-      'Acta de constatación',
-      'Acta de notificación',
-      'Protocolización de documentos',
-    ],
-  },
-  {
-    label: 'Operaciones Comerciales',
-    subtipos: [
-      'Constitución de sociedad (SA)',
-      'Constitución de sociedad (SRL)',
-      'Constitución de sociedad (SAS)',
-      'Constitución de sociedad (otra)',
-      'Transferencia de fondo de comercio',
-      'Acta de asamblea',
-      'Acta de directorio',
-      'Contrato de alquiler (certificación)',
-      'Cesión de cuotas sociales',
-    ],
-  },
-  {
-    label: 'Gestión Registral',
-    subtipos: [
-      'Solicitud de informe de dominio',
-      'Solicitud de informe de inhibición',
-      'Inscripción en Registro de la Propiedad',
-      'Tramitación de segundo testimonio',
-      'Cancelación de hipoteca',
-    ],
-  },
-]
+// Tipos de acto + negocios causales viven ahora en /lib/tipos-acto.ts
 
 // ─── Monedas ─────────────────────────────────────────────
 const MONEDAS = [
@@ -165,10 +108,10 @@ export default function NuevoTramitePage() {
   // un callback para asignar el cliente recién creado a ese slot puntual.
   const [asignarSlotPendiente, setAsignarSlotPendiente] = useState<((id: string) => void) | null>(null)
 
-  // Tipo de operación (dos niveles)
-  const [categoria, setCategoria] = useState('')
-  const [subtipo, setSubtipo] = useState('')
-  const subtiposActuales = CATEGORIAS_TRAMITE.find(c => c.label === categoria)?.subtipos ?? []
+  // Tipo de acto notarial + negocios causales (multi-select)
+  const [tipoActoNotarial, setTipoActoNotarial] = useState<TipoActoValue | ''>('')
+  const [negociosCausales, setNegociosCausales] = useState<string[]>([])
+  const causalesDisponibles = causalesDe(tipoActoNotarial)
 
   // Moneda
   const [moneda, setMoneda] = useState('ARS')
@@ -258,26 +201,30 @@ export default function NuevoTramitePage() {
     setForm(p => ({ ...p, [key]: value }))
   }
 
-  // Detectar compraventa: por subtipo elegido o por tipo_acto UIF
-  const esCompraventa = subtipo.toLowerCase().includes('compraventa') || form.tipo_acto === 'compraventa_inmueble'
+  // Detectar compraventa: si alguna causal elegida contiene "compraventa", o el tipo_acto UIF lo es.
+  const esCompraventa =
+    negociosCausales.some(c => c.toLowerCase().includes('compraventa')) ||
+    form.tipo_acto === 'compraventa_inmueble'
 
   // Auto-save: combina form + selecciones derivadas en un único objeto serializable
   type DraftShape = {
     form: typeof form
-    categoria: string
-    subtipo: string
+    tipoActoNotarial: TipoActoValue | ''
+    negociosCausales: string[]
     moneda: string
     criptoNombre: string
     compradores: PartePrincipal[]
     vendedores: PartePrincipal[]
   }
-  const draftState: DraftShape = { form, categoria, subtipo, moneda, criptoNombre, compradores, vendedores }
+  const draftState: DraftShape = {
+    form, tipoActoNotarial, negociosCausales, moneda, criptoNombre, compradores, vendedores,
+  }
   const { hasDraft, restoreDraft, clearDraft, draftSavedAt } = useFormDraft<DraftShape>(
     'nuevo-tramite', draftState,
     s => {
       setForm(s.form)
-      setCategoria(s.categoria)
-      setSubtipo(s.subtipo)
+      setTipoActoNotarial(s.tipoActoNotarial ?? '')
+      setNegociosCausales(s.negociosCausales ?? [])
       setMoneda(s.moneda)
       setCriptoNombre(s.criptoNombre)
       setCompradores(s.compradores ?? [])
@@ -298,12 +245,13 @@ export default function NuevoTramitePage() {
 
   const clienteSeleccionado = clientes.find(c => c.id === form.cliente_id)
 
-  // El tipo final que se guarda en DB es el subtipo elegido
-  const tipoFinal = subtipo || categoria
+  // El `tipo` legacy = primer negocio causal. Es por compatibilidad.
+  const tipoFinal = negociosCausales[0] ?? ''
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!tipoFinal) { toast.error('Indicá el tipo de operación.'); return }
+    if (!tipoActoNotarial) { toast.error('Elegí el Tipo de acto.'); return }
+    if (negociosCausales.length === 0) { toast.error('Elegí al menos un negocio causal.'); return }
 
     // Validación según sea compraventa o no
     if (esCompraventa) {
@@ -341,6 +289,8 @@ export default function NuevoTramitePage() {
     const payload = {
       tipo: tipoFinal,
       tipo_acto: form.tipo_acto || null,
+      tipo_acto_notarial: tipoActoNotarial || null,
+      negocios_causales: negociosCausales,
       cliente_id: clientePrincipalId,
       escribano_id: form.escribano_id || null,
       descripcion: form.descripcion || null,
@@ -516,33 +466,45 @@ export default function NuevoTramitePage() {
           </CardHeader>
           <CardContent className="space-y-4">
 
-            {/* Dos desplegables de tipo de operación */}
+            {/* Tipo de acto + Negocios causales (multi-select) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-zinc-300">Categoría <span className="text-lime-400">*</span></Label>
-                <Select value={categoria} onValueChange={v => { setCategoria(v); setSubtipo('') }}>
+                <Label className="text-zinc-300">Tipo de acto <span className="text-lime-400">*</span></Label>
+                <Select
+                  value={tipoActoNotarial}
+                  onValueChange={v => {
+                    setTipoActoNotarial(v as TipoActoValue)
+                    setNegociosCausales([]) // reset al cambiar de categoría
+                  }}
+                >
                   <SelectTrigger className={selectTriggerCls}>
-                    <SelectValue placeholder="Seleccioná categoría" />
+                    <SelectValue placeholder="Seleccioná tipo de acto" />
                   </SelectTrigger>
                   <SelectContent className={selectContentCls}>
-                    {CATEGORIAS_TRAMITE.map(c => (
-                      <SelectItem key={c.label} value={c.label} className={selectItemCls}>{c.label}</SelectItem>
+                    {TIPOS_ACTO.map(t => (
+                      <SelectItem key={t.value} value={t.value} className={selectItemCls}>
+                        {t.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-zinc-300">Tipo de operación <span className="text-lime-400">*</span></Label>
-                <Select value={subtipo} onValueChange={setSubtipo} disabled={!categoria}>
-                  <SelectTrigger className={selectTriggerCls}>
-                    <SelectValue placeholder={categoria ? 'Seleccioná tipo' : '— elegí categoría primero —'} />
-                  </SelectTrigger>
-                  <SelectContent className={selectContentCls}>
-                    {subtiposActuales.map(s => (
-                      <SelectItem key={s} value={s} className={selectItemCls}>{s}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label className="text-zinc-300">
+                  Tipo de negocio causal <span className="text-lime-400">*</span>
+                  <span className="ml-2 text-zinc-500 text-xs font-normal">(podés elegir varios)</span>
+                </Label>
+                <NegociosCausalesInput
+                  value={negociosCausales}
+                  onChange={setNegociosCausales}
+                  options={causalesDisponibles}
+                  disabled={!tipoActoNotarial}
+                  placeholder={
+                    tipoActoNotarial
+                      ? 'Tipeá o seleccioná causales…'
+                      : '— elegí tipo de acto primero —'
+                  }
+                />
               </div>
             </div>
 

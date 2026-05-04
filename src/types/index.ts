@@ -302,7 +302,9 @@ export interface Tramite {
   fecha_escritura?: string
 
   // Acto y UIF
-  tipo_acto?: TipoActo
+  tipo_acto?: TipoActo // categoría UIF (no confundir con tipo_acto_notarial)
+  tipo_acto_notarial?: 'inmuebles' | 'personales' | 'societarios' | 'certificaciones' | 'gestion_registral'
+  negocios_causales?: string[]
   dispara_uif: boolean
   requiere_uif: boolean // legacy, en sync con dispara_uif
 

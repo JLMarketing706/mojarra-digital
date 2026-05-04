@@ -91,8 +91,20 @@ export default async function TramitesPage({
                 return (
                   <tr key={t.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors">
                     <td className="px-4 py-3">
-                      <Link href={`/crm/tramites/${t.id}`} className="text-zinc-200 hover:text-lime-400 font-medium transition-colors">
-                        {t.tipo}
+                      <Link href={`/crm/tramites/${t.id}`} className="block text-zinc-200 hover:text-lime-400 font-medium transition-colors">
+                        {(() => {
+                          const causales = (t.negocios_causales as string[] | null) ?? (t.tipo ? [t.tipo] : [])
+                          if (causales.length === 0) return '—'
+                          if (causales.length === 1) return causales[0]
+                          return (
+                            <>
+                              {causales[0]}
+                              <span className="ml-1.5 text-xs text-zinc-500 font-normal">
+                                +{causales.length - 1} más
+                              </span>
+                            </>
+                          )
+                        })()}
                       </Link>
                     </td>
                     <td className="px-4 py-3 text-zinc-400 hidden sm:table-cell">

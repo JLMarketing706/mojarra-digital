@@ -57,7 +57,9 @@ export default async function DetalleTramiteCRMPage({
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <div className="flex items-center gap-3 mb-1 flex-wrap">
-              <h1 className="text-2xl font-semibold text-white">{tramite.tipo as string}</h1>
+              <h1 className="text-2xl font-semibold text-white">
+                {((tramite.negocios_causales as string[] | null)?.[0]) ?? (tramite.tipo as string)}
+              </h1>
               <Badge className={`${estadoTramiteColor(tramite.estado)}`}>
                 {estadoTramiteLabel(tramite.estado)}
               </Badge>
@@ -67,6 +69,23 @@ export default async function DetalleTramiteCRMPage({
                 </Badge>
               )}
             </div>
+            {/* Chips con todos los negocios causales (si hay más de uno o si existen en el array) */}
+            {(() => {
+              const causales = (tramite.negocios_causales as string[] | null) ?? []
+              if (causales.length === 0) return null
+              return (
+                <div className="flex flex-wrap gap-1.5 mt-2 mb-1">
+                  {causales.map(c => (
+                    <span
+                      key={c}
+                      className="inline-flex items-center bg-lime-400/10 border border-lime-400/30 text-lime-300 text-xs font-medium px-2 py-0.5 rounded"
+                    >
+                      {c}
+                    </span>
+                  ))}
+                </div>
+              )
+            })()}
             {tramite.numero_referencia && (
               <p className="text-zinc-400 text-sm">Ref: {tramite.numero_referencia as string}</p>
             )}
