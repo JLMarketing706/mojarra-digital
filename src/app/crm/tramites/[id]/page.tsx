@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { estadoTramiteLabel, estadoTramiteColor, formatFecha, formatFechaHora, diasHastaVencimiento } from '@/lib/utils'
-import { ArrowLeft, AlertTriangle, FileText, Feather, Clock, AlertCircle } from 'lucide-react'
+import { estadoTramiteLabel, estadoTramiteColor, formatFecha, formatFechaHora, diasHastaVencimiento, formatMonto } from '@/lib/utils'
+import { ArrowLeft, AlertTriangle, FileText, Feather, Clock, AlertCircle, Coins } from 'lucide-react'
+import { LABEL_FORMA_PAGO, type FormaPago } from '@/types'
 import { TramiteAcciones } from '@/components/crm/tramite-acciones'
 import { CalificacionSelector } from '@/components/crm/calificacion-selector'
 import { DocsRequeridosAlert } from '@/components/crm/docs-requeridos-alert'
@@ -25,7 +26,7 @@ export default async function DetalleTramiteCRMPage({
 
   const { data: tramite } = await supabase
     .from('tramites')
-    .select('*, cliente:clientes(*), escribano:profiles(id, nombre, apellido)')
+    .select('*, cliente:clientes(*), escribano:profiles(id, nombre, apellido), formas_pago:tramite_formas_pago(id, forma_pago, monto, observacion, orden)')
     .eq('id', id)
     .single()
 
@@ -196,6 +197,48 @@ export default async function DetalleTramiteCRMPage({
               ) : null)}
             </CardContent>
           </Card>
+
+          {/* Formas de pago */}
+          {(() => {
+            const formas = (tramite.formas_pago as Array<{
+              id: string; forma_pago: FormaPago; monto: number;
+              observacion: string | null; orden: number;
+            }> | null) ?? []
+            if (formas.length === 0) return null
+            const ordenadas = [...formas].sort((a, b) => a.orden - b.orden)
+            const total = ordenadas.reduce((acc, f) => acc + Number(f.monto), 0)
+            return (
+              <Card className="bg-zinc-900 border-zinc-800">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm text-zinc-300 flex items-center gap-2">
+                    <Coins size={14} className="text-lime-400" />
+                    Formas de pago
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                  {ordenadas.map(f => (
+                    <div key={f.id} className="flex items-start justify-between gap-2 py-1 border-b border-zinc-800 last:border-0">
+                      <div className="min-w-0">
+                        <p className="text-zinc-200 font-medium">{LABEL_FORMA_PAGO[f.forma_pago] ?? f.forma_pago}</p>
+                        {f.observacion && (
+                          <p className="text-xs text-zinc-500 mt-0.5">{f.observacion}</p>
+                        )}
+                      </div>
+                      <span className="text-zinc-100 font-mono text-xs shrink-0">
+                        ${formatMonto(Number(f.monto))}
+                      </span>
+                    </div>
+                  ))}
+                  <div className="flex items-center justify-between pt-2 mt-1 border-t border-zinc-700">
+                    <span className="text-xs text-zinc-500 uppercase tracking-wider">Total</span>
+                    <span className="text-lime-400 font-mono font-semibold">
+                      ${formatMonto(total)}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })()}
 
           {/* Calificaciones (UIF + riesgo cliente) */}
           <Card className="bg-zinc-900 border-zinc-800">

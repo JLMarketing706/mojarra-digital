@@ -29,6 +29,7 @@ import { MontoInput as MontoInputShared } from '@/components/crm/monto-input'
 import { ClienteQuickCreate } from '@/components/crm/cliente-quick-create'
 import { NegociosCausalesInput } from '@/components/crm/negocios-causales-input'
 import { ClienteCombobox } from '@/components/crm/cliente-combobox'
+import { FormasPagoMultiInput, type FormaPagoEntry } from '@/components/crm/formas-pago-multi-input'
 import { TIPOS_ACTO, causalesDe, type TipoActoValue } from '@/lib/tipos-acto'
 import { UserPlus } from 'lucide-react'
 
@@ -121,6 +122,9 @@ export default function NuevoTramitePage() {
   // Compradores y vendedores (solo para compraventa)
   const [compradores, setCompradores] = useState<PartePrincipal[]>([])
   const [vendedores, setVendedores] = useState<PartePrincipal[]>([])
+
+  // Formas de pago (multi)
+  const [formasPago, setFormasPago] = useState<FormaPagoEntry[]>([])
   // esCompraventa se calcula más abajo, después de declarar `form`
 
   const [form, setForm] = useState({
@@ -216,9 +220,10 @@ export default function NuevoTramitePage() {
     criptoNombre: string
     compradores: PartePrincipal[]
     vendedores: PartePrincipal[]
+    formasPago: FormaPagoEntry[]
   }
   const draftState: DraftShape = {
-    form, tipoActoNotarial, negociosCausales, moneda, criptoNombre, compradores, vendedores,
+    form, tipoActoNotarial, negociosCausales, moneda, criptoNombre, compradores, vendedores, formasPago,
   }
   const { hasDraft, restoreDraft, clearDraft, draftSavedAt } = useFormDraft<DraftShape>(
     'nuevo-tramite', draftState,
@@ -230,12 +235,16 @@ export default function NuevoTramitePage() {
       setCriptoNombre(s.criptoNombre)
       setCompradores(s.compradores ?? [])
       setVendedores(s.vendedores ?? [])
+      setFormasPago(s.formasPago ?? [])
     },
   )
 
   // Cálculo en vivo UIF
   const monto = parseMonto(form.monto)
-  const efectivo = parseMonto(form.monto_efectivo)
+  // El efectivo se deriva de las formas de pago cargadas (suma de las "efectivo")
+  const efectivo = formasPago
+    .filter(fp => fp.forma_pago === 'efectivo')
+    .reduce((acc, fp) => acc + parseMonto(fp.monto), 0)
   const umbralEfectivo = smvm * 750
   const umbralCompraventa = smvm * 700
 
@@ -306,7 +315,13 @@ export default function NuevoTramitePage() {
       monto_moneda_extranjera: moneda !== 'ARS' ? (montoExt || null) : null,
       moneda_extranjera: monedaExtNombre || null,
       tipo_cambio: tc || null,
-      forma_pago: form.forma_pago || null,
+      // Legacy: si hay 1 forma de pago la guardamos directo, si hay varias = "mixto"
+      forma_pago: (() => {
+        const fps = formasPago.filter(f => f.forma_pago)
+        if (fps.length === 0) return null
+        if (fps.length === 1) return fps[0].forma_pago
+        return 'mixto'
+      })(),
       origen_fondos: form.origen_fondos || null,
       estado: form.estado_inicial,
       cumplimiento_dd: 'pendiente',
@@ -428,6 +443,21 @@ export default function NuevoTramitePage() {
           if (errOtros) console.error('Error insertando otros:', errOtros)
         }
       }
+    }
+
+    // Insertar formas de pago (si hay)
+    const formasPagoValidas = formasPago.filter(fp => fp.forma_pago && parseMonto(fp.monto) > 0)
+    if (formasPagoValidas.length > 0) {
+      const { error: errFp } = await supabase
+        .from('tramite_formas_pago')
+        .insert(formasPagoValidas.map((fp, i) => ({
+          tramite_id: t.id,
+          forma_pago: fp.forma_pago,
+          monto: parseMonto(fp.monto),
+          observacion: fp.observacion?.trim() || null,
+          orden: i,
+        })))
+      if (errFp) console.error('Error insertando formas de pago:', errFp)
     }
 
     setSaving(false)
@@ -694,18 +724,11 @@ export default function NuevoTramitePage() {
             )}
 
             {moneda === 'ARS' ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <MontoInput
-                  label="Monto tota la operación (ARS)"
-                  value={form.monto}
-                  onChange={v => set('monto', v)}
-                />
-                <MontoInput
-                  label={`Importe en efectivo (ARS)${efectivo > 0 && efectivo >= smvm * 750 ? ' ⚠ supera 750 SMVM' : ''}`}
-                  value={form.monto_efectivo}
-                  onChange={v => set('monto_efectivo', v)}
-                />
-              </div>
+              <MontoInput
+                label="Monto total de la operación (ARS)"
+                value={form.monto}
+                onChange={v => set('monto', v)}
+              />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <MontoInput
@@ -731,18 +754,24 @@ export default function NuevoTramitePage() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className="text-zinc-300">Forma de pago</Label>
-                <Select value={form.forma_pago} onValueChange={v => set('forma_pago', v as FormaPago)}>
-                  <SelectTrigger className={selectTriggerCls}><SelectValue placeholder="—" /></SelectTrigger>
-                  <SelectContent className={selectContentCls}>
-                    {FORMAS_PAGO_LIST.map(f => (
-                      <SelectItem key={f} value={f} className={selectItemCls}>{LABEL_FORMA_PAGO[f]}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            {/* Formas de pago: una o varias */}
+            <div className="space-y-1.5">
+              <Label className="text-zinc-300">
+                Formas de pago
+                <span className="ml-2 text-zinc-500 text-xs font-normal">
+                  (podés combinar varias: ej. 50% efectivo + 30% transferencia + 20% cheque)
+                </span>
+              </Label>
+              <FormasPagoMultiInput
+                value={formasPago}
+                onChange={setFormasPago}
+                montoTotal={
+                  moneda === 'ARS'
+                    ? parseMonto(form.monto)
+                    : (parseMonto(form.monto_moneda_extranjera) * parseMonto(form.tipo_cambio)) || undefined
+                }
+                smvm={smvm}
+              />
             </div>
 
             <div className="space-y-1.5">
