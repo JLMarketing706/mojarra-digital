@@ -206,8 +206,8 @@ export default async function IndiceNotarialPage({
               <th className="text-left px-4 py-3 text-zinc-400 font-medium hidden sm:table-cell w-24">Fecha</th>
               <th className="text-left px-4 py-3 text-zinc-400 font-medium">Tipo de acto</th>
               <th className="text-left px-4 py-3 text-zinc-400 font-medium">Partes</th>
-              <th className="text-left px-4 py-3 text-zinc-400 font-medium hidden lg:table-cell">Inmueble</th>
               <th className="text-left px-4 py-3 text-zinc-400 font-medium hidden md:table-cell">Folio</th>
+              <th className="text-left px-4 py-3 text-zinc-400 font-medium hidden lg:table-cell">Inmueble</th>
               <th className="text-left px-4 py-3 text-zinc-400 font-medium">Estado</th>
               <th className="px-4 py-3 w-12" />
             </tr>
@@ -250,11 +250,11 @@ export default async function IndiceNotarialPage({
                       )
                     })()}
                   </td>
-                  <td className="px-4 py-3 text-zinc-400 hidden lg:table-cell max-w-xs truncate">
-                    {t.descripcion ?? '—'}
-                  </td>
                   <td className="px-4 py-3 text-zinc-500 hidden md:table-cell font-mono text-xs">
                     {t.folio_protocolo ?? '—'}
+                  </td>
+                  <td className="px-4 py-3 text-zinc-400 hidden lg:table-cell max-w-xs truncate">
+                    {t.descripcion ?? '—'}
                   </td>
                   <td className="px-4 py-3">
                     <Badge className={`text-xs ${estadoTramiteColor(t.estado)}`}>
