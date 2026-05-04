@@ -14,26 +14,58 @@ interface ParteRow {
   cliente: { nombre: string; apellido: string } | null
 }
 
+const ROL_LABEL_PDF: Record<string, { single: string; plural: string }> = {
+  comprador:   { single: 'Comprador',   plural: 'Compradores' },
+  vendedor:    { single: 'Vendedor',    plural: 'Vendedores' },
+  donante:     { single: 'Donante',     plural: 'Donantes' },
+  donatario:   { single: 'Donatario',   plural: 'Donatarios' },
+  permutante:  { single: 'Permutante',  plural: 'Permutantes' },
+  conyuge:     { single: 'Cónyuge',     plural: 'Cónyuges' },
+  conviviente: { single: 'Conviviente', plural: 'Convivientes' },
+  apoderado:   { single: 'Apoderado',   plural: 'Apoderados' },
+  padre:       { single: 'Padre',       plural: 'Padres' },
+  madre:       { single: 'Madre',       plural: 'Madres' },
+  fiador:      { single: 'Fiador',      plural: 'Fiadores' },
+  otro:        { single: 'Otro',        plural: 'Otros' },
+}
+const ORDEN_ROLES = [
+  'comprador', 'vendedor', 'donante', 'donatario', 'permutante',
+  'apoderado', 'fiador', 'conyuge', 'conviviente', 'padre', 'madre', 'otro',
+]
+
 function partesString(t: {
   cliente: { nombre: string; apellido: string } | null
   tramite_partes: ParteRow[] | null
 }): string {
   const partes = t.tramite_partes ?? []
-  if (partes.length > 0) {
-    const c = partes.filter(p => p.rol === 'comprador')
-      .map(p => p.cliente ? `${p.cliente.apellido}, ${p.cliente.nombre}` : p.nombre).filter(Boolean)
-    const v = partes.filter(p => p.rol === 'vendedor')
-      .map(p => p.cliente ? `${p.cliente.apellido}, ${p.cliente.nombre}` : p.nombre).filter(Boolean)
-    const o = partes.filter(p => p.rol !== 'comprador' && p.rol !== 'vendedor')
-      .map(p => p.cliente ? `${p.cliente.apellido}, ${p.cliente.nombre}` : p.nombre).filter(Boolean)
-    const frags: string[] = []
-    if (c.length > 0) frags.push(`C: ${c.join(', ')}`)
-    if (v.length > 0) frags.push(`V: ${v.join(', ')}`)
-    if (o.length > 0) frags.push(o.join(', '))
-    if (frags.length > 0) return frags.join(' · ')
+  if (partes.length === 0) {
+    return t.cliente ? `${t.cliente.apellido}, ${t.cliente.nombre}` : ''
   }
-  if (t.cliente) return `${t.cliente.apellido}, ${t.cliente.nombre}`
-  return ''
+
+  const porRol = new Map<string, string[]>()
+  for (const p of partes) {
+    const rol = p.rol ?? 'otro'
+    const persona = p.cliente
+      ? `${p.cliente.apellido}, ${p.cliente.nombre}`
+      : (p.nombre?.trim() || null)
+    if (!persona) continue
+    if (!porRol.has(rol)) porRol.set(rol, [])
+    porRol.get(rol)!.push(persona)
+  }
+
+  return Array.from(porRol.entries())
+    .sort(([a], [b]) => {
+      const ia = ORDEN_ROLES.indexOf(a)
+      const ib = ORDEN_ROLES.indexOf(b)
+      return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib)
+    })
+    .map(([rol, personas]) => {
+      const m = ROL_LABEL_PDF[rol]
+      const label = m ? (personas.length > 1 ? m.plural : m.single)
+                      : rol.charAt(0).toUpperCase() + rol.slice(1)
+      return `${label}: ${personas.join(', ')}`
+    })
+    .join(' · ')
 }
 
 export async function GET(request: NextRequest) {

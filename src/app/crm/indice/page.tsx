@@ -36,31 +36,90 @@ interface TramiteIndice {
   updated_at: string
 }
 
-function partesString(t: TramiteIndice): string {
-  // Si hay tramite_partes, las usamos (ej: compraventa con varios compradores y vendedores)
+// Mapping de rol → label legible. Fallback: capitalizar el rol.
+const ROL_LABEL: Record<string, { single: string; plural: string }> = {
+  comprador:   { single: 'Comprador',   plural: 'Compradores' },
+  vendedor:    { single: 'Vendedor',    plural: 'Vendedores' },
+  donante:     { single: 'Donante',     plural: 'Donantes' },
+  donatario:   { single: 'Donatario',   plural: 'Donatarios' },
+  permutante:  { single: 'Permutante',  plural: 'Permutantes' },
+  conyuge:     { single: 'Cónyuge',     plural: 'Cónyuges' },
+  conviviente: { single: 'Conviviente', plural: 'Convivientes' },
+  apoderado:   { single: 'Apoderado',   plural: 'Apoderados' },
+  padre:       { single: 'Padre',       plural: 'Padres' },
+  madre:       { single: 'Madre',       plural: 'Madres' },
+  fiador:      { single: 'Fiador',      plural: 'Fiadores' },
+  otro:        { single: 'Otro',        plural: 'Otros' },
+}
+
+function rolLabel(rol: string, count: number): string {
+  const m = ROL_LABEL[rol]
+  if (m) return count > 1 ? m.plural : m.single
+  // Fallback: capitalize
+  return rol.charAt(0).toUpperCase() + rol.slice(1)
+}
+
+interface PartesAgrupadas {
+  /** Orden de roles: principales primero (compraventa), luego el resto */
+  grupos: { rol: string; label: string; personas: string[] }[]
+}
+
+const ORDEN_ROLES = [
+  'comprador', 'vendedor', 'donante', 'donatario', 'permutante',
+  'apoderado', 'fiador', 'conyuge', 'conviviente', 'padre', 'madre', 'otro',
+]
+
+function partesAgrupadas(t: TramiteIndice): PartesAgrupadas {
   const partes = t.tramite_partes ?? []
-  if (partes.length > 0) {
-    const compradores = partes
-      .filter(p => p.rol === 'comprador')
-      .map(p => p.cliente ? `${p.cliente.apellido}, ${p.cliente.nombre}` : p.nombre)
-      .filter(Boolean)
-    const vendedores = partes
-      .filter(p => p.rol === 'vendedor')
-      .map(p => p.cliente ? `${p.cliente.apellido}, ${p.cliente.nombre}` : p.nombre)
-      .filter(Boolean)
-    const otros = partes
-      .filter(p => p.rol !== 'comprador' && p.rol !== 'vendedor')
-      .map(p => p.cliente ? `${p.cliente.apellido}, ${p.cliente.nombre}` : p.nombre)
-      .filter(Boolean)
-    const fragmentos: string[] = []
-    if (compradores.length > 0) fragmentos.push(`C: ${compradores.join(', ')}`)
-    if (vendedores.length > 0) fragmentos.push(`V: ${vendedores.join(', ')}`)
-    if (otros.length > 0) fragmentos.push(otros.join(', '))
-    if (fragmentos.length > 0) return fragmentos.join(' · ')
+  if (partes.length === 0) {
+    // Fallback: cliente principal sin rol
+    if (t.cliente) {
+      return {
+        grupos: [{
+          rol: 'cliente',
+          label: 'Cliente',
+          personas: [`${t.cliente.apellido}, ${t.cliente.nombre}`],
+        }],
+      }
+    }
+    return { grupos: [] }
   }
-  // Fallback: cliente principal
-  if (t.cliente) return `${t.cliente.apellido}, ${t.cliente.nombre}`
-  return '—'
+
+  // Agrupar por rol
+  const porRol = new Map<string, string[]>()
+  for (const p of partes) {
+    const rol = p.rol ?? 'otro'
+    const persona = p.cliente
+      ? `${p.cliente.apellido}, ${p.cliente.nombre}`
+      : (p.nombre?.trim() || null)
+    if (!persona) continue
+    if (!porRol.has(rol)) porRol.set(rol, [])
+    porRol.get(rol)!.push(persona)
+  }
+
+  // Ordenar según ORDEN_ROLES
+  const grupos = Array.from(porRol.entries())
+    .sort(([a], [b]) => {
+      const ia = ORDEN_ROLES.indexOf(a)
+      const ib = ORDEN_ROLES.indexOf(b)
+      return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib)
+    })
+    .map(([rol, personas]) => ({
+      rol,
+      label: rolLabel(rol, personas.length),
+      personas,
+    }))
+
+  return { grupos }
+}
+
+// String plano para que el buscador matchee por nombre/rol/etc.
+function partesString(t: TramiteIndice): string {
+  const { grupos } = partesAgrupadas(t)
+  if (grupos.length === 0) return ''
+  return grupos
+    .map(g => `${g.label}: ${g.personas.join(', ')}`)
+    .join(' · ')
 }
 
 function tipoActoString(t: TramiteIndice): string {
@@ -175,7 +234,22 @@ export default async function IndiceNotarialPage({
                     {t.fecha_escritura ? formatFecha(t.fecha_escritura) : <span className="text-zinc-600">—</span>}
                   </td>
                   <td className="px-4 py-3 text-zinc-200">{tipoActoString(t)}</td>
-                  <td className="px-4 py-3 text-zinc-300 max-w-xs truncate">{partesString(t)}</td>
+                  <td className="px-4 py-3 text-zinc-300">
+                    {(() => {
+                      const { grupos } = partesAgrupadas(t)
+                      if (grupos.length === 0) return <span className="text-zinc-600">—</span>
+                      return (
+                        <div className="space-y-0.5">
+                          {grupos.map(g => (
+                            <div key={g.rol} className="text-xs leading-snug">
+                              <span className="text-zinc-500 font-medium">{g.label}:</span>{' '}
+                              <span className="text-zinc-200">{g.personas.join('; ')}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    })()}
+                  </td>
                   <td className="px-4 py-3 text-zinc-400 hidden lg:table-cell max-w-xs truncate">
                     {t.descripcion ?? '—'}
                   </td>
