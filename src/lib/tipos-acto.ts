@@ -91,7 +91,6 @@ export const TIPOS_ACTO: TipoActo[] = [
       'Constitución de sociedad (SA)',
       'Constitución de sociedad (SAS)',
       'Constitución de sociedad (SRL)',
-      'Contrato de alquiler (certificación)',
       'Transferencia de fondo de comercio',
     ],
   },

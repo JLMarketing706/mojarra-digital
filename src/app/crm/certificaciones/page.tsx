@@ -22,9 +22,9 @@ export default function CertificacionesPage() {
           <Construction size={48} className="text-amber-400 mx-auto mb-4" />
           <h2 className="text-lg font-semibold text-zinc-200 mb-2">Próximamente</h2>
           <p className="text-zinc-400 text-sm max-w-md mx-auto">
-            En esta sección vas a poder gestionar certificaciones de firmas, de
-            fotocopias y otros actos certificatorios — separados del registro
-            de escrituras del protocolo.
+            En esta sección vas a poder gestionar certificaciones de firmas,
+            de fotocopias, contratos de alquiler y otros actos certificatorios
+            — separados del registro de escrituras del protocolo.
           </p>
         </CardContent>
       </Card>
