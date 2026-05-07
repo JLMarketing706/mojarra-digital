@@ -5,7 +5,7 @@
 // La columna `negocios_causales` (text[]) guarda los strings exactos
 // del label de cada causal seleccionada.
 
-export type TipoActoValue = 'inmuebles' | 'personales' | 'societarios' | 'certificaciones' | 'gestion_registral'
+export type TipoActoValue = 'inmuebles' | 'personales' | 'societarios' | 'gestion_registral'
 
 export interface TipoActo {
   value: TipoActoValue
@@ -93,14 +93,6 @@ export const TIPOS_ACTO: TipoActo[] = [
       'Acta de directorio',
       'Contrato de alquiler (certificación)',
       'Cesión de cuotas sociales',
-    ],
-  },
-  {
-    value: 'certificaciones',
-    label: 'Certificaciones y actas',
-    causales: [
-      'Certificación de firmas',
-      'Certificación de fotocopias',
     ],
   },
 ]
