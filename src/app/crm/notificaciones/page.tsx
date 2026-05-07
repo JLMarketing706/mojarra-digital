@@ -68,7 +68,7 @@ export default async function NotificacionesPage() {
                         href={`/crm/tramites/${n.tramite_id}`}
                         className="text-xs text-lime-400 hover:underline"
                       >
-                        Ver operación →
+                        Ver escritura →
                       </Link>
                     )}
                   </div>

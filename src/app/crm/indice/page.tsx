@@ -187,8 +187,8 @@ export default async function IndiceNotarialPage({
         <div>
           <h1 className="text-2xl font-semibold text-white mb-1">Índice Notarial</h1>
           <p className="text-zinc-400 text-sm">
-            {entradas.length} {entradas.length === 1 ? 'operación' : 'operaciones'} en el índice ·{' '}
-            <span className="text-zinc-500">se deriva de las operaciones (excepto Certificaciones y Gestión Registral)</span>
+            {entradas.length} {entradas.length === 1 ? 'escritura' : 'escrituras'} en el índice ·{' '}
+            <span className="text-zinc-500">se deriva de las escrituras (excepto Certificaciones y Gestión Registral)</span>
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -218,7 +218,7 @@ export default async function IndiceNotarialPage({
                 <td colSpan={8} className="px-4 py-12 text-center text-zinc-500">
                   {q
                     ? `Sin resultados para "${q}".`
-                    : 'No hay operaciones para mostrar. Cargá una operación nueva y aparecerá acá automáticamente.'}
+                    : 'No hay escrituras para mostrar. Cargá una escritura nueva y aparecerá acá automáticamente.'}
                 </td>
               </tr>
             ) : (

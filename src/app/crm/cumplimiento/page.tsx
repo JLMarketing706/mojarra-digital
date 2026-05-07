@@ -366,7 +366,7 @@ export default async function CumplimientoPage() {
             <CardContent className="space-y-2 text-sm">
               {statsAnio && (
                 <>
-                  <Row label="Operaciones" value={statsAnio.total_operaciones} />
+                  <Row label="Escrituras" value={statsAnio.total_operaciones} />
                   <Row label="Disparan UIF" value={statsAnio.operaciones_uif} highlight />
                   <Row label="Clientes nuevos" value={statsAnio.total_clientes} />
                   <Row label="Clientes PEP" value={statsAnio.total_pep} />

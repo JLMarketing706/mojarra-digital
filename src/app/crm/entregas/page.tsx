@@ -34,7 +34,7 @@ export default async function EntregasPage() {
         <table className="w-full text-sm min-w-[640px]">
           <thead>
             <tr className="border-b border-zinc-800 bg-zinc-900/50">
-              <th className="text-left px-4 py-3 text-zinc-400 font-medium">Operación</th>
+              <th className="text-left px-4 py-3 text-zinc-400 font-medium">Escritura</th>
               <th className="text-left px-4 py-3 text-zinc-400 font-medium hidden sm:table-cell">Receptor</th>
               <th className="text-left px-4 py-3 text-zinc-400 font-medium hidden md:table-cell">DNI receptor</th>
               <th className="text-left px-4 py-3 text-zinc-400 font-medium">Fecha</th>

@@ -8,7 +8,7 @@ import { estadoTramiteLabel, estadoUifLabel, estadoUifColor } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import type { Metadata } from 'next'
 
-export const metadata: Metadata = { title: 'Operaciones' }
+export const metadata: Metadata = { title: 'Escrituras' }
 
 const ESTADOS = ['todos', 'iniciado', 'en_proceso', 'en_registro', 'observado', 'listo', 'entregado']
 
@@ -35,12 +35,12 @@ export default async function TramitesPage({
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-white mb-1">Operaciones</h1>
+          <h1 className="text-2xl font-semibold text-white mb-1">Escrituras</h1>
           <p className="text-zinc-400 text-sm">{tramites?.length ?? 0} resultados</p>
         </div>
         <Link href="/crm/tramites/nuevo">
           <Button className="bg-lime-400 text-black hover:bg-lime-300 font-medium gap-2">
-            <FilePlus size={16} />Nueva operación
+            <FilePlus size={16} />Nueva escritura
           </Button>
         </Link>
       </div>
@@ -82,7 +82,7 @@ export default async function TramitesPage({
             {!tramites || tramites.length === 0 ? (
               <tr>
                 <td colSpan={8} className="px-4 py-10 text-center text-zinc-500">
-                  No se encontraron operaciones.
+                  No se encontraron escrituras.
                 </td>
               </tr>
             ) : (

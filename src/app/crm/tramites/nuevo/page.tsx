@@ -335,14 +335,14 @@ export default function NuevoTramitePage() {
 
     if (error || !tramite) {
       console.error(error)
-      toast.error('Error al crear la operación.')
+      toast.error('Error al crear la escritura.')
       setSaving(false)
       return
     }
 
     await supabase.from('tramite_hitos').insert({
       tramite_id: tramite.id,
-      descripcion: `Operación creada en estado: ${ESTADOS_OPERACION.find(e => e.v === form.estado_inicial)?.label ?? form.estado_inicial}`,
+      descripcion: `Escritura creada en estado: ${ESTADOS_OPERACION.find(e => e.v === form.estado_inicial)?.label ?? form.estado_inicial}`,
     })
 
     type AlertaInsert = { tramite_id: string; tipo?: string; tipo_alerta?: string; descripcion: string }
@@ -462,7 +462,7 @@ export default function NuevoTramitePage() {
 
     setSaving(false)
     clearDraft()
-    toast.success(t.dispara_uif ? 'Operación creada · Dispara UIF' : 'Operación creada.')
+    toast.success(t.dispara_uif ? 'Escritura creada · Dispara UIF' : 'Escritura creada.')
     router.push(`/crm/tramites/${tramite.id}`)
   }
 
@@ -471,12 +471,12 @@ export default function NuevoTramitePage() {
       <div className="mb-6">
         <Link href="/crm/tramites">
           <Button variant="ghost" size="sm" className="gap-1.5 text-zinc-400 -ml-2 mb-4">
-            <ArrowLeft size={14} />Operaciones
+            <ArrowLeft size={14} />Escrituras
           </Button>
         </Link>
-        <h1 className="text-2xl font-semibold text-white mb-1">Nueva operación</h1>
+        <h1 className="text-2xl font-semibold text-white mb-1">Nueva escritura</h1>
         <p className="text-zinc-500 text-sm">
-          El sistema calcula automáticamente si la operación dispara obligación UIF según el tipo de acto y los montos.
+          El sistema calcula automáticamente si la escritura dispara obligación UIF según el tipo de acto y los montos.
         </p>
       </div>
 
@@ -492,7 +492,7 @@ export default function NuevoTramitePage() {
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
             <CardTitle className="text-sm text-zinc-300 flex items-center gap-2">
-              <FileText size={14} className="text-lime-400" />Identificación de la operación
+              <FileText size={14} className="text-lime-400" />Identificación de la escritura
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -616,7 +616,7 @@ export default function NuevoTramitePage() {
                 <MicButton value={form.descripcion} onChange={v => set('descripcion', v)} />
               </div>
               <Textarea value={form.descripcion} onChange={e => set('descripcion', e.target.value)}
-                placeholder="Descripción breve de la operación..." rows={2}
+                placeholder="Descripción breve de la escritura..." rows={2}
                 className={inputCls + ' resize-none'} />
             </div>
           </CardContent>
@@ -703,7 +703,7 @@ export default function NuevoTramitePage() {
 
             {/* Selector de moneda */}
             <div className="space-y-1.5">
-              <Label className="text-zinc-300">Moneda de la operación</Label>
+              <Label className="text-zinc-300">Moneda de la escritura</Label>
               <Select value={moneda} onValueChange={setMoneda}>
                 <SelectTrigger className={selectTriggerCls}><SelectValue /></SelectTrigger>
                 <SelectContent className={selectContentCls}>
@@ -725,7 +725,7 @@ export default function NuevoTramitePage() {
 
             {moneda === 'ARS' ? (
               <MontoInput
-                label="Monto total de la operación (ARS)"
+                label="Monto total de la escritura (ARS)"
                 value={form.monto}
                 onChange={v => set('monto', v)}
               />
@@ -783,7 +783,7 @@ export default function NuevoTramitePage() {
                 placeholder="Ej: venta de inmueble anterior, ahorros, herencia, préstamo bancario..." rows={2}
                 className={inputCls + ' resize-none'} />
               <p className="text-xs text-zinc-500">
-                Res. UIF 78/2025: la documentación de respaldo se carga en la ficha de la operación.
+                Res. UIF 78/2025: la documentación de respaldo se carga en la ficha de la escritura.
               </p>
             </div>
           </CardContent>
@@ -798,7 +798,7 @@ export default function NuevoTramitePage() {
                 : <CheckCircle2 size={20} className="text-green-400 shrink-0 mt-0.5" />}
               <div>
                 <p className={`text-sm font-semibold ${disparaUIF ? 'text-red-300' : 'text-green-300'}`}>
-                  {disparaUIF ? 'Esta operación dispara obligación UIF' : 'Esta operación no dispara obligación UIF'}
+                  {disparaUIF ? 'Esta escritura dispara obligación UIF' : 'Esta escritura no dispara obligación UIF'}
                 </p>
                 <ul className="mt-2 space-y-1 text-xs">
                   {disparaPorTipo && <li className="text-red-400/80">• {LABEL_TIPO_ACTO[form.tipo_acto as TipoActo]}: requiere UIF sin mínimo</li>}
@@ -828,7 +828,7 @@ export default function NuevoTramitePage() {
         {/* ESTADO INICIAL */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
-            <CardTitle className="text-sm text-zinc-300">Estado inicial de la operación</CardTitle>
+            <CardTitle className="text-sm text-zinc-300">Estado inicial de la escritura</CardTitle>
             <p className="text-xs text-zinc-500">Podés crearla directamente en el estado que corresponda (ej: si ya fue enviada al registro).</p>
           </CardHeader>
           <CardContent>
@@ -854,7 +854,7 @@ export default function NuevoTramitePage() {
         <div className="flex gap-3 items-center">
           <Button type="submit" disabled={saving}
             className="bg-lime-400 text-black hover:bg-lime-300 font-semibold gap-2">
-            {saving && <Loader2 size={14} className="animate-spin" />}Crear operación
+            {saving && <Loader2 size={14} className="animate-spin" />}Crear escritura
           </Button>
           <Link href="/crm/tramites">
             <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">Cancelar</Button>

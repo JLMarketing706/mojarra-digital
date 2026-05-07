@@ -14,7 +14,7 @@ import { DocsRequeridosAlert } from '@/components/crm/docs-requeridos-alert'
 import { TramitePartesManager } from '@/components/crm/tramite-partes-manager'
 import type { Metadata } from 'next'
 
-export const metadata: Metadata = { title: 'Detalle de operación' }
+export const metadata: Metadata = { title: 'Detalle de escritura' }
 
 export default async function DetalleTramiteCRMPage({
   params,
@@ -52,7 +52,7 @@ export default async function DetalleTramiteCRMPage({
       <div className="mb-6">
         <Link href="/crm/tramites">
           <Button variant="ghost" size="sm" className="gap-1.5 text-zinc-400 -ml-2 mb-4">
-            <ArrowLeft size={14} />Operaciones
+            <ArrowLeft size={14} />Escrituras
           </Button>
         </Link>
         <div className="flex items-start justify-between gap-4 flex-wrap">

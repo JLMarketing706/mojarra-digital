@@ -103,12 +103,12 @@ export default function NuevaEntregaPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!tramiteSeleccionado) {
-      toast.error('Buscá y seleccioná la operación a entregar.')
+      toast.error('Buscá y seleccioná la escritura a entregar.')
       return
     }
     const cliente = tramiteSeleccionado.cliente
     if (!cliente) {
-      toast.error('La operación no tiene cliente vinculado.')
+      toast.error('La escritura no tiene cliente vinculado.')
       return
     }
     setSaving(true)
@@ -130,7 +130,7 @@ export default function NuevaEntregaPage() {
 
     if (entregaError) {
       if (entregaError.code === '23505') {
-        toast.error('Esta operación ya tiene una entrega registrada.')
+        toast.error('Esta escritura ya tiene una entrega registrada.')
       } else {
         toast.error('Error al registrar la entrega.')
       }
@@ -149,7 +149,7 @@ export default function NuevaEntregaPage() {
     })
 
     setSaving(false)
-    toast.success('Entrega registrada. Operación marcada como entregada.')
+    toast.success('Entrega registrada. Escritura marcada como entregada.')
     setEntregaId(entrega.id)
     setTramiteIdRegistrada(tramiteSeleccionado.id)
   }
@@ -201,7 +201,7 @@ export default function NuevaEntregaPage() {
             <FileDown className="text-lime-400" size={22} />
           </div>
           <h2 className="text-white font-semibold mb-2">¡Entrega registrada!</h2>
-          <p className="text-zinc-400 text-sm mb-6">La operación fue marcada como entregada.</p>
+          <p className="text-zinc-400 text-sm mb-6">La escritura fue marcada como entregada.</p>
           <div className="flex flex-col gap-2">
             <a href={`/api/recibo?id=${entregaId}`} target="_blank" rel="noopener noreferrer">
               <Button className="w-full bg-lime-400 text-black hover:bg-lime-300 font-semibold gap-2">
@@ -251,7 +251,7 @@ export default function NuevaEntregaPage() {
       </Link>
       <h1 className="text-2xl font-semibold text-white mb-1">Nueva entrega</h1>
       <p className="text-zinc-500 text-sm mb-6">
-        Buscá la operación que vas a entregar. El cliente se completa automáticamente.
+        Buscá la escritura que vas a entregar. El cliente se completa automáticamente.
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-5 max-w-2xl">
@@ -263,7 +263,7 @@ export default function NuevaEntregaPage() {
 
             {/* Buscador de operación */}
             <div className="space-y-1.5">
-              <Label className="text-zinc-300">Operación a entregar <span className="text-lime-400">*</span></Label>
+              <Label className="text-zinc-300">Escritura a entregar <span className="text-lime-400">*</span></Label>
 
               {tramiteSeleccionado ? (
                 <div className="rounded-md border border-lime-400/30 bg-lime-400/5 p-3">
@@ -305,7 +305,7 @@ export default function NuevaEntregaPage() {
                     </div>
                   ) : (
                     <div className="mt-3 pt-3 border-t border-yellow-500/30 text-yellow-400 text-xs">
-                      ⚠ Esta operación no tiene cliente vinculado.
+                      ⚠ Esta escritura no tiene cliente vinculado.
                     </div>
                   )}
                 </div>
@@ -317,7 +317,7 @@ export default function NuevaEntregaPage() {
                     onChange={e => { setBusqueda(e.target.value); setMostrarResultados(true) }}
                     onFocus={() => setMostrarResultados(true)}
                     onBlur={() => setTimeout(() => setMostrarResultados(false), 150)}
-                    placeholder="Buscar operación por tipo, ref, escritura, cliente o DNI..."
+                    placeholder="Buscar escritura por tipo, ref, número, cliente o DNI..."
                     className="pl-9 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-lime-400"
                   />
                   {mostrarResultados && resultados.length > 0 && (
@@ -342,7 +342,7 @@ export default function NuevaEntregaPage() {
                   )}
                   {mostrarResultados && busqueda.trim().length > 0 && resultados.length === 0 && (
                     <div className="absolute z-20 mt-1 w-full bg-zinc-900 border border-zinc-700 rounded-md p-3 text-zinc-500 text-xs">
-                      Sin operaciones que coincidan con &quot;{busqueda}&quot;.
+                      Sin escrituras que coincidan con &quot;{busqueda}&quot;.
                     </div>
                   )}
                 </div>
