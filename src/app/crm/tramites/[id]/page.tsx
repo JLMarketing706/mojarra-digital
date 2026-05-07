@@ -203,11 +203,11 @@ export default async function DetalleTramiteCRMPage({
           {tramite.registro_propiedad && tramite.fecha_presentacion && (
             <PlazoRegistralCountdown
               registro={tramite.registro_propiedad as string}
-              fechas={{
+              estado={{
                 fecha_presentacion: tramite.fecha_presentacion as string | null,
-                fecha_primera_prorroga: tramite.fecha_primera_prorroga as string | null,
-                fecha_segunda_prorroga: tramite.fecha_segunda_prorroga as string | null,
-                fecha_tercera_prorroga: tramite.fecha_tercera_prorroga as string | null,
+                primera_prorroga_activa: !!tramite.primera_prorroga_activa,
+                segunda_prorroga_activa: !!tramite.segunda_prorroga_activa,
+                tercera_prorroga_activa: !!tramite.tercera_prorroga_activa,
               }}
             />
           )}

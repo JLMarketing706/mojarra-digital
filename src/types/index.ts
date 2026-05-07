@@ -311,9 +311,9 @@ export interface Tramite {
   // Gestión registral
   registro_propiedad?: 'pba' | 'caba'
   fecha_presentacion?: string
-  fecha_primera_prorroga?: string
-  fecha_segunda_prorroga?: string
-  fecha_tercera_prorroga?: string
+  primera_prorroga_activa?: boolean
+  segunda_prorroga_activa?: boolean
+  tercera_prorroga_activa?: boolean
 
   // Pagos
   monto_efectivo: number

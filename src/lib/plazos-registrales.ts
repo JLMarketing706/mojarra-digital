@@ -1,12 +1,11 @@
 // ──────────────────────────────────────────────────────────────
 // Plazos registrales — cálculo de vencimientos
 // ──────────────────────────────────────────────────────────────
-// Cada registro de la propiedad maneja sus propios días:
-//   PBA  → 180 desde presentación, +180 por cada prórroga
-//   CABA → 180 desde presentación, +60 por cada prórroga
-//
-// El reloj toma la fecha MÁS RECIENTE cargada y le suma los días
-// que correspondan a esa etapa.
+// Solo se ingresa la fecha de presentación. Las prórrogas son
+// booleans (activadas / no). Cada prórroga activa suma días según
+// el registro:
+//   PBA  → presentación +180 días, +180 por cada prórroga activa
+//   CABA → presentación +180 días, +60 por cada prórroga activa
 // ──────────────────────────────────────────────────────────────
 
 export type RegistroPropiedad = 'pba' | 'caba'
@@ -21,7 +20,6 @@ export const REGISTRO_LABELS_CORTO: Record<RegistroPropiedad, string> = {
   caba: 'CABA',
 }
 
-/** Días que corresponden por etapa, según registro */
 export const PLAZOS_POR_REGISTRO: Record<
   RegistroPropiedad,
   { presentacion: number; prorroga: number }
@@ -39,26 +37,38 @@ export const ETAPA_LABEL: Record<EtapaPlazo, string> = {
   tercera_prorroga: '3ra prórroga',
 }
 
-export interface FechasPlazo {
+export interface EstadoPlazos {
   fecha_presentacion?: string | null
-  fecha_primera_prorroga?: string | null
-  fecha_segunda_prorroga?: string | null
-  fecha_tercera_prorroga?: string | null
+  primera_prorroga_activa?: boolean
+  segunda_prorroga_activa?: boolean
+  tercera_prorroga_activa?: boolean
+}
+
+export interface VencimientoEtapa {
+  etapa: EtapaPlazo
+  /** Fecha desde la que arranca esta etapa (YYYY-MM-DD) */
+  fechaInicio: string
+  /** Días que dura esta etapa */
+  diasEtapa: number
+  /** Fecha de vencimiento de esta etapa (YYYY-MM-DD) */
+  fechaVencimiento: string
+  /** Si esta etapa está activada (siempre true para presentación, según el bool para prórrogas) */
+  activa: boolean
 }
 
 export interface PlazoCalculado {
   registro: RegistroPropiedad
-  /** Etapa actual (la última fecha cargada) */
+  /** Línea de tiempo completa: presentación + 3 prórrogas (estén activas o no) */
+  timeline: VencimientoEtapa[]
+  /** Etapa actual = última activa */
   etapaActual: EtapaPlazo
-  /** Fecha desde la que cuenta el plazo */
-  fechaInicio: string // YYYY-MM-DD
-  /** Días totales del plazo de esta etapa */
-  diasPlazo: number
-  /** Fecha de vencimiento calculada */
-  fechaVencimiento: string // YYYY-MM-DD
-  /** Días restantes hasta el vencimiento (negativo si vencido) */
+  /** Fecha de vencimiento actual (de la última etapa activa) */
+  fechaVencimiento: string
+  /** Días restantes hasta el vencimiento actual (negativo si vencido) */
   diasRestantes: number
-  /** Si la 2da prórroga está cargada → genera Nº de expediente */
+  /** Días totales desde la presentación hasta el vencimiento actual */
+  diasAcumulados: number
+  /** True si la 2da prórroga está activa → genera Nº de expediente */
   generaExpediente: boolean
 }
 
@@ -75,56 +85,84 @@ function toYMD(d: Date): string {
   return `${y}-${m}-${day}`
 }
 
+function addDays(d: Date, days: number): Date {
+  const r = new Date(d)
+  r.setDate(r.getDate() + days)
+  return r
+}
+
 /**
- * Calcula el plazo registral activo para una escritura.
- * Devuelve null si no hay registro o no hay ninguna fecha cargada.
+ * Calcula la línea de tiempo completa de plazos para una escritura.
+ * Devuelve null si no hay registro o no hay fecha de presentación.
  */
 export function calcularPlazoRegistral(
   registro: string | null | undefined,
-  fechas: FechasPlazo
+  estado: EstadoPlazos
 ): PlazoCalculado | null {
   if (registro !== 'pba' && registro !== 'caba') return null
-
-  // Determinar la etapa más avanzada con fecha
-  let etapa: EtapaPlazo | null = null
-  let fechaInicio: string | null = null
-
-  if (fechas.fecha_tercera_prorroga) {
-    etapa = 'tercera_prorroga'
-    fechaInicio = fechas.fecha_tercera_prorroga
-  } else if (fechas.fecha_segunda_prorroga) {
-    etapa = 'segunda_prorroga'
-    fechaInicio = fechas.fecha_segunda_prorroga
-  } else if (fechas.fecha_primera_prorroga) {
-    etapa = 'primera_prorroga'
-    fechaInicio = fechas.fecha_primera_prorroga
-  } else if (fechas.fecha_presentacion) {
-    etapa = 'presentacion'
-    fechaInicio = fechas.fecha_presentacion
-  }
-
-  if (!etapa || !fechaInicio) return null
+  if (!estado.fecha_presentacion) return null
 
   const plazos = PLAZOS_POR_REGISTRO[registro]
-  const diasPlazo = etapa === 'presentacion' ? plazos.presentacion : plazos.prorroga
+  const presentacion = parseFechaLocal(estado.fecha_presentacion)
 
-  const fechaInicioDate = parseFechaLocal(fechaInicio)
-  const fechaVencDate = new Date(fechaInicioDate)
-  fechaVencDate.setDate(fechaVencDate.getDate() + diasPlazo)
+  // Calcular cada vencimiento acumulando días sobre la presentación
+  const venceTras180 = addDays(presentacion, plazos.presentacion)
+  const venceTrasP1 = addDays(venceTras180, plazos.prorroga)
+  const venceTrasP2 = addDays(venceTrasP1, plazos.prorroga)
+  const venceTrasP3 = addDays(venceTrasP2, plazos.prorroga)
+
+  const timeline: VencimientoEtapa[] = [
+    {
+      etapa: 'presentacion',
+      fechaInicio: toYMD(presentacion),
+      diasEtapa: plazos.presentacion,
+      fechaVencimiento: toYMD(venceTras180),
+      activa: true,
+    },
+    {
+      etapa: 'primera_prorroga',
+      fechaInicio: toYMD(venceTras180),
+      diasEtapa: plazos.prorroga,
+      fechaVencimiento: toYMD(venceTrasP1),
+      activa: !!estado.primera_prorroga_activa,
+    },
+    {
+      etapa: 'segunda_prorroga',
+      fechaInicio: toYMD(venceTrasP1),
+      diasEtapa: plazos.prorroga,
+      fechaVencimiento: toYMD(venceTrasP2),
+      activa: !!estado.segunda_prorroga_activa,
+    },
+    {
+      etapa: 'tercera_prorroga',
+      fechaInicio: toYMD(venceTrasP2),
+      diasEtapa: plazos.prorroga,
+      fechaVencimiento: toYMD(venceTrasP3),
+      activa: !!estado.tercera_prorroga_activa,
+    },
+  ]
+
+  // La etapa actual es la ÚLTIMA activa
+  const ultimaActiva = [...timeline].reverse().find(e => e.activa) ?? timeline[0]
 
   const hoy = new Date()
   hoy.setHours(0, 0, 0, 0)
-  const ms = fechaVencDate.getTime() - hoy.getTime()
-  const diasRestantes = Math.ceil(ms / 86400000)
+  const venceDate = parseFechaLocal(ultimaActiva.fechaVencimiento)
+  const diasRestantes = Math.ceil((venceDate.getTime() - hoy.getTime()) / 86400000)
+
+  // Días acumulados desde la presentación hasta el vencimiento actual
+  const diasAcumulados = Math.round(
+    (venceDate.getTime() - presentacion.getTime()) / 86400000
+  )
 
   return {
     registro,
-    etapaActual: etapa,
-    fechaInicio,
-    diasPlazo,
-    fechaVencimiento: toYMD(fechaVencDate),
+    timeline,
+    etapaActual: ultimaActiva.etapa,
+    fechaVencimiento: ultimaActiva.fechaVencimiento,
     diasRestantes,
-    generaExpediente: !!fechas.fecha_segunda_prorroga,
+    diasAcumulados,
+    generaExpediente: !!estado.segunda_prorroga_activa,
   }
 }
 

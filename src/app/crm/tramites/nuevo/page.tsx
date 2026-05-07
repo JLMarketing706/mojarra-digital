@@ -149,9 +149,9 @@ export default function NuevoTramitePage() {
     // Plazos registrales
     registro_propiedad: '' as 'pba' | 'caba' | '',
     fecha_presentacion: '',
-    fecha_primera_prorroga: '',
-    fecha_segunda_prorroga: '',
-    fecha_tercera_prorroga: '',
+    primera_prorroga_activa: false,
+    segunda_prorroga_activa: false,
+    tercera_prorroga_activa: false,
   })
 
   useEffect(() => {
@@ -320,9 +320,9 @@ export default function NuevoTramitePage() {
       // Gestión registral
       registro_propiedad: form.registro_propiedad || null,
       fecha_presentacion: form.fecha_presentacion || null,
-      fecha_primera_prorroga: form.fecha_primera_prorroga || null,
-      fecha_segunda_prorroga: form.fecha_segunda_prorroga || null,
-      fecha_tercera_prorroga: form.fecha_tercera_prorroga || null,
+      primera_prorroga_activa: form.primera_prorroga_activa,
+      segunda_prorroga_activa: form.segunda_prorroga_activa,
+      tercera_prorroga_activa: form.tercera_prorroga_activa,
       monto: montoARS || null,
       monto_efectivo: efectivo || 0,
       monto_moneda_extranjera: moneda !== 'ARS' ? (montoExt || null) : null,
@@ -645,50 +645,65 @@ export default function NuevoTramitePage() {
               </div>
             </div>
 
-            {/* Plazos registrales: presentación + 3 prórrogas */}
-            <div className="space-y-2">
+            {/* Plazos registrales: 1 fecha de presentación + 3 prórrogas opcionales */}
+            <div className="space-y-3">
               <Label className="text-zinc-300 text-sm">
                 Plazos registrales
                 <span className="ml-2 text-zinc-500 text-xs font-normal">
-                  (cargá las fechas a medida que avanza la gestión)
+                  (las prórrogas se calculan automáticamente según el registro)
                 </span>
               </Label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs text-zinc-400">Fecha de presentación</Label>
                   <Input type="date" value={form.fecha_presentacion}
                     onChange={e => set('fecha_presentacion', e.target.value)}
                     className={inputCls + ' h-9'} />
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-zinc-400">1ra prórroga</Label>
-                  <Input type="date" value={form.fecha_primera_prorroga}
-                    onChange={e => set('fecha_primera_prorroga', e.target.value)}
-                    className={inputCls + ' h-9'} />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-zinc-400">2da prórroga</Label>
-                  <Input type="date" value={form.fecha_segunda_prorroga}
-                    onChange={e => set('fecha_segunda_prorroga', e.target.value)}
-                    className={inputCls + ' h-9'} />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-zinc-400">3ra prórroga</Label>
-                  <Input type="date" value={form.fecha_tercera_prorroga}
-                    onChange={e => set('fecha_tercera_prorroga', e.target.value)}
-                    className={inputCls + ' h-9'} />
-                </div>
               </div>
+
+              {/* Checkboxes de prórrogas */}
+              {form.fecha_presentacion && form.registro_propiedad && (
+                <div className="rounded-md border border-zinc-700 bg-zinc-900/50 p-3 space-y-2">
+                  <p className="text-xs text-zinc-400 mb-2">
+                    Activá las prórrogas a medida que se solicitan:
+                  </p>
+                  <div className="space-y-2">
+                    {(
+                      [
+                        { key: 'primera_prorroga_activa', label: '1ra prórroga' },
+                        { key: 'segunda_prorroga_activa', label: '2da prórroga (genera Nº de expediente)' },
+                        { key: 'tercera_prorroga_activa', label: '3ra prórroga' },
+                      ] as const
+                    ).map(p => (
+                      <label
+                        key={p.key}
+                        className="flex items-center gap-2 text-sm text-zinc-200 cursor-pointer hover:text-white"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={!!form[p.key]}
+                          onChange={e => set(p.key, e.target.checked)}
+                          className="h-4 w-4 rounded border-zinc-700 bg-zinc-800 text-lime-400 focus:ring-lime-400 focus:ring-offset-zinc-900"
+                        />
+                        {p.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Preview del plazo si hay datos suficientes */}
               {form.registro_propiedad && form.fecha_presentacion && (
                 <div className="mt-2">
                   <PlazoRegistralCountdown
                     registro={form.registro_propiedad}
-                    fechas={{
+                    estado={{
                       fecha_presentacion: form.fecha_presentacion,
-                      fecha_primera_prorroga: form.fecha_primera_prorroga,
-                      fecha_segunda_prorroga: form.fecha_segunda_prorroga,
-                      fecha_tercera_prorroga: form.fecha_tercera_prorroga,
+                      primera_prorroga_activa: form.primera_prorroga_activa,
+                      segunda_prorroga_activa: form.segunda_prorroga_activa,
+                      tercera_prorroga_activa: form.tercera_prorroga_activa,
                     }}
                     asCard={false}
                   />

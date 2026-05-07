@@ -3,31 +3,31 @@
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ClipboardList, AlertTriangle, CheckCircle2, FileWarning } from 'lucide-react'
+import { ClipboardList, AlertTriangle, FileWarning, CheckCircle2, Circle } from 'lucide-react'
 import {
   calcularPlazoRegistral, colorPlazo,
   REGISTRO_LABELS_CORTO, ETAPA_LABEL,
-  type FechasPlazo,
+  type EstadoPlazos,
 } from '@/lib/plazos-registrales'
 import { formatFecha } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 
 interface Props {
   registro: string | null | undefined
-  fechas: FechasPlazo
+  estado: EstadoPlazos
   /** Si true, lo muestra dentro de una <Card>; sino solo el contenido */
   asCard?: boolean
 }
 
-export function PlazoRegistralCountdown({ registro, fechas, asCard = true }: Props) {
-  // Recalcular cada vez que cambia el día (por si se queda abierta la pantalla
-  // toda la noche). Trigger via state que se setea al montar.
+export function PlazoRegistralCountdown({ registro, estado, asCard = true }: Props) {
+  // Recalcular cada minuto por si la página queda abierta toda la noche
   const [, setTick] = useState(0)
   useEffect(() => {
-    const id = setInterval(() => setTick(t => t + 1), 60_000) // 1 min
+    const id = setInterval(() => setTick(t => t + 1), 60_000)
     return () => clearInterval(id)
   }, [])
 
-  const plazo = calcularPlazoRegistral(registro, fechas)
+  const plazo = calcularPlazoRegistral(registro, estado)
   if (!plazo) {
     if (!asCard) return null
     return (
@@ -52,6 +52,7 @@ export function PlazoRegistralCountdown({ registro, fechas, asCard = true }: Pro
 
   const contenido = (
     <div className="space-y-3">
+      {/* Header con números grandes */}
       <div className="flex items-baseline justify-between gap-3 flex-wrap">
         <div>
           <div className="flex items-baseline gap-2">
@@ -75,11 +76,51 @@ export function PlazoRegistralCountdown({ registro, fechas, asCard = true }: Pro
             {REGISTRO_LABELS_CORTO[plazo.registro]}
           </Badge>
           <Badge className="text-xs bg-lime-400/10 text-lime-400 border border-lime-400/30">
-            {ETAPA_LABEL[plazo.etapaActual]} · {plazo.diasPlazo}d
+            {ETAPA_LABEL[plazo.etapaActual]}
           </Badge>
         </div>
       </div>
 
+      {/* Timeline de etapas */}
+      <div className="space-y-1 pt-2 border-t border-zinc-800">
+        <p className="text-[10px] uppercase tracking-wider text-zinc-500 mb-1">Línea de tiempo</p>
+        {plazo.timeline.map((e, i) => {
+          const esActual = e.etapa === plazo.etapaActual
+          const completada = !esActual && plazo.timeline.findIndex(x => x.etapa === plazo.etapaActual) > i
+          return (
+            <div
+              key={e.etapa}
+              className={cn(
+                'flex items-center gap-2 py-1 text-xs',
+                !e.activa && !esActual && 'opacity-50',
+              )}
+            >
+              {e.activa ? (
+                <CheckCircle2 size={11} className={cn(
+                  'shrink-0',
+                  esActual ? 'text-lime-400' : completada ? 'text-zinc-500' : 'text-lime-400'
+                )} />
+              ) : (
+                <Circle size={11} className="text-zinc-600 shrink-0" />
+              )}
+              <span className={cn(
+                'flex-1 truncate',
+                esActual ? 'text-zinc-100 font-medium' : e.activa ? 'text-zinc-300' : 'text-zinc-500'
+              )}>
+                {ETAPA_LABEL[e.etapa]} <span className="text-zinc-600">·</span> {e.diasEtapa}d
+              </span>
+              <span className={cn(
+                'font-mono shrink-0',
+                esActual ? 'text-zinc-100' : 'text-zinc-500'
+              )}>
+                {formatFecha(e.fechaVencimiento)}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Avisos */}
       {plazo.generaExpediente && (
         <div className="rounded-md border border-blue-500/30 bg-blue-500/10 p-2 flex items-start gap-2">
           <FileWarning size={13} className="text-blue-400 shrink-0 mt-0.5" />
@@ -93,23 +134,18 @@ export function PlazoRegistralCountdown({ registro, fechas, asCard = true }: Pro
         <div className="rounded-md border border-red-500/30 bg-red-500/10 p-2 flex items-start gap-2">
           <AlertTriangle size={13} className="text-red-400 shrink-0 mt-0.5" />
           <p className="text-xs text-red-300 leading-snug">
-            El plazo venció hace {Math.abs(plazo.diasRestantes)} días. Verificá si
-            corresponde solicitar una nueva prórroga.
+            El plazo venció hace {Math.abs(plazo.diasRestantes)} días.
+            {plazo.etapaActual !== 'tercera_prorroga' && ' Considerá activar la próxima prórroga.'}
           </p>
         </div>
       ) : plazo.diasRestantes <= 15 ? (
         <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-2 flex items-start gap-2">
           <AlertTriangle size={13} className="text-amber-400 shrink-0 mt-0.5" />
           <p className="text-xs text-amber-300 leading-snug">
-            Quedan menos de 15 días. Considerá solicitar prórroga si no vas a llegar.
+            Quedan menos de 15 días. Considerá activar la próxima prórroga.
           </p>
         </div>
-      ) : (
-        <div className="text-xs text-zinc-500 flex items-start gap-1.5">
-          <CheckCircle2 size={11} className="text-zinc-500 shrink-0 mt-0.5" />
-          Plazo en curso desde {formatFecha(plazo.fechaInicio)}
-        </div>
-      )}
+      ) : null}
     </div>
   )
 

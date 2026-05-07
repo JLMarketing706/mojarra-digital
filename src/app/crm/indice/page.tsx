@@ -40,9 +40,9 @@ interface TramiteIndice {
   // Gestión registral
   registro_propiedad: string | null
   fecha_presentacion: string | null
-  fecha_primera_prorroga: string | null
-  fecha_segunda_prorroga: string | null
-  fecha_tercera_prorroga: string | null
+  primera_prorroga_activa: boolean | null
+  segunda_prorroga_activa: boolean | null
+  tercera_prorroga_activa: boolean | null
 }
 
 // Mapping de rol → label legible. Fallback: capitalizar el rol.
@@ -152,8 +152,8 @@ export default async function IndiceNotarialPage({
     .select(`
       id, estado, numero_escritura, folio_protocolo, fecha_escritura,
       descripcion, tipo, negocios_causales, tipo_acto_notarial, updated_at,
-      registro_propiedad, fecha_presentacion, fecha_primera_prorroga,
-      fecha_segunda_prorroga, fecha_tercera_prorroga,
+      registro_propiedad, fecha_presentacion,
+      primera_prorroga_activa, segunda_prorroga_activa, tercera_prorroga_activa,
       cliente:clientes(nombre, apellido),
       escribano:profiles(nombre, apellido),
       tramite_partes(rol, nombre, cliente:clientes(nombre, apellido))
@@ -278,9 +278,9 @@ export default async function IndiceNotarialPage({
                     {(() => {
                       const plazo = calcularPlazoRegistral(t.registro_propiedad, {
                         fecha_presentacion: t.fecha_presentacion,
-                        fecha_primera_prorroga: t.fecha_primera_prorroga,
-                        fecha_segunda_prorroga: t.fecha_segunda_prorroga,
-                        fecha_tercera_prorroga: t.fecha_tercera_prorroga,
+                        primera_prorroga_activa: !!t.primera_prorroga_activa,
+                        segunda_prorroga_activa: !!t.segunda_prorroga_activa,
+                        tercera_prorroga_activa: !!t.tercera_prorroga_activa,
                       })
                       if (!plazo) return <span className="text-zinc-600 text-xs">—</span>
                       const c = colorPlazo(plazo.diasRestantes)
