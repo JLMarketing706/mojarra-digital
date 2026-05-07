@@ -20,6 +20,7 @@ import {
   ShieldAlert,
   Crown,
   ClipboardList,
+  FileSignature,
   X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -29,6 +30,7 @@ const navItems = [
   { href: '/crm/clientes', label: 'Clientes', icon: Users },
   { href: '/crm/tramites', label: 'Escrituras', icon: FileText },
   { href: '/crm/gestion-registral', label: 'Gestión Registral', icon: ClipboardList },
+  { href: '/crm/certificaciones', label: 'Certificaciones', icon: FileSignature },
   { href: '/crm/indice', label: 'Índice Notarial', icon: BookOpen },
   { href: '/crm/uif', label: 'UIF', icon: AlertTriangle },
   { href: '/crm/cumplimiento', label: 'Cumplimiento', icon: ShieldAlert },
