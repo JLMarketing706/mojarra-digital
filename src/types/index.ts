@@ -985,7 +985,7 @@ export const LABEL_NIVEL_RIESGO: Record<NivelRiesgo, string> = {
 }
 
 export const LABEL_TIPO_ACTO: Record<TipoActo, string> = {
-  compraventa_inmueble: 'Compraventa de inmueble',
+  compraventa_inmueble: 'Compraventa',
   constitucion_sociedad: 'Constitución de sociedad',
   cesion_cuotas: 'Cesión de cuotas',
   fideicomiso: 'Fideicomiso',
