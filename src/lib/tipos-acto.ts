@@ -54,16 +54,30 @@ export const TIPOS_ACTO: TipoActo[] = [
     value: 'personales',
     label: 'Actos personales y de familia',
     causales: [
+      // Poderes
       'Poder general',
       'Poder especial',
+      'Poder especial Administración',
+      'Poder Especial Irrevocable',
+      'Poder General judicial',
+      'Poder General Bancario',
+      'Poder General Judicial y Bancario',
+      'Poder G. Jud. Y Adm.',
+      'Poder General Administración y Disposición',
+      'Poder General Amplio de administración y disposición',
+      'Poder General Amplio Disposición Judicial',
+      // Familia / personales
       'Autorización de viaje para menor',
       'Testamento',
       'Autorización para conducir vehículo',
       'Certificación de unión convivencial',
       'Venia matrimonial',
+      'Desvinculación laboral',
+      // Actas y protocolizaciones
       'Acta de constatación',
       'Acta de notificación',
       'Protocolización de documentos',
+      'Protocolización de instrumento privado',
     ],
   },
   {
