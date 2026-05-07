@@ -38,23 +38,45 @@ COMMENT ON COLUMN tramites.tercera_prorroga_activa IS
 COMMENT ON COLUMN tramites.numero_expediente_registro IS
   'N° de expediente que asigna el registro al solicitarse la 2da prórroga.';
 
--- Migración de datos: si alguien tenía las fechas viejas cargadas,
--- pasamos esa info a los booleans (asumiendo que si la fecha estaba
--- cargada es porque la prórroga estaba en curso).
-UPDATE tramites
-SET primera_prorroga_activa = true
-WHERE fecha_primera_prorroga IS NOT NULL AND primera_prorroga_activa = false;
+-- Migración de datos opcional: si alguien tenía las fechas viejas
+-- cargadas (de la v1 que nunca llegó a producción), pasamos esa info
+-- a los booleans. Envuelto en DO porque las columnas viejas pueden
+-- no existir en absoluto, y un UPDATE plano fallaría con error 42703.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'tramites' AND column_name = 'fecha_primera_prorroga'
+  ) THEN
+    EXECUTE $sql$
+      UPDATE tramites SET primera_prorroga_activa = true
+      WHERE fecha_primera_prorroga IS NOT NULL AND primera_prorroga_activa = false
+    $sql$;
+  END IF;
 
-UPDATE tramites
-SET segunda_prorroga_activa = true
-WHERE fecha_segunda_prorroga IS NOT NULL AND segunda_prorroga_activa = false;
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'tramites' AND column_name = 'fecha_segunda_prorroga'
+  ) THEN
+    EXECUTE $sql$
+      UPDATE tramites SET segunda_prorroga_activa = true
+      WHERE fecha_segunda_prorroga IS NOT NULL AND segunda_prorroga_activa = false
+    $sql$;
+  END IF;
 
-UPDATE tramites
-SET tercera_prorroga_activa = true
-WHERE fecha_tercera_prorroga IS NOT NULL AND tercera_prorroga_activa = false;
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'tramites' AND column_name = 'fecha_tercera_prorroga'
+  ) THEN
+    EXECUTE $sql$
+      UPDATE tramites SET tercera_prorroga_activa = true
+      WHERE fecha_tercera_prorroga IS NOT NULL AND tercera_prorroga_activa = false
+    $sql$;
+  END IF;
+END $$;
 
--- Las fechas de prórroga viejas no se borran por seguridad.
--- Si querés limpiarlas después de validar que todo funciona:
+-- Si las columnas viejas existen y querés limpiarlas después de
+-- validar que todo funciona, podés correr:
 --   ALTER TABLE tramites DROP COLUMN IF EXISTS fecha_primera_prorroga;
 --   ALTER TABLE tramites DROP COLUMN IF EXISTS fecha_segunda_prorroga;
 --   ALTER TABLE tramites DROP COLUMN IF EXISTS fecha_tercera_prorroga;
