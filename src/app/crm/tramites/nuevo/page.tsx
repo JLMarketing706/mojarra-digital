@@ -152,6 +152,7 @@ export default function NuevoTramitePage() {
     primera_prorroga_activa: false,
     segunda_prorroga_activa: false,
     tercera_prorroga_activa: false,
+    numero_expediente_registro: '',
   })
 
   useEffect(() => {
@@ -323,6 +324,7 @@ export default function NuevoTramitePage() {
       primera_prorroga_activa: form.primera_prorroga_activa,
       segunda_prorroga_activa: form.segunda_prorroga_activa,
       tercera_prorroga_activa: form.tercera_prorroga_activa,
+      numero_expediente_registro: form.numero_expediente_registro?.trim() || null,
       monto: montoARS || null,
       monto_efectivo: efectivo || 0,
       monto_moneda_extranjera: moneda !== 'ARS' ? (montoExt || null) : null,
@@ -663,23 +665,23 @@ export default function NuevoTramitePage() {
                 </div>
               </div>
 
-              {/* Checkboxes de prórrogas */}
+              {/* Checkboxes de prórrogas (en línea) + input de Nº de expediente */}
               {form.fecha_presentacion && form.registro_propiedad && (
-                <div className="rounded-md border border-zinc-700 bg-zinc-900/50 p-3 space-y-2">
-                  <p className="text-xs text-zinc-400 mb-2">
+                <div className="rounded-md border border-zinc-700 bg-zinc-900/50 p-3 space-y-3">
+                  <p className="text-xs text-zinc-400">
                     Activá las prórrogas a medida que se solicitan:
                   </p>
-                  <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
                     {(
                       [
                         { key: 'primera_prorroga_activa', label: '1ra prórroga' },
-                        { key: 'segunda_prorroga_activa', label: '2da prórroga (genera Nº de expediente)' },
+                        { key: 'segunda_prorroga_activa', label: '2da prórroga' },
                         { key: 'tercera_prorroga_activa', label: '3ra prórroga' },
                       ] as const
                     ).map(p => (
                       <label
                         key={p.key}
-                        className="flex items-center gap-2 text-sm text-zinc-200 cursor-pointer hover:text-white"
+                        className="inline-flex items-center gap-2 text-sm text-zinc-200 cursor-pointer hover:text-white"
                       >
                         <input
                           type="checkbox"
@@ -691,6 +693,24 @@ export default function NuevoTramitePage() {
                       </label>
                     ))}
                   </div>
+
+                  {/* N° de expediente: aparece cuando la 2da prórroga está activa */}
+                  {form.segunda_prorroga_activa && (
+                    <div className="space-y-1 pt-2 border-t border-zinc-800">
+                      <Label className="text-xs text-zinc-400">
+                        N° de expediente del registro
+                        <span className="ml-1.5 text-[10px] text-zinc-500 font-normal">
+                          (lo asigna el registro al pedir la 2da prórroga)
+                        </span>
+                      </Label>
+                      <Input
+                        value={form.numero_expediente_registro}
+                        onChange={e => set('numero_expediente_registro', e.target.value)}
+                        placeholder="Ej: 22-1234567/2026"
+                        className={inputCls + ' h-9'}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -705,6 +725,7 @@ export default function NuevoTramitePage() {
                       segunda_prorroga_activa: form.segunda_prorroga_activa,
                       tercera_prorroga_activa: form.tercera_prorroga_activa,
                     }}
+                    numeroExpediente={form.numero_expediente_registro}
                     asCard={false}
                   />
                 </div>

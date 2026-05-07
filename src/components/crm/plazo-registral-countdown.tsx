@@ -15,11 +15,13 @@ import { cn } from '@/lib/utils'
 interface Props {
   registro: string | null | undefined
   estado: EstadoPlazos
+  /** N° de expediente del registro (si la 2da prórroga ya fue solicitada) */
+  numeroExpediente?: string | null
   /** Si true, lo muestra dentro de una <Card>; sino solo el contenido */
   asCard?: boolean
 }
 
-export function PlazoRegistralCountdown({ registro, estado, asCard = true }: Props) {
+export function PlazoRegistralCountdown({ registro, estado, numeroExpediente, asCard = true }: Props) {
   // Recalcular cada minuto por si la página queda abierta toda la noche
   const [, setTick] = useState(0)
   useEffect(() => {
@@ -120,13 +122,21 @@ export function PlazoRegistralCountdown({ registro, estado, asCard = true }: Pro
         })}
       </div>
 
-      {/* Avisos */}
+      {/* N° de expediente (cuando se solicitó la 2da prórroga) */}
       {plazo.generaExpediente && (
         <div className="rounded-md border border-blue-500/30 bg-blue-500/10 p-2 flex items-start gap-2">
           <FileWarning size={13} className="text-blue-400 shrink-0 mt-0.5" />
-          <p className="text-xs text-blue-300 leading-snug">
-            La 2da prórroga genera <strong>Nº de expediente</strong> en el registro.
-          </p>
+          {numeroExpediente && numeroExpediente.trim() ? (
+            <p className="text-xs text-blue-300 leading-snug">
+              <span className="text-blue-400/80">N° de expediente:</span>{' '}
+              <span className="font-mono font-semibold text-blue-200">{numeroExpediente}</span>
+            </p>
+          ) : (
+            <p className="text-xs text-blue-300 leading-snug">
+              La 2da prórroga ya fue solicitada — falta cargar el{' '}
+              <strong>N° de expediente</strong> que asignó el registro.
+            </p>
+          )}
         </div>
       )}
 

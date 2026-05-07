@@ -209,6 +209,7 @@ export default async function DetalleTramiteCRMPage({
                 segunda_prorroga_activa: !!tramite.segunda_prorroga_activa,
                 tercera_prorroga_activa: !!tramite.tercera_prorroga_activa,
               }}
+              numeroExpediente={tramite.numero_expediente_registro as string | null}
             />
           )}
 

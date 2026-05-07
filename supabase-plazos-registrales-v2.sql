@@ -21,7 +21,9 @@ ALTER TABLE tramites
   -- Nuevos: prórrogas como booleans
   ADD COLUMN IF NOT EXISTS primera_prorroga_activa BOOLEAN NOT NULL DEFAULT false,
   ADD COLUMN IF NOT EXISTS segunda_prorroga_activa BOOLEAN NOT NULL DEFAULT false,
-  ADD COLUMN IF NOT EXISTS tercera_prorroga_activa BOOLEAN NOT NULL DEFAULT false;
+  ADD COLUMN IF NOT EXISTS tercera_prorroga_activa BOOLEAN NOT NULL DEFAULT false,
+  -- N° de expediente: lo asigna el registro al solicitarse la 2da prórroga
+  ADD COLUMN IF NOT EXISTS numero_expediente_registro TEXT;
 
 COMMENT ON COLUMN tramites.registro_propiedad IS
   'Registro de la propiedad inmueble: pba | caba. Define los plazos de cada prórroga.';
@@ -33,6 +35,8 @@ COMMENT ON COLUMN tramites.segunda_prorroga_activa IS
   'Si está en true, suma otra extensión y genera Nº de expediente en el registro.';
 COMMENT ON COLUMN tramites.tercera_prorroga_activa IS
   'Si está en true, suma una tercera extensión.';
+COMMENT ON COLUMN tramites.numero_expediente_registro IS
+  'N° de expediente que asigna el registro al solicitarse la 2da prórroga.';
 
 -- Migración de datos: si alguien tenía las fechas viejas cargadas,
 -- pasamos esa info a los booleans (asumiendo que si la fecha estaba

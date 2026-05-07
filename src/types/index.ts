@@ -314,6 +314,7 @@ export interface Tramite {
   primera_prorroga_activa?: boolean
   segunda_prorroga_activa?: boolean
   tercera_prorroga_activa?: boolean
+  numero_expediente_registro?: string
 
   // Pagos
   monto_efectivo: number
