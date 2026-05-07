@@ -308,6 +308,13 @@ export interface Tramite {
   dispara_uif: boolean
   requiere_uif: boolean // legacy, en sync con dispara_uif
 
+  // Gestión registral
+  registro_propiedad?: 'pba' | 'caba'
+  fecha_presentacion?: string
+  fecha_primera_prorroga?: string
+  fecha_segunda_prorroga?: string
+  fecha_tercera_prorroga?: string
+
   // Pagos
   monto_efectivo: number
   monto_moneda_extranjera?: number

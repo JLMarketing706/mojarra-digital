@@ -31,6 +31,7 @@ import { NegociosCausalesInput } from '@/components/crm/negocios-causales-input'
 import { ClienteCombobox } from '@/components/crm/cliente-combobox'
 import { FormasPagoMultiInput, type FormaPagoEntry } from '@/components/crm/formas-pago-multi-input'
 import { TIPOS_ACTO, causalesDe, type TipoActoValue } from '@/lib/tipos-acto'
+import { PlazoRegistralCountdown } from '@/components/crm/plazo-registral-countdown'
 import { UserPlus } from 'lucide-react'
 
 // ─── Clases de estilo ─────────────────────────────────────
@@ -145,6 +146,12 @@ export default function NuevoTramitePage() {
     forma_pago: '' as FormaPago | '',
     origen_fondos: '',
     estado_inicial: 'iniciado',
+    // Plazos registrales
+    registro_propiedad: '' as 'pba' | 'caba' | '',
+    fecha_presentacion: '',
+    fecha_primera_prorroga: '',
+    fecha_segunda_prorroga: '',
+    fecha_tercera_prorroga: '',
   })
 
   useEffect(() => {
@@ -310,6 +317,12 @@ export default function NuevoTramitePage() {
       folio_protocolo: form.folio_protocolo || null,
       registro_notarial: form.registro_notarial || null,
       fecha_escritura: form.fecha_escritura || null,
+      // Gestión registral
+      registro_propiedad: form.registro_propiedad || null,
+      fecha_presentacion: form.fecha_presentacion || null,
+      fecha_primera_prorroga: form.fecha_primera_prorroga || null,
+      fecha_segunda_prorroga: form.fecha_segunda_prorroga || null,
+      fecha_tercera_prorroga: form.fecha_tercera_prorroga || null,
       monto: montoARS || null,
       monto_efectivo: efectivo || 0,
       monto_moneda_extranjera: moneda !== 'ARS' ? (montoExt || null) : null,
@@ -604,10 +617,83 @@ export default function NuevoTramitePage() {
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-zinc-300">Número de referencia interno</Label>
-              <Input value={form.numero_referencia} onChange={e => set('numero_referencia', e.target.value)}
-                placeholder="Ej: 2024-001" className={inputCls} />
+            {/* Línea: número de referencia + registro */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-zinc-300">Número de referencia interno</Label>
+                <Input value={form.numero_referencia} onChange={e => set('numero_referencia', e.target.value)}
+                  placeholder="Ej: 2024-001" className={inputCls} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-zinc-300">Registro de la propiedad</Label>
+                <Select
+                  value={form.registro_propiedad}
+                  onValueChange={v => set('registro_propiedad', v as 'pba' | 'caba')}
+                >
+                  <SelectTrigger className={selectTriggerCls}>
+                    <SelectValue placeholder="— elegir —" />
+                  </SelectTrigger>
+                  <SelectContent className={selectContentCls}>
+                    <SelectItem value="pba" className={selectItemCls}>
+                      Provincia de Buenos Aires (PBA)
+                    </SelectItem>
+                    <SelectItem value="caba" className={selectItemCls}>
+                      Capital Federal (CABA)
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Plazos registrales: presentación + 3 prórrogas */}
+            <div className="space-y-2">
+              <Label className="text-zinc-300 text-sm">
+                Plazos registrales
+                <span className="ml-2 text-zinc-500 text-xs font-normal">
+                  (cargá las fechas a medida que avanza la gestión)
+                </span>
+              </Label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs text-zinc-400">Fecha de presentación</Label>
+                  <Input type="date" value={form.fecha_presentacion}
+                    onChange={e => set('fecha_presentacion', e.target.value)}
+                    className={inputCls + ' h-9'} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-zinc-400">1ra prórroga</Label>
+                  <Input type="date" value={form.fecha_primera_prorroga}
+                    onChange={e => set('fecha_primera_prorroga', e.target.value)}
+                    className={inputCls + ' h-9'} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-zinc-400">2da prórroga</Label>
+                  <Input type="date" value={form.fecha_segunda_prorroga}
+                    onChange={e => set('fecha_segunda_prorroga', e.target.value)}
+                    className={inputCls + ' h-9'} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-zinc-400">3ra prórroga</Label>
+                  <Input type="date" value={form.fecha_tercera_prorroga}
+                    onChange={e => set('fecha_tercera_prorroga', e.target.value)}
+                    className={inputCls + ' h-9'} />
+                </div>
+              </div>
+              {/* Preview del plazo si hay datos suficientes */}
+              {form.registro_propiedad && form.fecha_presentacion && (
+                <div className="mt-2">
+                  <PlazoRegistralCountdown
+                    registro={form.registro_propiedad}
+                    fechas={{
+                      fecha_presentacion: form.fecha_presentacion,
+                      fecha_primera_prorroga: form.fecha_primera_prorroga,
+                      fecha_segunda_prorroga: form.fecha_segunda_prorroga,
+                      fecha_tercera_prorroga: form.fecha_tercera_prorroga,
+                    }}
+                    asCard={false}
+                  />
+                </div>
+              )}
             </div>
 
             <div className="space-y-1.5">

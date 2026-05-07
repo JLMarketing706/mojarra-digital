@@ -5,6 +5,9 @@ import { Badge } from '@/components/ui/badge'
 import { IndiceSearch } from '@/components/crm/indice-search'
 import { IndiceExportButton } from '@/components/crm/indice-export-button'
 import { formatFecha, estadoTramiteLabel, estadoTramiteColor } from '@/lib/utils'
+import {
+  calcularPlazoRegistral, colorPlazo, REGISTRO_LABELS_CORTO,
+} from '@/lib/plazos-registrales'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Índice Notarial' }
@@ -34,6 +37,12 @@ interface TramiteIndice {
   escribano: { nombre: string; apellido: string } | null
   tramite_partes: ParteRow[] | null
   updated_at: string
+  // Gestión registral
+  registro_propiedad: string | null
+  fecha_presentacion: string | null
+  fecha_primera_prorroga: string | null
+  fecha_segunda_prorroga: string | null
+  fecha_tercera_prorroga: string | null
 }
 
 // Mapping de rol → label legible. Fallback: capitalizar el rol.
@@ -143,6 +152,8 @@ export default async function IndiceNotarialPage({
     .select(`
       id, estado, numero_escritura, folio_protocolo, fecha_escritura,
       descripcion, tipo, negocios_causales, tipo_acto_notarial, updated_at,
+      registro_propiedad, fecha_presentacion, fecha_primera_prorroga,
+      fecha_segunda_prorroga, fecha_tercera_prorroga,
       cliente:clientes(nombre, apellido),
       escribano:profiles(nombre, apellido),
       tramite_partes(rol, nombre, cliente:clientes(nombre, apellido))
@@ -207,7 +218,8 @@ export default async function IndiceNotarialPage({
               <th className="text-left px-4 py-3 text-zinc-400 font-medium">Tipo de acto</th>
               <th className="text-left px-4 py-3 text-zinc-400 font-medium">Partes</th>
               <th className="text-left px-4 py-3 text-zinc-400 font-medium hidden md:table-cell">Folio</th>
-              <th className="text-left px-4 py-3 text-zinc-400 font-medium hidden lg:table-cell">Inmueble</th>
+              <th className="text-left px-4 py-3 text-zinc-400 font-medium hidden lg:table-cell">Registro</th>
+              <th className="text-left px-4 py-3 text-zinc-400 font-medium hidden md:table-cell">Plazo</th>
               <th className="text-left px-4 py-3 text-zinc-400 font-medium">Estado</th>
               <th className="px-4 py-3 w-12" />
             </tr>
@@ -215,7 +227,7 @@ export default async function IndiceNotarialPage({
           <tbody>
             {entradas.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-12 text-center text-zinc-500">
+                <td colSpan={9} className="px-4 py-12 text-center text-zinc-500">
                   {q
                     ? `Sin resultados para "${q}".`
                     : 'No hay escrituras para mostrar. Cargá una escritura nueva y aparecerá acá automáticamente.'}
@@ -253,8 +265,35 @@ export default async function IndiceNotarialPage({
                   <td className="px-4 py-3 text-zinc-500 hidden md:table-cell font-mono text-xs">
                     {t.folio_protocolo ?? '—'}
                   </td>
-                  <td className="px-4 py-3 text-zinc-400 hidden lg:table-cell max-w-xs truncate">
-                    {t.descripcion ?? '—'}
+                  <td className="px-4 py-3 hidden lg:table-cell">
+                    {t.registro_propiedad === 'pba' || t.registro_propiedad === 'caba' ? (
+                      <span className="inline-block text-xs font-medium bg-zinc-800 border border-zinc-700 text-zinc-300 px-1.5 py-0.5 rounded">
+                        {REGISTRO_LABELS_CORTO[t.registro_propiedad]}
+                      </span>
+                    ) : (
+                      <span className="text-zinc-600 text-xs">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 hidden md:table-cell">
+                    {(() => {
+                      const plazo = calcularPlazoRegistral(t.registro_propiedad, {
+                        fecha_presentacion: t.fecha_presentacion,
+                        fecha_primera_prorroga: t.fecha_primera_prorroga,
+                        fecha_segunda_prorroga: t.fecha_segunda_prorroga,
+                        fecha_tercera_prorroga: t.fecha_tercera_prorroga,
+                      })
+                      if (!plazo) return <span className="text-zinc-600 text-xs">—</span>
+                      const c = colorPlazo(plazo.diasRestantes)
+                      const vencido = plazo.diasRestantes < 0
+                      return (
+                        <div className="text-xs leading-tight">
+                          <span className={`${c} font-mono font-semibold`}>
+                            {vencido ? `-${Math.abs(plazo.diasRestantes)}` : plazo.diasRestantes}d
+                          </span>
+                          {vencido && <span className="ml-1 text-red-400 text-[10px]">vencido</span>}
+                        </div>
+                      )
+                    })()}
                   </td>
                   <td className="px-4 py-3">
                     <Badge className={`text-xs ${estadoTramiteColor(t.estado)}`}>

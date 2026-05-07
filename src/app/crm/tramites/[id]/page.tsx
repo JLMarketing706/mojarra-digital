@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator'
 import { estadoTramiteLabel, estadoTramiteColor, formatFecha, formatFechaHora, diasHastaVencimiento, formatMonto } from '@/lib/utils'
 import { ArrowLeft, AlertTriangle, FileText, Feather, Clock, AlertCircle, Coins } from 'lucide-react'
 import { LABEL_FORMA_PAGO, type FormaPago } from '@/types'
+import { PlazoRegistralCountdown } from '@/components/crm/plazo-registral-countdown'
 import { TramiteAcciones } from '@/components/crm/tramite-acciones'
 import { CalificacionSelector } from '@/components/crm/calificacion-selector'
 import { DocsRequeridosAlert } from '@/components/crm/docs-requeridos-alert'
@@ -197,6 +198,19 @@ export default async function DetalleTramiteCRMPage({
               ) : null)}
             </CardContent>
           </Card>
+
+          {/* Plazo registral */}
+          {tramite.registro_propiedad && tramite.fecha_presentacion && (
+            <PlazoRegistralCountdown
+              registro={tramite.registro_propiedad as string}
+              fechas={{
+                fecha_presentacion: tramite.fecha_presentacion as string | null,
+                fecha_primera_prorroga: tramite.fecha_primera_prorroga as string | null,
+                fecha_segunda_prorroga: tramite.fecha_segunda_prorroga as string | null,
+                fecha_tercera_prorroga: tramite.fecha_tercera_prorroga as string | null,
+              }}
+            />
+          )}
 
           {/* Formas de pago */}
           {(() => {
