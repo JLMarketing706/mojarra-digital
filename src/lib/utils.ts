@@ -7,12 +7,32 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/**
+ * Parsea una fecha DATE de Postgres ("YYYY-MM-DD") como fecha LOCAL.
+ *
+ * Si usás `new Date('2026-03-01')` JavaScript la interpreta como UTC,
+ * y al mostrarla en horario Argentina (UTC-3) la corre a 28/02/2026
+ * a las 21hs — bug clásico que el usuario nunca entiende.
+ * Con esta función, "2026-03-01" siempre se muestra como 01/03/2026.
+ *
+ * Si el input ya tiene hora (timestamp con 'T'), se respeta como está.
+ */
+function parseFechaLocal(fecha: string | Date): Date {
+  if (fecha instanceof Date) return fecha
+  // YYYY-MM-DD puro (sin tiempo) → construir como fecha local
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(fecha)
+  if (m) {
+    return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+  }
+  return new Date(fecha)
+}
+
 export function formatFecha(fecha: string | Date): string {
-  return format(new Date(fecha), 'dd/MM/yyyy', { locale: es })
+  return format(parseFechaLocal(fecha), 'dd/MM/yyyy', { locale: es })
 }
 
 export function formatFechaHora(fecha: string | Date): string {
-  return format(new Date(fecha), 'dd/MM/yyyy HH:mm', { locale: es })
+  return format(parseFechaLocal(fecha), 'dd/MM/yyyy HH:mm', { locale: es })
 }
 
 export function estadoTramiteLabel(estado: string): string {
