@@ -567,12 +567,24 @@ export default function NuevoTramitePage() {
                 <SelectTrigger className={selectTriggerCls + ' h-auto py-2 [&>span]:text-left'}>
                   <SelectValue placeholder="Seleccioná (define obligación UIF)" />
                 </SelectTrigger>
-                <SelectContent className={selectContentCls + ' max-w-[min(640px,calc(100vw-2rem))]'}>
+                <SelectContent
+                  className={
+                    selectContentCls +
+                    // Forzar ancho cómodo para que las descripciones largas no se corten:
+                    //  - mínimo: ancho del trigger
+                    //  - normal: ~640px
+                    //  - máximo: viewport - 1rem (mobile)
+                    ' w-[min(640px,calc(100vw-1rem))] min-w-[var(--radix-select-trigger-width)]'
+                  }
+                >
                   {TIPOS_ACTO_UIF_INFO.map(t => (
                     <SelectItem
                       key={t.value}
                       value={t.value}
-                      className={selectItemCls + ' py-2.5 items-start whitespace-normal'}
+                      className={
+                        selectItemCls +
+                        ' py-2.5 pr-8 items-start whitespace-normal'
+                      }
                     >
                       <div className="flex flex-col gap-0.5">
                         <span className="font-semibold text-zinc-100 leading-snug">
