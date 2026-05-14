@@ -63,7 +63,7 @@ const FORMAS_PAGO_LIST: FormaPago[] = [
 
 const ESTADOS_OPERACION = [
   { v: 'iniciado', label: 'Iniciado' },
-  { v: 'en_proceso', label: 'En proceso' },
+  { v: 'en_proceso', label: 'En curso' },
   { v: 'en_registro', label: 'En registro' },
   { v: 'observado', label: 'Observado' },
   { v: 'listo', label: 'Listo para retirar' },

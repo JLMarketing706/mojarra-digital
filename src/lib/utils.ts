@@ -40,7 +40,7 @@ export function estadoTramiteLabel(estado: string): string {
     // 'borrador' / 'iniciado' (legacy) → ambos se muestran como "Iniciado"
     borrador: 'Iniciado',
     iniciado: 'Iniciado',
-    en_proceso: 'En proceso',
+    en_proceso: 'En curso',
     en_registro: 'En registro',
     observado: 'Observado',
     listo: 'Listo para retirar',

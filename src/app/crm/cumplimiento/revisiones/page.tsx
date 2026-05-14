@@ -28,7 +28,7 @@ const ESTADO_COLORS: Record<EstadoRevision, string> = {
 
 const ESTADO_LABEL: Record<EstadoRevision, string> = {
   pendiente: 'Pendiente',
-  en_proceso: 'En proceso',
+  en_proceso: 'En curso',
   completada: 'Completada',
   archivada: 'Archivada',
 }
