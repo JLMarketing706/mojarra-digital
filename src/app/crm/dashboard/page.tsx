@@ -13,6 +13,24 @@ export const metadata: Metadata = { title: 'Panel de control' }
 export default async function CRMDashboardPage() {
   const supabase = await createClient()
 
+  // Nombre de la escribanía del usuario actual (para mostrar al lado del título)
+  let nombreEscribania: string | null = null
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles').select('escribania_id').eq('id', user.id).single()
+    const escribaniaId = (profile as { escribania_id?: string } | null)?.escribania_id
+    if (escribaniaId) {
+      const { data: esc } = await supabase
+        .from('escribanias')
+        .select('razon_social, nombre_fantasia')
+        .eq('id', escribaniaId)
+        .single()
+      const e = esc as { razon_social?: string; nombre_fantasia?: string } | null
+      nombreEscribania = e?.nombre_fantasia || e?.razon_social || null
+    }
+  }
+
   const [
     { count: totalClientes },
     { count: tramitesActivos },
@@ -71,7 +89,17 @@ export default async function CRMDashboardPage() {
     <div>
       <div className="mb-8 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-white mb-1">Panel de control</h1>
+          <div className="flex items-baseline gap-3 flex-wrap mb-1">
+            <h1 className="text-2xl font-semibold text-white">Panel de control</h1>
+            {nombreEscribania && (
+              <span className="text-zinc-500 text-base">·</span>
+            )}
+            {nombreEscribania && (
+              <span className="text-zinc-300 text-base font-medium">
+                {nombreEscribania}
+              </span>
+            )}
+          </div>
           <p className="text-zinc-400 text-sm">Resumen del sistema notarial.</p>
         </div>
         <Link href="/crm/cumplimiento/ddjj/imprimir" target="_blank">
