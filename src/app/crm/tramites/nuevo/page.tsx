@@ -29,7 +29,7 @@ import { MontoInput as MontoInputShared } from '@/components/crm/monto-input'
 import { ClienteQuickCreate } from '@/components/crm/cliente-quick-create'
 import { NegociosCausalesInput } from '@/components/crm/negocios-causales-input'
 import { ClienteCombobox } from '@/components/crm/cliente-combobox'
-import { FormasPagoMultiInput, type FormaPagoEntry } from '@/components/crm/formas-pago-multi-input'
+import { FormasPagoMultiInput, type FormaPagoEntry, nuevaFormaPagoVacia } from '@/components/crm/formas-pago-multi-input'
 import { TIPOS_ACTO, causalesDe, type TipoActoValue } from '@/lib/tipos-acto'
 import { PlazoRegistralCountdown } from '@/components/crm/plazo-registral-countdown'
 import { UserPlus } from 'lucide-react'
@@ -273,10 +273,21 @@ export default function NuevoTramitePage() {
 
   // Cálculo en vivo UIF
   const monto = parseMonto(form.monto)
-  // El efectivo se deriva de las formas de pago cargadas (suma de las "efectivo")
-  const efectivo = formasPago
-    .filter(fp => fp.forma_pago === 'efectivo')
-    .reduce((acc, fp) => acc + parseMonto(fp.monto), 0)
+  // Monto total en ARS (sirve para sincronizar la forma de pago única)
+  const montoTotalARS = moneda === 'ARS'
+    ? monto
+    : (parseMonto(form.monto_moneda_extranjera) * parseMonto(form.tipo_cambio)) || 0
+  // El efectivo se deriva de las formas de pago cargadas:
+  //  - Si hay >= 2 formas, suma de las "efectivo" según lo cargado en cada fila.
+  //  - Si hay 1 sola y es 'efectivo', se usa el monto total.
+  const efectivo = (() => {
+    if (formasPago.length === 1 && formasPago[0].forma_pago === 'efectivo') {
+      return montoTotalARS
+    }
+    return formasPago
+      .filter(fp => fp.forma_pago === 'efectivo')
+      .reduce((acc, fp) => acc + parseMonto(fp.monto), 0)
+  })()
   const umbralEfectivo = smvm * 700
   const umbralCompraventa = smvm * 700
 
@@ -489,12 +500,22 @@ export default function NuevoTramitePage() {
       }
     }
 
-    // Insertar formas de pago (si hay)
-    const formasPagoValidas = formasPago.filter(fp => fp.forma_pago && parseMonto(fp.monto) > 0)
-    if (formasPagoValidas.length > 0) {
+    // Insertar formas de pago.
+    // Caso especial: si hay 1 sola forma elegida y sin monto cargado
+    // (modo simple desde el select inline), su monto = monto total ARS.
+    const formasPagoParaGuardar = (() => {
+      if (formasPago.length === 1 && formasPago[0].forma_pago) {
+        const fp = formasPago[0]
+        const m = parseMonto(fp.monto) > 0 ? parseMonto(fp.monto) : montoARS
+        if (m > 0) return [{ ...fp, monto: String(m) }]
+        return []
+      }
+      return formasPago.filter(fp => fp.forma_pago && parseMonto(fp.monto) > 0)
+    })()
+    if (formasPagoParaGuardar.length > 0) {
       const { error: errFp } = await supabase
         .from('tramite_formas_pago')
-        .insert(formasPagoValidas.map((fp, i) => ({
+        .insert(formasPagoParaGuardar.map((fp, i) => ({
           tramite_id: t.id,
           forma_pago: fp.forma_pago,
           monto: parseMonto(fp.monto),
@@ -911,17 +932,68 @@ export default function NuevoTramitePage() {
           </CardHeader>
           <CardContent className="space-y-4">
 
-            {/* Selector de moneda */}
-            <div className="space-y-1.5">
-              <Label className="text-zinc-300">Moneda de la escritura</Label>
-              <Select value={moneda} onValueChange={setMoneda}>
-                <SelectTrigger className={selectTriggerCls}><SelectValue /></SelectTrigger>
-                <SelectContent className={selectContentCls}>
-                  {MONEDAS.map(m => (
-                    <SelectItem key={m.v} value={m.v} className={selectItemCls}>{m.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {/* Moneda + Forma de pago (en la misma línea) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-zinc-300">Moneda de la escritura</Label>
+                <Select value={moneda} onValueChange={setMoneda}>
+                  <SelectTrigger className={selectTriggerCls}><SelectValue /></SelectTrigger>
+                  <SelectContent className={selectContentCls}>
+                    {MONEDAS.map(m => (
+                      <SelectItem key={m.v} value={m.v} className={selectItemCls}>{m.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Forma de pago (simple) — visible cuando hay 0 o 1 formas
+                  Cuando hay >= 2 (modo multi-row), se oculta acá y aparece
+                  el componente FormasPagoMultiInput debajo. */}
+              {formasPago.length <= 1 && (
+                <div className="space-y-1.5">
+                  <Label className="text-zinc-300">Forma de pago</Label>
+                  <div className="flex gap-2">
+                    <Select
+                      value={formasPago[0]?.forma_pago ?? ''}
+                      onValueChange={v => {
+                        const fp = v as FormaPago
+                        if (formasPago.length === 0) {
+                          setFormasPago([{ ...nuevaFormaPagoVacia(), forma_pago: fp }])
+                        } else {
+                          setFormasPago(p => p.map((e, i) => (i === 0 ? { ...e, forma_pago: fp } : e)))
+                        }
+                      }}
+                    >
+                      <SelectTrigger className={selectTriggerCls + ' flex-1'}>
+                        <SelectValue placeholder="Seleccioná forma de pago" />
+                      </SelectTrigger>
+                      <SelectContent className={selectContentCls}>
+                        {FORMAS_PAGO_LIST.map(f => (
+                          <SelectItem key={f} value={f} className={selectItemCls}>
+                            {LABEL_FORMA_PAGO[f]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        // Agregar 2da forma → entra en modo multi-row
+                        const base = formasPago.length === 0
+                          ? [nuevaFormaPagoVacia(), nuevaFormaPagoVacia()]
+                          : [...formasPago, nuevaFormaPagoVacia()]
+                        setFormasPago(base)
+                      }}
+                      className="border-zinc-700 text-lime-400 hover:bg-lime-400/10 gap-1 shrink-0 h-10"
+                      title="Agregar otra forma de pago"
+                    >
+                      <span className="text-base leading-none">+</span> Otra
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Si crypto, especificar cuál */}
@@ -964,25 +1036,27 @@ export default function NuevoTramitePage() {
               </div>
             )}
 
-            {/* Formas de pago: una o varias */}
-            <div className="space-y-1.5">
-              <Label className="text-zinc-300">
-                Formas de pago
-                <span className="ml-2 text-zinc-500 text-xs font-normal">
-                  (podés combinar varias: ej. 50% efectivo + 30% transferencia + 20% cheque)
-                </span>
-              </Label>
-              <FormasPagoMultiInput
-                value={formasPago}
-                onChange={setFormasPago}
-                montoTotal={
-                  moneda === 'ARS'
-                    ? parseMonto(form.monto)
-                    : (parseMonto(form.monto_moneda_extranjera) * parseMonto(form.tipo_cambio)) || undefined
-                }
-                smvm={smvm}
-              />
-            </div>
+            {/* Formas de pago combinadas (modo multi-row): solo cuando hay 2+ */}
+            {formasPago.length >= 2 && (
+              <div className="space-y-1.5">
+                <Label className="text-zinc-300">
+                  Formas de pago combinadas
+                  <span className="ml-2 text-zinc-500 text-xs font-normal">
+                    (ej. 50% efectivo + 30% transferencia + 20% cheque)
+                  </span>
+                </Label>
+                <FormasPagoMultiInput
+                  value={formasPago}
+                  onChange={setFormasPago}
+                  montoTotal={
+                    moneda === 'ARS'
+                      ? parseMonto(form.monto)
+                      : (parseMonto(form.monto_moneda_extranjera) * parseMonto(form.tipo_cambio)) || undefined
+                  }
+                  smvm={smvm}
+                />
+              </div>
+            )}
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
