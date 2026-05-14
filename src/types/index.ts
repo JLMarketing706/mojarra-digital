@@ -46,6 +46,11 @@ export interface Profile {
   desactivado_por?: string
   desactivacion_motivo?: string
   reactivacion_programada?: string
+
+  // Registros notariales en los que está inscripto el escribano
+  // (solo aplica a roles de escribano). Aparecen como opciones del
+  // selector "Registro notarial" al cargar una escritura.
+  registros_notariales?: string[] | null
 }
 
 // ─── CLIENTES ────────────────────────────────────────────

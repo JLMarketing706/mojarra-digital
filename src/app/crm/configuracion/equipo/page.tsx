@@ -17,7 +17,7 @@ import {
 import { toast } from 'sonner'
 import {
   ArrowLeft, Loader2, UserPlus, Mail, Copy, X, Users, ShieldOff,
-  RefreshCw, Send, Check, XCircle, Trash2, Calendar, MessageCircle,
+  RefreshCw, Send, Check, XCircle, Trash2, Calendar, MessageCircle, Stamp, Save,
 } from 'lucide-react'
 import Link from 'next/link'
 import { formatFecha, formatFechaHora } from '@/lib/utils'
@@ -58,6 +58,9 @@ export default function EquipoPage() {
   const [miembros, setMiembros] = useState<Miembro[]>([])
   const [invitaciones, setInvitaciones] = useState<InvitacionView[]>([])
   const [showForm, setShowForm] = useState(false)
+  // Edición de registros notariales — qué miembro y el textarea draft
+  const [editandoRegistros, setEditandoRegistros] = useState<Miembro | null>(null)
+  const [registrosDraft, setRegistrosDraft] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [linkGenerado, setLinkGenerado] = useState<string | null>(null)
   const [filtro, setFiltro] = useState<'activos' | 'desactivados' | 'todos'>('activos')
@@ -196,6 +199,26 @@ export default function EquipoPage() {
       .eq('id', m.id)
     if (error) { toast.error('No se pudo cambiar el rol (verificá que sos titular)'); return }
     toast.success('Rol actualizado')
+    cargar()
+  }
+
+  /** Guarda la lista de registros notariales del escribano (un string por línea) */
+  async function guardarRegistros(m: Miembro, raw: string) {
+    // Cada línea es un registro. Limpio espacios y vacíos.
+    const lista = raw
+      .split('\n')
+      .map(s => s.trim())
+      .filter(Boolean)
+    const { error } = await supabase
+      .from('profiles')
+      .update({ registros_notariales: lista.length > 0 ? lista : null })
+      .eq('id', m.id)
+    if (error) { toast.error('No se pudieron guardar los registros'); return }
+    toast.success(
+      lista.length === 0
+        ? 'Registros notariales borrados'
+        : `${lista.length} ${lista.length === 1 ? 'registro guardado' : 'registros guardados'}`
+    )
     cargar()
   }
 
@@ -418,6 +441,8 @@ export default function EquipoPage() {
         {miembrosFiltrados.map(m => {
           const desactivado = !!m.desactivado_at
           const esYo = m.id === yo?.id
+          const esEscribano = ['escribano_titular', 'escribano_adscripto', 'escribano_subrogante', 'escribano_interino', 'escribano'].includes(m.rol)
+          const registros = (m as Miembro & { registros_notariales?: string[] | null }).registros_notariales ?? []
           return (
             <Card key={m.id} className={`bg-zinc-900 border ${desactivado ? 'border-zinc-800 opacity-60' : 'border-zinc-800'}`}>
               <CardContent className="p-4 flex items-center justify-between gap-3 flex-wrap">
@@ -466,6 +491,22 @@ export default function EquipoPage() {
                     </SelectContent>
                   </Select>
 
+                  {esEscribano && !desactivado && (
+                    <Button
+                      onClick={() => {
+                        setEditandoRegistros(m)
+                        setRegistrosDraft(registros.join('\n'))
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs gap-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                      title="Editar registros notariales del escribano"
+                    >
+                      <Stamp size={11} />
+                      Registros ({registros.length})
+                    </Button>
+                  )}
+
                   {!esYo && (
                     <Button onClick={() => desactivado ? reactivar(m) : abrirDialogDesactivar(m)}
                       variant="outline" size="sm"
@@ -484,6 +525,67 @@ export default function EquipoPage() {
           )
         })}
       </div>
+
+      {/* Dialog: editar registros notariales del escribano */}
+      <Dialog
+        open={!!editandoRegistros}
+        onOpenChange={open => { if (!open) setEditandoRegistros(null) }}
+      >
+        <DialogContent className="bg-zinc-900 border-zinc-800 max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-zinc-100">
+              Registros notariales
+              {editandoRegistros && (
+                <p className="text-zinc-400 text-sm font-normal mt-1">
+                  {editandoRegistros.nombre} {editandoRegistros.apellido}
+                </p>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Label className="text-zinc-300 text-xs">
+              Un registro por línea
+              <span className="text-zinc-500 font-normal ml-2">
+                (ej: &ldquo;Registro 123 CABA&rdquo;)
+              </span>
+            </Label>
+            <Textarea
+              value={registrosDraft}
+              onChange={e => setRegistrosDraft(e.target.value)}
+              placeholder="Registro 123 CABA&#10;Registro 45 PBA"
+              rows={5}
+              className={inputCls + ' font-mono text-sm'}
+            />
+            <p className="text-xs text-zinc-500">
+              Si el escribano tiene un solo registro, se va a seleccionar
+              por default al cargar una escritura. Si tiene varios,
+              vas a poder elegir cuál usar en cada operación.
+            </p>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setEditandoRegistros(null)}
+                className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+              >
+                Cancelar
+              </Button>
+              <Button
+                size="sm"
+                onClick={async () => {
+                  if (editandoRegistros) {
+                    await guardarRegistros(editandoRegistros, registrosDraft)
+                    setEditandoRegistros(null)
+                  }
+                }}
+                className="bg-lime-400 text-black hover:bg-lime-300 font-semibold gap-2"
+              >
+                <Save size={13} /> Guardar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* INVITACIONES */}
       {invitaciones.length > 0 && (

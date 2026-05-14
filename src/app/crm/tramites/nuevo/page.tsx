@@ -173,7 +173,7 @@ export default function NuevoTramitePage() {
 
       let escQuery = supabase
         .from('profiles')
-        .select('id, nombre, apellido, rol, email, activo, created_at')
+        .select('id, nombre, apellido, rol, email, activo, created_at, registros_notariales')
         .in('rol', ['escribano', 'protocolista', 'escribano_titular', 'escribano_adscripto', 'escribano_subrogante', 'escribano_interino', 'oficial_cumplimiento'])
         .eq('activo', true)
         .order('apellido')
@@ -214,6 +214,29 @@ export default function NuevoTramitePage() {
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm(p => ({ ...p, [key]: value }))
   }
+
+  // Registros notariales del escribano seleccionado.
+  // Si tiene exactamente uno, lo auto-asigno como registro_notarial.
+  // Si tiene varios, el campo se rendea como Select con sus opciones.
+  // Si tiene cero, queda como Input libre.
+  const escribanoSeleccionado = escribanos.find(e => e.id === form.escribano_id)
+  const registrosDelEscribano = (
+    (escribanoSeleccionado as (Profile & { registros_notariales?: string[] | null }) | undefined)
+      ?.registros_notariales ?? []
+  )
+  useEffect(() => {
+    if (registrosDelEscribano.length === 1) {
+      // Solo lo seteo si está vacío o no coincide con la única opción
+      if (form.registro_notarial !== registrosDelEscribano[0]) {
+        setForm(p => ({ ...p, registro_notarial: registrosDelEscribano[0] }))
+      }
+    } else if (registrosDelEscribano.length > 1) {
+      // Si el actual no está en la lista, lo limpio para que el usuario elija
+      if (form.registro_notarial && !registrosDelEscribano.includes(form.registro_notarial)) {
+        setForm(p => ({ ...p, registro_notarial: '' }))
+      }
+    }
+  }, [registrosDelEscribano.join('|')]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Detectar compraventa: si alguna causal elegida contiene "compraventa", o el tipo_acto UIF lo es.
   const esCompraventa =
@@ -836,7 +859,41 @@ export default function NuevoTramitePage() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-zinc-300">Registro notarial</Label>
-                <Input value={form.registro_notarial} onChange={e => set('registro_notarial', e.target.value)} placeholder="N°123 CABA" className={inputCls} />
+                {registrosDelEscribano.length > 0 ? (
+                  <Select
+                    value={form.registro_notarial}
+                    onValueChange={v => set('registro_notarial', v)}
+                  >
+                    <SelectTrigger className={selectTriggerCls}>
+                      <SelectValue placeholder="Seleccioná registro" />
+                    </SelectTrigger>
+                    <SelectContent className={selectContentCls}>
+                      {registrosDelEscribano.map(r => (
+                        <SelectItem key={r} value={r} className={selectItemCls}>
+                          {r}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <>
+                    <Input
+                      value={form.registro_notarial}
+                      onChange={e => set('registro_notarial', e.target.value)}
+                      placeholder="N°123 CABA"
+                      className={inputCls}
+                    />
+                    {form.escribano_id && (
+                      <p className="text-xs text-zinc-500">
+                        El escribano no tiene registros cargados.{' '}
+                        <Link href="/crm/configuracion/equipo" className="text-lime-400 hover:underline">
+                          Cargalos en el equipo
+                        </Link>{' '}
+                        para que aparezcan acá automáticamente.
+                      </p>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           </CardContent>
