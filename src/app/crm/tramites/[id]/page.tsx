@@ -27,7 +27,16 @@ export default async function DetalleTramiteCRMPage({
 
   const { data: tramite } = await supabase
     .from('tramites')
-    .select('*, cliente:clientes(*), escribano:profiles(id, nombre, apellido), formas_pago:tramite_formas_pago(id, forma_pago, monto, observacion, orden)')
+    .select(`
+      *,
+      cliente:clientes(*),
+      escribano:profiles(id, nombre, apellido),
+      formas_pago:tramite_formas_pago(id, forma_pago, monto, observacion, orden),
+      partes:tramite_partes(
+        id, rol, cliente_id,
+        cliente:clientes(id, nombre, apellido, es_pep, es_sujeto_obligado, tipo_persona)
+      )
+    `)
     .eq('id', id)
     .single()
 
@@ -138,18 +147,42 @@ export default async function DetalleTramiteCRMPage({
 
       {/* Documentos requeridos faltantes */}
       <div className="mb-6">
-        <DocsRequeridosAlert
-          tramite={{
-            tipo: tramite.tipo as string,
-            monto: tramite.monto as number | null,
-            monto_efectivo: tramite.monto_efectivo as number | null,
-            dispara_uif: tramite.dispara_uif as boolean | null,
-            requiere_uif: tramite.requiere_uif as boolean | null,
-            forma_pago: tramite.forma_pago as string | null,
-          }}
-          cliente={cliente as { es_pep?: boolean; es_sujeto_obligado?: boolean; tipo_persona?: string } | null}
-          documentos={documentos ?? []}
-        />
+        {(() => {
+          // Armo el set de clientes únicos: el principal + los de tramite_partes.
+          // Dedupe por id para no duplicar (ej: si el principal también es comprador).
+          type ClienteCtx = {
+            id: string; nombre: string; apellido: string
+            es_pep?: boolean | null; es_sujeto_obligado?: boolean | null
+            tipo_persona?: string | null
+          }
+          const map = new Map<string, ClienteCtx>()
+          if (cliente && (cliente as { id?: string }).id) {
+            const c = cliente as unknown as ClienteCtx
+            map.set(c.id, c)
+          }
+          const partes = (tramite.partes as Array<{ cliente: ClienteCtx | null }> | null) ?? []
+          for (const p of partes) {
+            if (p.cliente?.id && !map.has(p.cliente.id)) {
+              map.set(p.cliente.id, p.cliente)
+            }
+          }
+          const clientes = Array.from(map.values())
+          if (clientes.length === 0) return null
+          return (
+            <DocsRequeridosAlert
+              tramite={{
+                tipo: tramite.tipo as string,
+                monto: tramite.monto as number | null,
+                monto_efectivo: tramite.monto_efectivo as number | null,
+                dispara_uif: tramite.dispara_uif as boolean | null,
+                requiere_uif: tramite.requiere_uif as boolean | null,
+                forma_pago: tramite.forma_pago as string | null,
+              }}
+              clientes={clientes}
+              documentos={documentos ?? []}
+            />
+          )
+        })()}
       </div>
 
       {/* Alertas UIF activas */}
