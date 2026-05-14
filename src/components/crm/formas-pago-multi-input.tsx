@@ -55,7 +55,7 @@ export function FormasPagoMultiInput({ value, onChange, montoTotal, smvm }: Prop
       .reduce((acc, e) => acc + parseMonto(e.monto), 0),
     [value]
   )
-  const umbralEfectivo = (smvm ?? 0) * 750
+  const umbralEfectivo = (smvm ?? 0) * 700
   const efectivoSuperaUmbral = umbralEfectivo > 0 && efectivoTotal >= umbralEfectivo
 
   function add() {
@@ -195,12 +195,12 @@ export function FormasPagoMultiInput({ value, onChange, montoTotal, smvm }: Prop
             </div>
           </div>
 
-          {/* Warning UIF si efectivo supera 750 SMVM */}
+          {/* Warning UIF si efectivo supera 700 SMVM */}
           {efectivoSuperaUmbral && (
             <div className="rounded-md border border-yellow-500/30 bg-yellow-500/10 p-2.5 flex items-start gap-2">
               <AlertTriangle size={14} className="text-yellow-400 shrink-0 mt-0.5" />
               <p className="text-xs text-yellow-300 leading-snug">
-                El total en efectivo (${formatMonto(efectivoTotal)}) supera los 750 SMVM —
+                El total en efectivo (${formatMonto(efectivoTotal)}) supera los 700 SMVM —
                 la operación va a disparar reporte UIF.
               </p>
             </div>

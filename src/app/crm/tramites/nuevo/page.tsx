@@ -277,7 +277,7 @@ export default function NuevoTramitePage() {
   const efectivo = formasPago
     .filter(fp => fp.forma_pago === 'efectivo')
     .reduce((acc, fp) => acc + parseMonto(fp.monto), 0)
-  const umbralEfectivo = smvm * 750
+  const umbralEfectivo = smvm * 700
   const umbralCompraventa = smvm * 700
 
   // Estos actos disparan UIF sin importar el monto.
@@ -393,7 +393,7 @@ export default function NuevoTramitePage() {
     const alertas: AlertaInsert[] = []
     const t = tramite as { id: string; dispara_uif: boolean }
     if (t.dispara_uif) {
-      if (disparaPorEfectivo) alertas.push({ tramite_id: t.id, tipo: 'monto', tipo_alerta: 'monto_excedido', descripcion: `Pago en efectivo $${efectivo.toLocaleString('es-AR')} supera 750 SMVM` })
+      if (disparaPorEfectivo) alertas.push({ tramite_id: t.id, tipo: 'monto', tipo_alerta: 'monto_excedido', descripcion: `Pago en efectivo $${efectivo.toLocaleString('es-AR')} supera 700 SMVM` })
       if (disparaPorCompraventa) alertas.push({ tramite_id: t.id, tipo: 'monto', tipo_alerta: 'monto_excedido', descripcion: `Compraventa $${monto.toLocaleString('es-AR')} supera 700 SMVM` })
       if (disparaPorTipo) alertas.push({ tramite_id: t.id, tipo: 'otro', tipo_alerta: 'monto_excedido', descripcion: `Acto "${LABEL_TIPO_ACTO[form.tipo_acto as TipoActo]}" requiere UIF sin mínimo` })
     }
@@ -906,7 +906,7 @@ export default function NuevoTramitePage() {
               <Coins size={14} className="text-lime-400" />Montos y forma de pago
             </CardTitle>
             <p className="text-xs text-zinc-500">
-              SMVM vigente: ${smvm.toLocaleString('es-AR')} · Umbral 750 SMVM (efectivo): ${(smvm * 750).toLocaleString('es-AR')}
+              SMVM vigente: ${smvm.toLocaleString('es-AR')} · Umbral 700 SMVM (efectivo): ${(smvm * 700).toLocaleString('es-AR')}
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -1012,7 +1012,7 @@ export default function NuevoTramitePage() {
                 </p>
                 <ul className="mt-2 space-y-1 text-xs">
                   {disparaPorTipo && <li className="text-red-400/80">• {LABEL_TIPO_ACTO[form.tipo_acto as TipoActo]}: requiere UIF sin mínimo</li>}
-                  {disparaPorEfectivo && <li className="text-red-400/80">• Efectivo ${efectivo.toLocaleString('es-AR')} ≥ 750 SMVM (${(smvm * 750).toLocaleString('es-AR')})</li>}
+                  {disparaPorEfectivo && <li className="text-red-400/80">• Efectivo ${efectivo.toLocaleString('es-AR')} ≥ 700 SMVM (${(smvm * 700).toLocaleString('es-AR')})</li>}
                   {disparaPorCompraventa && !disparaPorEfectivo && <li className="text-red-400/80">• Compraventa total ${monto.toLocaleString('es-AR')} ≥ 700 SMVM</li>}
                   {!disparaUIF && form.tipo_acto && <li className="text-green-400/80">• El sistema validará al guardar.</li>}
                 </ul>

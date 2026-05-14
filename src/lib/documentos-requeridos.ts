@@ -123,7 +123,7 @@ export function calcularDocsRequeridos(
 
   // ──────── Requerimientos DE LA OPERACIÓN (no por cliente) ────────
   const umbral700 = smvm * 700
-  const umbral750 = smvm * 750
+  const umbralEfectivo = smvm * 700
 
   // NOSIS: compraventa > 700 SMVM, fideicomiso, cesión cuotas
   const requiereNosis =
@@ -143,17 +143,17 @@ export function calcularDocsRequeridos(
     })
   }
 
-  // DDJJ origen de fondos: compraventa > 700 SMVM, efectivo > 750 SMVM, o dispara UIF
+  // DDJJ origen de fondos: compraventa > 700 SMVM, efectivo > 700 SMVM, o dispara UIF
   if (
     (tipo.includes('compraventa') && monto > umbral700) ||
-    efectivo > umbral750 ||
+    efectivo > umbralEfectivo ||
     tramite.dispara_uif
   ) {
     reqs.push({
       categoria: 'origen_fondos',
       label: 'DDJJ origen y licitud de fondos',
-      motivo: efectivo > umbral750
-        ? `Efectivo supera 750 SMVM ($${umbral750.toLocaleString('es-AR')})`
+      motivo: efectivo > umbralEfectivo
+        ? `Efectivo supera 700 SMVM ($${umbralEfectivo.toLocaleString('es-AR')})`
         : 'Operación supera umbrales UIF',
       critico: true,
       cliente: null,

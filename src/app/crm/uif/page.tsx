@@ -131,7 +131,7 @@ export default async function UIFPage({
       {/* Umbrales clave */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         {[
-          { label: '750 SMVM (efectivo)', val: smvm * 750, desc: 'Compraventa en efectivo' },
+          { label: '700 SMVM (efectivo)', val: smvm * 700, desc: 'Compraventa en efectivo' },
           { label: '700 SMVM', val: smvm * 700, desc: 'Compraventa total' },
           { label: '150 SMVM', val: smvm * 150, desc: 'Adm. de bienes' },
           { label: '50 SMVM', val: smvm * 50, desc: 'Adm. de cuentas' },

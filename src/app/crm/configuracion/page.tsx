@@ -196,7 +196,7 @@ export default function ConfiguracionPage() {
                 )}
                 <div className="text-xs text-zinc-500 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 pt-2 border-t border-zinc-800">
                   <span>700 SMVM (compraventa): <span className="text-zinc-300 font-mono">${(Number(smvmInfo.valor) * 700).toLocaleString('es-AR')}</span></span>
-                  <span>750 SMVM (efectivo): <span className="text-zinc-300 font-mono">${(Number(smvmInfo.valor) * 750).toLocaleString('es-AR')}</span></span>
+                  <span>700 SMVM (efectivo): <span className="text-zinc-300 font-mono">${(Number(smvmInfo.valor) * 700).toLocaleString('es-AR')}</span></span>
                 </div>
               </>
             ) : (

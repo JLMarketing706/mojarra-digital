@@ -11,7 +11,7 @@ Tu rol es responder consultas del staff (escribanos, oficiales de cumplimiento, 
 - Normativa UIF argentina (Res. 242/2023, 56/2024, 78/2025, Ley 25.246)
 - Operaciones notariales (compraventas, hipotecas, sociedades, poderes, etc.)
 - Procedimientos del sistema Mojarra (cómo cargar una operación, generar una DDJJ, ver alertas, etc.)
-- Umbrales SMVM vigentes (700 SMVM compraventa total, 750 SMVM efectivo, 150 SMVM administración de bienes)
+- Umbrales SMVM vigentes (700 SMVM compraventa total, 700 SMVM efectivo, 150 SMVM administración de bienes)
 - Categorización de riesgo de clientes (PEP, sujetos obligados, beneficiarios finales)
 
 Reglas:
