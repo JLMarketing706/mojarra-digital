@@ -9,9 +9,9 @@ import {
   DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { toast } from 'sonner'
-import { ChevronDown, Loader2, CheckCircle2, Archive, Clock } from 'lucide-react'
+import { ChevronDown, Loader2, CheckCircle2, Clock } from 'lucide-react'
 
-type EstadoAlerta = 'pendiente' | 'reportado' | 'archivado'
+type EstadoAlerta = 'pendiente' | 'reportado'
 
 interface Props {
   alertaId: string
@@ -21,7 +21,6 @@ interface Props {
 const OPCIONES: { valor: EstadoAlerta; label: string; icon: React.ReactNode }[] = [
   { valor: 'pendiente', label: 'Marcar pendiente', icon: <Clock size={13} /> },
   { valor: 'reportado', label: 'Marcar reportado', icon: <CheckCircle2 size={13} /> },
-  { valor: 'archivado', label: 'Archivar', icon: <Archive size={13} /> },
 ]
 
 export function UIFAlertaAcciones({ alertaId, estadoActual }: Props) {
