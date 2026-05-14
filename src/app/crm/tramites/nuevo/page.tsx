@@ -20,7 +20,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import type { Profile, TipoActo, FormaPago, NivelRiesgo } from '@/types'
-import { LABEL_TIPO_ACTO, LABEL_FORMA_PAGO } from '@/types'
+import { LABEL_TIPO_ACTO, LABEL_FORMA_PAGO, TIPOS_ACTO_UIF_INFO } from '@/types'
 import { formatMonto, parseMonto } from '@/lib/utils'
 import { useFormDraft } from '@/lib/use-form-draft'
 import { DraftBanner, DraftSavedIndicator } from '@/components/crm/draft-banner'
@@ -51,10 +51,11 @@ const MONEDAS = [
   { v: 'CRYPTO', label: 'Criptomoneda' },
 ]
 
-const TIPOS_ACTO_LIST: TipoActo[] = [
-  'compraventa_inmueble', 'constitucion_sociedad', 'cesion_cuotas',
-  'fideicomiso', 'hipoteca', 'donacion', 'mutuo', 'otro',
-]
+// La lista de tipo_acto UIF y sus descripciones está en types/index.ts
+// → TIPOS_ACTO_UIF_INFO. Este archivo lo importa y rendea con título +
+//   descripción. Solo los 4 actos vigentes según Res. UIF aparecen acá;
+//   los slugs legacy (constitucion_sociedad, fideicomiso, etc) siguen
+//   en el TYPE para no romper data vieja.
 
 const FORMAS_PAGO_LIST: FormaPago[] = [
   'efectivo', 'transferencia', 'cheque', 'mixto', 'permuta', 'credito_hipotecario', 'otra',
@@ -256,7 +257,12 @@ export default function NuevoTramitePage() {
   const umbralEfectivo = smvm * 750
   const umbralCompraventa = smvm * 700
 
-  const disparaPorTipo = ['constitucion_sociedad', 'cesion_cuotas', 'fideicomiso'].includes(form.tipo_acto)
+  // Estos actos disparan UIF sin importar el monto.
+  // Incluyo los slugs legacy para que data vieja siga disparando como antes.
+  const disparaPorTipo = [
+    'organizacion_aportes', 'creacion_administracion_pj', 'cesion_cuotas',
+    'constitucion_sociedad', 'fideicomiso', // legacy
+  ].includes(form.tipo_acto)
   const disparaPorEfectivo = form.tipo_acto === 'compraventa_inmueble' && efectivo > 0 && efectivo >= umbralEfectivo
   const disparaPorCompraventa = form.tipo_acto === 'compraventa_inmueble' && monto >= umbralCompraventa
   const disparaUIF = disparaPorTipo || disparaPorEfectivo || disparaPorCompraventa
@@ -558,12 +564,25 @@ export default function NuevoTramitePage() {
             <div className="space-y-1.5">
               <Label className="text-zinc-300">Tipo de acto UIF</Label>
               <Select value={form.tipo_acto} onValueChange={v => set('tipo_acto', v as TipoActo)}>
-                <SelectTrigger className={selectTriggerCls}>
+                <SelectTrigger className={selectTriggerCls + ' h-auto py-2 [&>span]:text-left'}>
                   <SelectValue placeholder="Seleccioná (define obligación UIF)" />
                 </SelectTrigger>
-                <SelectContent className={selectContentCls}>
-                  {TIPOS_ACTO_LIST.map(t => (
-                    <SelectItem key={t} value={t} className={selectItemCls}>{LABEL_TIPO_ACTO[t]}</SelectItem>
+                <SelectContent className={selectContentCls + ' max-w-[min(640px,calc(100vw-2rem))]'}>
+                  {TIPOS_ACTO_UIF_INFO.map(t => (
+                    <SelectItem
+                      key={t.value}
+                      value={t.value}
+                      className={selectItemCls + ' py-2.5 items-start whitespace-normal'}
+                    >
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-semibold text-zinc-100 leading-snug">
+                          {t.titulo}
+                        </span>
+                        <span className="text-xs text-zinc-400 leading-snug">
+                          {t.descripcion}
+                        </span>
+                      </div>
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

@@ -274,8 +274,18 @@ export interface Inmueble {
 export type EstadoTramite = 'iniciado' | 'en_proceso' | 'en_registro' | 'listo' | 'entregado'
 
 export type TipoActo =
-  | 'compraventa_inmueble' | 'constitucion_sociedad' | 'cesion_cuotas'
-  | 'fideicomiso' | 'hipoteca' | 'donacion' | 'mutuo' | 'otro'
+  // Vigentes (Res. UIF)
+  | 'compraventa_inmueble'
+  | 'organizacion_aportes'
+  | 'creacion_administracion_pj'
+  | 'cesion_cuotas'
+  // Legacy (para data anterior, no se ofrecen en el dropdown)
+  | 'constitucion_sociedad'
+  | 'fideicomiso'
+  | 'hipoteca'
+  | 'donacion'
+  | 'mutuo'
+  | 'otro'
 
 export type FormaPago =
   | 'efectivo' | 'transferencia' | 'cheque' | 'mixto'
@@ -992,14 +1002,48 @@ export const LABEL_NIVEL_RIESGO: Record<NivelRiesgo, string> = {
   alto: 'Alto',
 }
 
+/** Tipos de acto UIF vigentes (los 4 que se ofrecen en el dropdown).
+ *  Cada uno con título corto y descripción larga (Res. UIF). */
+export interface TipoActoUIFInfo {
+  value: TipoActo
+  titulo: string
+  descripcion: string
+}
+
+export const TIPOS_ACTO_UIF_INFO: TipoActoUIFInfo[] = [
+  {
+    value: 'compraventa_inmueble',
+    titulo: 'Compraventas mayores a 700 SMVM',
+    descripcion: 'Compraventa de inmueble cuyo valor supera los 700 Salarios Mínimos Vitales y Móviles.',
+  },
+  {
+    value: 'organizacion_aportes',
+    titulo: 'Organización de aportes (fondeo)',
+    descripcion: 'Aportes o contribuciones a personas jurídicas o estructuras jurídicas — aportes de capital, aumentos de capital, donaciones a fundaciones, integración de fondos a fideicomiso, con independencia del monto.',
+  },
+  {
+    value: 'creacion_administracion_pj',
+    titulo: 'Creación, operación y administración de PJ',
+    descripcion: 'Creación, operación y administración de personas jurídicas u otras estructuras jurídicas (fideicomisos, UTEs, etc.), con independencia del monto.',
+  },
+  {
+    value: 'cesion_cuotas',
+    titulo: 'Compraventa de negocios jurídicos / cesión de participaciones',
+    descripcion: 'Compraventa de negocios jurídicos en general y/o cesión de participaciones sociales o de estructuras jurídicas (por ejemplo, cesiones de posición contractual de un fideicomiso).',
+  },
+]
+
 export const LABEL_TIPO_ACTO: Record<TipoActo, string> = {
-  compraventa_inmueble: 'Compraventa',
-  constitucion_sociedad: 'Constitución de sociedad',
-  cesion_cuotas: 'Cesión de cuotas',
-  fideicomiso: 'Fideicomiso',
-  hipoteca: 'Hipoteca',
-  donacion: 'Donación',
-  mutuo: 'Mutuo',
+  compraventa_inmueble: 'Compraventas mayores a 700 SMVM',
+  organizacion_aportes: 'Organización de aportes (fondeo)',
+  creacion_administracion_pj: 'Creación, operación y administración de PJ',
+  cesion_cuotas: 'Compraventa de negocios jurídicos / cesión de participaciones',
+  // Legacy
+  constitucion_sociedad: 'Constitución de sociedad (legacy)',
+  fideicomiso: 'Fideicomiso (legacy)',
+  hipoteca: 'Hipoteca (legacy)',
+  donacion: 'Donación (legacy)',
+  mutuo: 'Mutuo (legacy)',
   otro: 'Otro',
 }
 
