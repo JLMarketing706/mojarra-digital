@@ -16,6 +16,7 @@ import {
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { Loader2, X, AlertTriangle, Calendar } from 'lucide-react'
+import { EntregaDialog } from '@/components/crm/entrega-dialog'
 
 const ESTADOS = ['iniciado', 'en_proceso', 'en_registro', 'observado', 'listo', 'entregado']
 
@@ -47,6 +48,7 @@ export function EstadoTramiteSelector({ tramiteId, estadoActual }: Props) {
   const router = useRouter()
   const [guardando, setGuardando] = useState(false)
   const [showObsDialog, setShowObsDialog] = useState(false)
+  const [showEntregaDialog, setShowEntregaDialog] = useState(false)
   const [fechaLimite, setFechaLimite] = useState('')
   const [obsTexto, setObsTexto] = useState('')
   const [plazoData, setPlazoData] = useState<PlazoTramite | null>(null)
@@ -105,6 +107,12 @@ export function EstadoTramiteSelector({ tramiteId, estadoActual }: Props) {
       setShowObsDialog(true)
       return
     }
+    if (nuevoEstado === 'entregado') {
+      // Abrir dialog de entrega — el componente se encarga de actualizar
+      // el estado a 'entregado' al confirmar.
+      setShowEntregaDialog(true)
+      return
+    }
     await aplicarEstado(nuevoEstado)
   }
 
@@ -137,6 +145,13 @@ export function EstadoTramiteSelector({ tramiteId, estadoActual }: Props) {
           ))}
         </SelectContent>
       </Select>
+
+      {/* Diálogo de entrega — al confirmarse, marca como 'entregado' */}
+      <EntregaDialog
+        tramiteId={tramiteId}
+        open={showEntregaDialog}
+        onOpenChange={setShowEntregaDialog}
+      />
 
       {/* Diálogo: observación + fecha límite (autoderivada del plazo registral) */}
       {showObsDialog && (

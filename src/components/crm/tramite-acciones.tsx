@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
 import { Loader2, Upload, FileText } from 'lucide-react'
 import { estadoTramiteLabel } from '@/lib/utils'
+import { EntregaDialog } from '@/components/crm/entrega-dialog'
 import type { Profile } from '@/types'
 
 const ESTADOS = ['iniciado', 'en_proceso', 'en_registro', 'observado', 'listo', 'entregado']
@@ -35,9 +36,15 @@ export function TramiteAcciones({ tramiteId, estadoActual, profiles }: Props) {
   const [visibleCliente, setVisibleCliente] = useState(false)
   const [fechaLimiteObs, setFechaLimiteObs] = useState('')
   const [obsTexto, setObsTexto] = useState('')
+  const [showEntregaDialog, setShowEntregaDialog] = useState(false)
 
   async function actualizarEstado() {
     if (nuevoEstado === estadoActual) return
+    // Si pasa a 'entregado', abro el dialog en lugar de aplicar directo
+    if (nuevoEstado === 'entregado') {
+      setShowEntregaDialog(true)
+      return
+    }
     if (nuevoEstado === 'observado' && !fechaLimiteObs) {
       toast.error('Cargá la fecha límite del registro antes de confirmar.')
       return
@@ -253,6 +260,14 @@ export function TramiteAcciones({ tramiteId, estadoActual, profiles }: Props) {
           <input ref={fileInputRef} type="file" className="hidden" onChange={subirDocumento} />
         </CardContent>
       </Card>
+
+      {/* Diálogo de entrega — al confirmar marca como 'entregado' */}
+      <EntregaDialog
+        tramiteId={tramiteId}
+        open={showEntregaDialog}
+        onOpenChange={setShowEntregaDialog}
+        onConfirmed={() => setNuevoEstado('entregado')}
+      />
     </div>
   )
 }
